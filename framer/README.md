@@ -27,8 +27,13 @@ Home entry, not a container for all content, and it is **not** a fake OS/desktop
 ## Components
 
 - **`Y2KHome.tsx`** — the Home experience:
-  - **Kinetic intro** (~2.5s): the wordmark slams in letter-by-letter, then
-    settles to the top as the desk reveals. Front-loaded drama, then clarity.
+  - **Load sequence**: opens on a near-black screen; the bold wordmark enters
+    via a staggered letter fade-up. The intro then resolves **scroll-linked**
+    (progress tied to scroll position, spring-smoothed/lerped, reversible): the
+    type wipes/scales out while the desk composes in from dark underneath. If
+    the user doesn't scroll within ~1.8s, a timed fallback resolves it. Reduced
+    motion skips the intro; mobile uses a single timed fade (touch scroll is
+    unreliable). This is not a one-shot CSS animation.
   - **Desk scene**: top-down, B&W, halftone + grain + scan-lines. Three
     prominent **CASE 01/02/03** objects are the case studies (click → flash-wipe
     → `/work/<slug>`). Secondary objects (`[ABOUT] [GALLERY] [CLIENTS]

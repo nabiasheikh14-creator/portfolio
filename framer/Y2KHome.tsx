@@ -1,12 +1,20 @@
 import {
     useEffect,
     useMemo,
+    useRef,
     useState,
     startTransition,
     type CSSProperties,
     type ReactNode,
 } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import {
+    motion,
+    AnimatePresence,
+    useScroll,
+    useSpring,
+    useTransform,
+    useMotionValueEvent,
+} from "framer-motion"
 import {
     addPropertyControls,
     ControlType,
@@ -16,6 +24,7 @@ import {
 
 const STAGE_W = 1280
 const STAGE_H = 760
+const INTRO_VH = 200 // scroll distance for the load sequence
 
 const DISPLAY = '"Archivo Black", "Arial Black", sans-serif'
 const MONO = '"Space Mono", ui-monospace, monospace'
@@ -30,22 +39,21 @@ interface NavItem {
     label: string
     href: string
 }
-
 interface Y2KHomeProps {
     name: string
     role: string
+    introLine: string
     accent: string
     cases: CaseItem[]
     style?: CSSProperties
 }
 
-// SVG grain (feTurbulence) as a data URI, tiled over the scene.
 const GRAIN =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E\")"
 
 /**
- * Y2K Home — kinetic B&W type intro that resolves into an illustrated desk.
- * Strict black & white with a single accent. Halftone + grain + scanlines.
+ * Y2K Home — a near-black load sequence whose bold wordmark resolves, via a
+ * scroll-linked (spring-smoothed) transition, into an illustrated B&W desk.
  *
  * @framerIntrinsicWidth 1280
  * @framerIntrinsicHeight 760
@@ -56,6 +64,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
     const {
         name = "NABIA SHAIKH",
         role = "GRAPHIC DESIGNER & CONTENT CREATOR — NYC",
+        introLine = "NABIA SHAIKH",
         accent = "#0F27FF",
         cases = defaultCases,
     } = props
@@ -85,29 +94,62 @@ export default function Y2KHome(props: Y2KHomeProps) {
         return () => window.removeEventListener("resize", compute)
     }, [])
 
-    // phases: intro (name big) -> reveal (settle + desk in) -> ready
-    const animated = mode === "full" && !isStatic
-    const [phase, setPhase] = useState<"intro" | "reveal" | "ready">(
-        animated ? "intro" : "ready"
-    )
+    const isFull = mode === "full" && !isStatic
+
+    // --- Scroll-linked progress (0..1), spring-smoothed ("lerp").
+    const rootRef = useRef<HTMLDivElement>(null)
+    const { scrollYProgress } = useScroll({
+        target: rootRef,
+        offset: ["start start", "end end"],
+    })
+    const smoothed = useSpring(scrollYProgress, {
+        stiffness: 110,
+        damping: 26,
+        mass: 0.5,
+    })
+    // Auto-advance fallback so the intro resolves even without scrolling.
+    const auto = useSpring(isStatic ? 1 : 0, {
+        stiffness: 70,
+        damping: 20,
+        mass: 0.5,
+    })
+    const scrolledRef = useRef(false)
+    useMotionValueEvent(scrollYProgress, "change", (v) => {
+        if (v > 0.015) scrolledRef.current = true
+    })
     useEffect(() => {
-        if (!animated) {
-            setPhase("ready")
+        if (isStatic || mode === "reduced") {
+            auto.set(1)
             return
         }
-        const t1 = window.setTimeout(
-            () => startTransition(() => setPhase("reveal")),
-            1900
-        )
-        const t2 = window.setTimeout(
-            () => startTransition(() => setPhase("ready")),
-            2600
-        )
-        return () => {
-            window.clearTimeout(t1)
-            window.clearTimeout(t2)
+        if (mode === "mobile") {
+            const t = window.setTimeout(() => auto.set(1), 1400)
+            return () => window.clearTimeout(t)
         }
-    }, [animated])
+        const t = window.setTimeout(() => {
+            if (!scrolledRef.current) auto.set(1)
+        }, 1800)
+        return () => window.clearTimeout(t)
+    }, [mode, isStatic, auto])
+
+    // Combined progress: scroll drives it; auto is the timed fallback.
+    const p = useTransform([smoothed, auto], ([s, a]: number[]) =>
+        Math.max(s, a)
+    )
+
+    // Intro (near-black + wordmark) resolves out; desk composes in from dark.
+    const introOpacity = useTransform(p, [0, 0.45], [1, 0])
+    const introScale = useTransform(p, [0, 0.5], [1, 0.8])
+    const introY = useTransform(p, [0, 0.5], [0, -48])
+    const introClip = useTransform(
+        p,
+        [0.18, 0.5],
+        ["inset(0% 0% 0% 0%)", "inset(0% 0% 100% 0%)"]
+    )
+    const hintOpacity = useTransform(p, [0, 0.06], [1, 0])
+    const deskOpacity = useTransform(p, [0.12, 0.55], [0, 1])
+    const deskScale = useTransform(p, [0, 0.55], [0.94, 1])
+    const veilOpacity = useTransform(p, [0.12, 0.62], [0.6, 0])
 
     const scale = useMemo(() => {
         if (mode === "mobile") return 1
@@ -127,9 +169,6 @@ export default function Y2KHome(props: Y2KHomeProps) {
         return <Thumb name={name} accent={accent} />
     }
 
-    const introActive = phase === "intro"
-    const showDesk = phase !== "intro"
-
     const nav: NavItem[] = [
         { label: "ABOUT", href: "/about" },
         { label: "GALLERY", href: "/gallery" },
@@ -139,13 +178,14 @@ export default function Y2KHome(props: Y2KHomeProps) {
 
     return (
         <div
+            ref={rootRef}
             style={{
                 position: "relative",
                 width: "100%",
-                minHeight: "100vh",
+                height: isFull ? `${INTRO_VH}vh` : undefined,
+                minHeight: isFull ? undefined : "100vh",
                 background: "#F4F2EC",
                 color: "#0A0A0A",
-                overflow: "hidden",
                 fontFamily: MONO,
                 ...props.style,
             }}
@@ -155,214 +195,120 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 rel="stylesheet"
             />
 
-            {mode === "mobile" ? (
-                <MobileHome
-                    name={name}
-                    role={role}
-                    accent={accent}
-                    cases={cases}
-                    nav={nav}
-                    onCase={go}
-                />
-            ) : (
-                <div
+            {/* ===== DESK (composes in from dark, scroll-linked) ===== */}
+            <div
+                style={{
+                    position: isFull ? "sticky" : "relative",
+                    top: 0,
+                    height: mode === "mobile" ? "auto" : "100vh",
+                    minHeight: mode === "mobile" ? "100vh" : undefined,
+                    width: "100%",
+                    overflow: "hidden",
+                }}
+            >
+                <motion.div
                     style={{
                         position: "relative",
                         width: "100%",
-                        minHeight: "100vh",
+                        height: "100%",
+                        minHeight: mode === "mobile" ? "100vh" : undefined,
+                        opacity: deskOpacity,
+                        scale: mode === "mobile" ? 1 : deskScale,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                     }}
                 >
-                    <div
-                        style={{
-                            width: STAGE_W,
-                            height: STAGE_H,
-                            transform: `scale(${scale})`,
-                            transformOrigin: "center center",
-                            position: "relative",
-                        }}
+                    {mode === "mobile" ? (
+                        <MobileHome
+                            name={name}
+                            role={role}
+                            accent={accent}
+                            cases={cases}
+                            nav={nav}
+                            onCase={go}
+                        />
+                    ) : (
+                        <DeskStage
+                            name={name}
+                            role={role}
+                            accent={accent}
+                            cases={cases}
+                            scale={scale}
+                            onCase={go}
+                        />
+                    )}
+                </motion.div>
+
+                {/* dark veil that lifts as the scene resolves */}
+                <motion.div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: "#0A0A0A",
+                        opacity: veilOpacity,
+                        pointerEvents: "none",
+                        zIndex: 6,
+                    }}
+                />
+            </div>
+
+            {/* ===== INTRO (near-black + wordmark), fixed cover, fades out ===== */}
+            <motion.div
+                style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 50,
+                    background: "#080808",
+                    opacity: introOpacity,
+                    pointerEvents: "none",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
+                }}
+            >
+                <motion.div
+                    style={{
+                        scale: introScale,
+                        y: introY,
+                        clipPath: introClip,
+                        textAlign: "center",
+                        padding: "0 24px",
+                    }}
+                >
+                    <IntroWordmark
+                        text={introLine || name}
+                        accent={accent}
+                        animate={!isStatic}
+                    />
+                </motion.div>
+
+                {/* scroll hint */}
+                <motion.div
+                    style={{
+                        position: "absolute",
+                        bottom: 40,
+                        left: 0,
+                        right: 0,
+                        textAlign: "center",
+                        opacity: hintOpacity,
+                        color: "#EDEDED",
+                        fontFamily: PIXEL,
+                        fontSize: 13,
+                        letterSpacing: 2,
+                    }}
+                >
+                    <motion.div
+                        animate={{ y: [0, 6, 0] }}
+                        transition={{ duration: 1.4, repeat: Infinity }}
                     >
-                        {/* Wordmark: big + centered in intro, settles to top */}
-                        <motion.div
-                            initial={false}
-                            animate={
-                                introActive
-                                    ? { top: 300, scale: 1, opacity: 1 }
-                                    : { top: 0, scale: 0.42, opacity: 1 }
-                            }
-                            transition={{
-                                type: "spring",
-                                stiffness: 120,
-                                damping: 20,
-                            }}
-                            style={{
-                                position: "absolute",
-                                left: 0,
-                                width: STAGE_W,
-                                transformOrigin: "left top",
-                                zIndex: 5,
-                            }}
-                        >
-                            <Wordmark
-                                name={name}
-                                accent={accent}
-                                animateIn={animated}
-                            />
-                        </motion.div>
+                        [ SCROLL ▼ ]
+                    </motion.div>
+                </motion.div>
+            </motion.div>
 
-                        {/* Role line + accent bar */}
-                        <AnimatePresence>
-                            {showDesk && (
-                                <motion.div
-                                    initial={{ opacity: 0, x: -12 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.15 }}
-                                    style={{
-                                        position: "absolute",
-                                        left: 4,
-                                        top: 92,
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 12,
-                                        zIndex: 5,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            width: 46,
-                                            height: 10,
-                                            background: accent,
-                                            display: "inline-block",
-                                        }}
-                                    />
-                                    <span
-                                        style={{
-                                            fontFamily: MONO,
-                                            fontSize: 13,
-                                            letterSpacing: 2,
-                                            fontWeight: 700,
-                                        }}
-                                    >
-                                        {role}
-                                    </span>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                        {/* DESK */}
-                        <AnimatePresence>
-                            {showDesk && (
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 0.4 }}
-                                    style={{
-                                        position: "absolute",
-                                        left: 0,
-                                        top: 150,
-                                        width: STAGE_W,
-                                        height: STAGE_H - 150,
-                                    }}
-                                >
-                                    {/* desk surface */}
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            inset: 0,
-                                            top: 20,
-                                            border: "2px solid #0A0A0A",
-                                            background:
-                                                "repeating-linear-gradient(90deg,#EDEBE4 0 2px,#E4E1D8 2px 4px)",
-                                        }}
-                                    />
-
-                                    {/* 3 CASE STUDY objects — prominent */}
-                                    {cases.slice(0, 3).map((c, i) => (
-                                        <CaseObject
-                                            key={c.slug}
-                                            index={i}
-                                            item={c}
-                                            accent={accent}
-                                            delay={0.1 + i * 0.08}
-                                            onClick={() => go(`/work/${c.slug}`)}
-                                            style={casePos[i]}
-                                        />
-                                    ))}
-
-                                    {/* Secondary nav objects */}
-                                    <NavObject
-                                        label="ABOUT"
-                                        href="/about"
-                                        accent={accent}
-                                        delay={0.4}
-                                        style={{ left: 40, top: 250 }}
-                                    >
-                                        <Journal />
-                                    </NavObject>
-                                    <NavObject
-                                        label="GALLERY"
-                                        href="/gallery"
-                                        accent={accent}
-                                        delay={0.46}
-                                        style={{ left: 900, top: 40 }}
-                                    >
-                                        <PhotoStack accent={accent} />
-                                    </NavObject>
-                                    <NavObject
-                                        label="CLIENTS"
-                                        href="/clients"
-                                        accent={accent}
-                                        delay={0.52}
-                                        style={{ left: 1060, top: 300 }}
-                                    >
-                                        <Rolodex />
-                                    </NavObject>
-                                    <NavObject
-                                        label="CONTACT"
-                                        href="/contact"
-                                        accent={accent}
-                                        delay={0.58}
-                                        style={{ left: 120, top: 470 }}
-                                    >
-                                        <Envelope accent={accent} />
-                                    </NavObject>
-
-                                    {/* atmosphere: halftone blob + mug */}
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            left: 980,
-                                            top: 470,
-                                            width: 120,
-                                            height: 120,
-                                            borderRadius: "50%",
-                                            border: "2px solid #0A0A0A",
-                                            background:
-                                                "radial-gradient(#0A0A0A 30%, transparent 31%) 0 0/12px 12px",
-                                        }}
-                                    />
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    {/* Corner UI chrome */}
-                    <Corner pos={{ top: 16, left: 20 }}>
-                        [ NABIA™ 2026 ]
-                    </Corner>
-                    <Corner pos={{ top: 16, right: 20 }}>[ NY / EST 2019 ]</Corner>
-                    <Corner pos={{ bottom: 16, left: 20 }}>
-                        studio@nabiashaikh.com
-                    </Corner>
-                    <Corner pos={{ bottom: 16, right: 20 }}>
-                        <Clock />
-                    </Corner>
-                </div>
-            )}
-
-            {/* scanlines + grain overlays */}
+            {/* scanlines + grain */}
             <div
                 style={{
                     position: "absolute",
@@ -387,7 +333,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 }}
             />
 
-            {/* flash-wipe transition */}
+            {/* flash-wipe transition to case studies */}
             <AnimatePresence>
                 {flash && (
                     <motion.div
@@ -396,7 +342,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.22, ease: "easeIn" }}
                         style={{
-                            position: "absolute",
+                            position: "fixed",
                             inset: 0,
                             background: accent,
                             transformOrigin: "bottom",
@@ -409,82 +355,222 @@ export default function Y2KHome(props: Y2KHomeProps) {
     )
 }
 
-const casePos: CSSProperties[] = [
-    { left: 300, top: 110, width: 250, height: 320 },
-    { left: 560, top: 70, width: 250, height: 320 },
-    { left: 620, top: 360, width: 250, height: 230 },
-]
-
-// --------------------------------------------------------------------------
-function Wordmark({
-    name,
+// ==========================================================================
+function IntroWordmark({
+    text,
     accent,
-    animateIn,
+    animate,
 }: {
-    name: string
+    text: string
     accent: string
-    animateIn: boolean
+    animate: boolean
 }) {
-    const letters = name.split("")
+    const words = text.split(" ")
     return (
         <h1
             style={{
                 margin: 0,
                 fontFamily: DISPLAY,
-                fontSize: 150,
+                fontSize: "clamp(48px, 12vw, 180px)",
                 lineHeight: 0.86,
                 letterSpacing: -4,
-                color: "#0A0A0A",
-                whiteSpace: "pre-wrap",
+                color: "#F4F2EC",
                 textTransform: "uppercase",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: "0 0.28em",
+                justifyContent: "center",
             }}
         >
-            {letters.map((ch, i) => (
-                <motion.span
-                    key={i}
-                    initial={animateIn ? { y: 120, opacity: 0 } : false}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{
-                        delay: animateIn ? i * 0.035 : 0,
-                        type: "spring",
-                        stiffness: 320,
-                        damping: 24,
-                    }}
-                    style={{
-                        display: "inline-block",
-                        color: ch === "." ? accent : undefined,
-                    }}
-                >
-                    {ch === " " ? "\u00A0" : ch}
-                </motion.span>
+            {words.map((w, wi) => (
+                <span key={wi} style={{ display: "inline-flex", overflow: "hidden" }}>
+                    {w.split("").map((ch, ci) => (
+                        <motion.span
+                            key={ci}
+                            initial={animate ? { y: "110%", opacity: 0 } : false}
+                            animate={{ y: "0%", opacity: 1 }}
+                            transition={{
+                                delay: animate ? 0.15 + (wi * 5 + ci) * 0.04 : 0,
+                                type: "spring",
+                                stiffness: 300,
+                                damping: 26,
+                            }}
+                            style={{
+                                display: "inline-block",
+                                color: ch === "." ? accent : undefined,
+                            }}
+                        >
+                            {ch}
+                        </motion.span>
+                    ))}
+                </span>
             ))}
         </h1>
     )
 }
 
+function DeskStage({
+    name,
+    role,
+    accent,
+    cases,
+    scale,
+    onCase,
+}: {
+    name: string
+    role: string
+    accent: string
+    cases: CaseItem[]
+    scale: number
+    onCase: (href: string) => void
+}) {
+    return (
+        <div
+            style={{
+                width: STAGE_W,
+                height: STAGE_H,
+                transform: `scale(${scale})`,
+                transformOrigin: "center center",
+                position: "relative",
+            }}
+        >
+            {/* Desk title + role */}
+            <h1
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 8,
+                    margin: 0,
+                    fontFamily: DISPLAY,
+                    fontSize: 64,
+                    letterSpacing: -2,
+                    lineHeight: 0.9,
+                    textTransform: "uppercase",
+                    zIndex: 5,
+                }}
+            >
+                {name}
+            </h1>
+            <div
+                style={{
+                    position: "absolute",
+                    left: 4,
+                    top: 82,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 12,
+                    zIndex: 5,
+                }}
+            >
+                <span
+                    style={{
+                        width: 46,
+                        height: 10,
+                        background: accent,
+                        display: "inline-block",
+                    }}
+                />
+                <span
+                    style={{
+                        fontFamily: MONO,
+                        fontSize: 13,
+                        letterSpacing: 2,
+                        fontWeight: 700,
+                    }}
+                >
+                    {role}
+                </span>
+            </div>
+
+            {/* desk surface */}
+            <div
+                style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 150,
+                    right: 0,
+                    height: STAGE_H - 150,
+                    border: "2px solid #0A0A0A",
+                    background:
+                        "repeating-linear-gradient(90deg,#EDEBE4 0 2px,#E4E1D8 2px 4px)",
+                }}
+            />
+
+            {/* 3 case-study objects */}
+            {cases.slice(0, 3).map((c, i) => (
+                <CaseObject
+                    key={c.slug}
+                    index={i}
+                    item={c}
+                    accent={accent}
+                    onClick={() => onCase(`/work/${c.slug}`)}
+                    style={casePos[i]}
+                />
+            ))}
+
+            {/* nav objects */}
+            <NavObject label="ABOUT" href="/about" accent={accent} style={{ left: 40, top: 400 }}>
+                <Journal />
+            </NavObject>
+            <NavObject label="GALLERY" href="/gallery" accent={accent} style={{ left: 900, top: 190 }}>
+                <PhotoStack accent={accent} />
+            </NavObject>
+            <NavObject label="CLIENTS" href="/clients" accent={accent} style={{ left: 1070, top: 450 }}>
+                <Rolodex />
+            </NavObject>
+            <NavObject label="CONTACT" href="/contact" accent={accent} style={{ left: 120, top: 610 }}>
+                <Envelope accent={accent} />
+            </NavObject>
+
+            {/* atmosphere */}
+            <div
+                style={{
+                    position: "absolute",
+                    left: 980,
+                    top: 620,
+                    width: 110,
+                    height: 110,
+                    borderRadius: "50%",
+                    border: "2px solid #0A0A0A",
+                    background:
+                        "radial-gradient(#0A0A0A 30%, transparent 31%) 0 0/12px 12px",
+                }}
+            />
+
+            {/* corner chrome */}
+            <Corner pos={{ top: -30, right: 0 }}>[ NY / EST 2019 ]</Corner>
+            <Corner pos={{ bottom: -34, left: 0 }}>studio@nabiashaikh.com</Corner>
+            <Corner pos={{ bottom: -34, right: 0 }}>
+                <Clock />
+            </Corner>
+        </div>
+    )
+}
+
+const casePos: CSSProperties[] = [
+    { left: 300, top: 200, width: 250, height: 320 },
+    { left: 560, top: 240, width: 250, height: 320 },
+    { left: 620, top: 470, width: 250, height: 210 },
+]
+
 function CaseObject({
     index,
     item,
     accent,
-    delay,
     onClick,
     style,
 }: {
     index: number
     item: CaseItem
     accent: string
-    delay: number
     onClick: () => void
     style: CSSProperties
 }) {
     const [hover, setHover] = useState(false)
     const num = String(index + 1).padStart(2, "0")
     return (
-        <motion.button
+        <button
             type="button"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay }}
             onClick={onClick}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
@@ -498,9 +584,7 @@ function CaseObject({
                 border: "3px solid #0A0A0A",
                 background: hover ? "#0A0A0A" : "#F4F2EC",
                 color: hover ? "#F4F2EC" : "#0A0A0A",
-                boxShadow: hover
-                    ? `10px 10px 0 ${accent}`
-                    : "6px 6px 0 #0A0A0A",
+                boxShadow: hover ? `10px 10px 0 ${accent}` : "6px 6px 0 #0A0A0A",
                 transition: "background 0.08s, color 0.08s, box-shadow 0.12s",
                 display: "flex",
                 flexDirection: "column",
@@ -509,7 +593,6 @@ function CaseObject({
                 ...style,
             }}
         >
-            {/* halftone image area */}
             <div
                 style={{
                     flex: 1,
@@ -541,7 +624,7 @@ function CaseObject({
                         bottom: 8,
                         fontFamily: DISPLAY,
                         fontSize: 40,
-                        color: hover ? "#F4F2EC" : "#F4F2EC",
+                        color: "#F4F2EC",
                         mixBlendMode: "difference",
                     }}
                 >
@@ -549,9 +632,7 @@ function CaseObject({
                 </span>
             </div>
             <div style={{ padding: "10px 12px" }}>
-                <div style={{ fontFamily: DISPLAY, fontSize: 18 }}>
-                    {item.label}
-                </div>
+                <div style={{ fontFamily: DISPLAY, fontSize: 18 }}>{item.label}</div>
                 <div
                     style={{
                         fontFamily: MONO,
@@ -563,7 +644,7 @@ function CaseObject({
                     {item.tag} {hover ? "▸ OPEN" : ""}
                 </div>
             </div>
-        </motion.button>
+        </button>
     )
 }
 
@@ -571,24 +652,19 @@ function NavObject({
     label,
     href,
     accent,
-    delay,
     style,
     children,
 }: {
     label: string
     href: string
     accent: string
-    delay: number
     style: CSSProperties
     children: ReactNode
 }) {
     const [hover, setHover] = useState(false)
     return (
-        <motion.a
+        <a
             href={href}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay }}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             onFocus={() => setHover(true)}
@@ -596,7 +672,7 @@ function NavObject({
             style={{
                 position: "absolute",
                 width: 140,
-                height: 140,
+                height: 150,
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
@@ -632,11 +708,10 @@ function NavObject({
             >
                 [{label}]
             </span>
-        </motion.a>
+        </a>
     )
 }
 
-// ---- object art (B&W, halftone) ----
 function Journal() {
     return (
         <svg viewBox="0 0 96 96" width="96" height="96">
@@ -658,14 +733,7 @@ function PhotoStack({ accent }: { accent: string }) {
             </g>
             <g transform="rotate(6 48 48)">
                 <rect x="16" y="26" width="66" height="52" fill="#0A0A0A" />
-                <rect
-                    x="20"
-                    y="30"
-                    width="58"
-                    height="36"
-                    fill="#F4F2EC"
-                    style={{}}
-                />
+                <rect x="20" y="30" width="58" height="36" fill="#F4F2EC" />
                 <rect x="20" y="30" width="58" height="36" fill={accent} opacity="0.25" />
             </g>
         </svg>
@@ -692,13 +760,7 @@ function Envelope({ accent }: { accent: string }) {
     )
 }
 
-function Corner({
-    children,
-    pos,
-}: {
-    children: ReactNode
-    pos: CSSProperties
-}) {
+function Corner({ children, pos }: { children: ReactNode; pos: CSSProperties }) {
     return (
         <div
             style={{
@@ -707,7 +769,7 @@ function Corner({
                 fontSize: 12,
                 letterSpacing: 1,
                 color: "#0A0A0A",
-                zIndex: 20,
+                zIndex: 5,
                 ...pos,
             }}
         >
@@ -750,10 +812,8 @@ function MobileHome({
     onCase: (href: string) => void
 }) {
     return (
-        <div style={{ padding: "24px 16px 60px" }}>
-            <motion.h1
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
+        <div style={{ padding: "24px 16px 60px", width: "100%" }}>
+            <h1
                 style={{
                     margin: 0,
                     fontFamily: DISPLAY,
@@ -764,7 +824,7 @@ function MobileHome({
                 }}
             >
                 {name}
-            </motion.h1>
+            </h1>
             <div
                 style={{
                     display: "flex",
@@ -773,14 +833,7 @@ function MobileHome({
                     margin: "12px 0 24px",
                 }}
             >
-                <span
-                    style={{
-                        width: 30,
-                        height: 8,
-                        background: accent,
-                        display: "inline-block",
-                    }}
-                />
+                <span style={{ width: 30, height: 8, background: accent }} />
                 <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1 }}>
                     {role}
                 </span>
@@ -829,13 +882,7 @@ function MobileHome({
                             <div style={{ fontFamily: DISPLAY, fontSize: 18 }}>
                                 {c.label}
                             </div>
-                            <div
-                                style={{
-                                    fontFamily: MONO,
-                                    fontSize: 11,
-                                    opacity: 0.8,
-                                }}
-                            >
+                            <div style={{ fontFamily: MONO, fontSize: 11, opacity: 0.8 }}>
                                 {c.tag} ▸ OPEN
                             </div>
                         </div>
@@ -879,14 +926,14 @@ function Thumb({ name, accent }: { name: string; accent: string }) {
                 width: "100%",
                 height: "100%",
                 minHeight: 200,
-                background: "#F4F2EC",
+                background: "#080808",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 fontFamily: DISPLAY,
                 fontSize: 48,
                 textTransform: "uppercase",
-                color: "#0A0A0A",
+                color: "#F4F2EC",
                 borderBottom: `10px solid ${accent}`,
             }}
         >
@@ -902,9 +949,10 @@ const defaultCases: CaseItem[] = [
 ]
 
 addPropertyControls(Y2KHome, {
-    name: {
+    name: { type: ControlType.String, title: "Name", defaultValue: "NABIA SHAIKH" },
+    introLine: {
         type: ControlType.String,
-        title: "Name",
+        title: "Intro Line",
         defaultValue: "NABIA SHAIKH",
     },
     role: {
