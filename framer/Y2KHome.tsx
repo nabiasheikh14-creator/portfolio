@@ -14,6 +14,7 @@ import {
     useSpring,
     useTransform,
     useMotionValueEvent,
+    type MotionValue,
 } from "framer-motion"
 import {
     addPropertyControls,
@@ -24,20 +25,20 @@ import {
 
 const STAGE_W = 1280
 const STAGE_H = 760
-const INTRO_VH = 200 // scroll distance for the load sequence
+const INTRO_VH = 220
 
 const DISPLAY = '"Archivo Black", "Arial Black", sans-serif'
 const MONO = '"Space Mono", ui-monospace, monospace'
 const PIXEL = '"Silkscreen", "Space Mono", monospace'
+const INK = "#0A0A0A"
+const PAPER = "#F4F2EC"
+
+type Section = "about" | "gallery" | "clients" | "contact"
 
 interface CaseItem {
     label: string
     tag: string
     slug: string
-}
-interface NavItem {
-    label: string
-    href: string
 }
 interface Y2KHomeProps {
     name: string
@@ -51,9 +52,40 @@ interface Y2KHomeProps {
 const GRAIN =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E\")"
 
+const NAV_CONTENT: Record<
+    Section,
+    { label: string; heading: string; blurb: string; href: string }
+> = {
+    about: {
+        label: "ABOUT",
+        heading: "WHO IS NABIA",
+        blurb: "Independent graphic designer & content creator in New York, working with wellness and lifestyle brands.",
+        href: "/about",
+    },
+    gallery: {
+        label: "GALLERY",
+        heading: "ODDS & ENDS",
+        blurb: "Smaller projects — posters, zines, social kits, lettering. The fun, low-stakes side of the practice.",
+        href: "/gallery",
+    },
+    clients: {
+        label: "CLIENTS",
+        heading: "IN GOOD COMPANY",
+        blurb: "A short list of the brands and studios I've made things with.",
+        href: "/clients",
+    },
+    contact: {
+        label: "CONTACT",
+        heading: "SAY HELLO",
+        blurb: "Got a project, a collab, or just want to talk shop? Let's talk.",
+        href: "/contact",
+    },
+}
+
 /**
- * Y2K Home — a near-black load sequence whose bold wordmark resolves, via a
- * scroll-linked (spring-smoothed) transition, into an illustrated B&W desk.
+ * Y2K Home — a Heat-style scroll-linked load sequence (wordmark + a grainy B&W
+ * collage assembling in) that resolves into an illustrated B&W desk scene with
+ * device-screen case studies and clickable desk objects.
  *
  * @framerIntrinsicWidth 1280
  * @framerIntrinsicHeight 760
@@ -73,6 +105,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
     const [mode, setMode] = useState<"full" | "reduced" | "mobile">("full")
     const [vw, setVw] = useState(STAGE_W)
     const [flash, setFlash] = useState(false)
+    const [openNav, setOpenNav] = useState<Section | null>(null)
 
     useEffect(() => {
         if (typeof window === "undefined") return
@@ -96,7 +129,6 @@ export default function Y2KHome(props: Y2KHomeProps) {
 
     const isFull = mode === "full" && !isStatic
 
-    // --- Scroll-linked progress (0..1), spring-smoothed ("lerp").
     const rootRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
         target: rootRef,
@@ -107,7 +139,6 @@ export default function Y2KHome(props: Y2KHomeProps) {
         damping: 26,
         mass: 0.5,
     })
-    // Auto-advance fallback so the intro resolves even without scrolling.
     const auto = useSpring(isStatic ? 1 : 0, {
         stiffness: 70,
         damping: 20,
@@ -132,24 +163,22 @@ export default function Y2KHome(props: Y2KHomeProps) {
         return () => window.clearTimeout(t)
     }, [mode, isStatic, auto])
 
-    // Combined progress: scroll drives it; auto is the timed fallback.
     const p = useTransform([smoothed, auto], ([s, a]: number[]) =>
         Math.max(s, a)
     )
 
-    // Intro (near-black + wordmark) resolves out; desk composes in from dark.
-    const introOpacity = useTransform(p, [0, 0.45], [1, 0])
-    const introScale = useTransform(p, [0, 0.5], [1, 0.8])
-    const introY = useTransform(p, [0, 0.5], [0, -48])
-    const introClip = useTransform(
+    const introOpacity = useTransform(p, [0, 0.52], [1, 0])
+    const wordScale = useTransform(p, [0, 0.55], [1, 0.82])
+    const wordY = useTransform(p, [0, 0.55], [0, -40])
+    const wordClip = useTransform(
         p,
-        [0.18, 0.5],
+        [0.3, 0.55],
         ["inset(0% 0% 0% 0%)", "inset(0% 0% 100% 0%)"]
     )
     const hintOpacity = useTransform(p, [0, 0.06], [1, 0])
-    const deskOpacity = useTransform(p, [0.12, 0.55], [0, 1])
-    const deskScale = useTransform(p, [0, 0.55], [0.94, 1])
-    const veilOpacity = useTransform(p, [0.12, 0.62], [0.6, 0])
+    const deskOpacity = useTransform(p, [0.2, 0.62], [0, 1])
+    const deskScale = useTransform(p, [0.1, 0.65], [0.94, 1])
+    const veilOpacity = useTransform(p, [0.2, 0.7], [0.7, 0])
 
     const scale = useMemo(() => {
         if (mode === "mobile") return 1
@@ -169,13 +198,6 @@ export default function Y2KHome(props: Y2KHomeProps) {
         return <Thumb name={name} accent={accent} />
     }
 
-    const nav: NavItem[] = [
-        { label: "ABOUT", href: "/about" },
-        { label: "GALLERY", href: "/gallery" },
-        { label: "CLIENTS", href: "/clients" },
-        { label: "CONTACT", href: "/contact" },
-    ]
-
     return (
         <div
             ref={rootRef}
@@ -184,8 +206,8 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 width: "100%",
                 height: isFull ? `${INTRO_VH}vh` : undefined,
                 minHeight: isFull ? undefined : "100vh",
-                background: "#F4F2EC",
-                color: "#0A0A0A",
+                background: PAPER,
+                color: INK,
                 fontFamily: MONO,
                 ...props.style,
             }}
@@ -195,7 +217,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 rel="stylesheet"
             />
 
-            {/* ===== DESK (composes in from dark, scroll-linked) ===== */}
+            {/* ===== DESK ===== */}
             <div
                 style={{
                     position: isFull ? "sticky" : "relative",
@@ -225,8 +247,8 @@ export default function Y2KHome(props: Y2KHomeProps) {
                             role={role}
                             accent={accent}
                             cases={cases}
-                            nav={nav}
                             onCase={go}
+                            onNav={setOpenNav}
                         />
                     ) : (
                         <DeskStage
@@ -236,16 +258,16 @@ export default function Y2KHome(props: Y2KHomeProps) {
                             cases={cases}
                             scale={scale}
                             onCase={go}
+                            onNav={setOpenNav}
                         />
                     )}
                 </motion.div>
 
-                {/* dark veil that lifts as the scene resolves */}
                 <motion.div
                     style={{
                         position: "absolute",
                         inset: 0,
-                        background: "#0A0A0A",
+                        background: INK,
                         opacity: veilOpacity,
                         pointerEvents: "none",
                         zIndex: 6,
@@ -253,7 +275,7 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 />
             </div>
 
-            {/* ===== INTRO (near-black + wordmark), fixed cover, fades out ===== */}
+            {/* ===== INTRO (near-black + wordmark + grainy collage) ===== */}
             <motion.div
                 style={{
                     position: "fixed",
@@ -262,29 +284,43 @@ export default function Y2KHome(props: Y2KHomeProps) {
                     background: "#080808",
                     opacity: introOpacity,
                     pointerEvents: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
                     overflow: "hidden",
                 }}
             >
-                <motion.div
+                {mode === "full" && (
+                    <div style={{ position: "absolute", inset: 0 }}>
+                        {introTiles.map((t, i) => (
+                            <IntroTile key={i} p={p} conf={t} accent={accent} />
+                        ))}
+                    </div>
+                )}
+                <div
                     style={{
-                        scale: introScale,
-                        y: introY,
-                        clipPath: introClip,
-                        textAlign: "center",
-                        padding: "0 24px",
+                        position: "absolute",
+                        inset: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
                     }}
                 >
-                    <IntroWordmark
-                        text={introLine || name}
-                        accent={accent}
-                        animate={!isStatic}
-                    />
-                </motion.div>
-
-                {/* scroll hint */}
+                    <motion.div
+                        style={{
+                            scale: wordScale,
+                            y: wordY,
+                            clipPath: wordClip,
+                            textAlign: "center",
+                            padding: "0 24px",
+                            position: "relative",
+                            zIndex: 2,
+                        }}
+                    >
+                        <IntroWordmark
+                            text={introLine || name}
+                            accent={accent}
+                            animate={!isStatic}
+                        />
+                    </motion.div>
+                </div>
                 <motion.div
                     style={{
                         position: "absolute",
@@ -333,7 +369,19 @@ export default function Y2KHome(props: Y2KHomeProps) {
                 }}
             />
 
-            {/* flash-wipe transition to case studies */}
+            {/* nav pop-up (Barbiana [X CLOSE] style) */}
+            <AnimatePresence>
+                {openNav && (
+                    <NavPopup
+                        content={NAV_CONTENT[openNav]}
+                        accent={accent}
+                        onClose={() => setOpenNav(null)}
+                        onVisit={go}
+                    />
+                )}
+            </AnimatePresence>
+
+            {/* flash-wipe transition */}
             <AnimatePresence>
                 {flash && (
                     <motion.div
@@ -356,6 +404,124 @@ export default function Y2KHome(props: Y2KHomeProps) {
 }
 
 // ==========================================================================
+// INTRO collage
+interface TileConf {
+    left: string
+    top: string
+    w: number
+    h: number
+    rot: number
+    start: number
+    pattern: "dots" | "lines" | "big" | "grad"
+}
+const introTiles: TileConf[] = [
+    { left: "18%", top: "24%", w: 150, h: 180, rot: -6, start: 0.06, pattern: "dots" },
+    { left: "70%", top: "18%", w: 170, h: 120, rot: 5, start: 0.1, pattern: "lines" },
+    { left: "26%", top: "60%", w: 140, h: 140, rot: 4, start: 0.14, pattern: "grad" },
+    { left: "64%", top: "58%", w: 180, h: 150, rot: -5, start: 0.18, pattern: "big" },
+    { left: "80%", top: "40%", w: 120, h: 160, rot: 8, start: 0.22, pattern: "dots" },
+    { left: "10%", top: "44%", w: 130, h: 110, rot: -8, start: 0.26, pattern: "lines" },
+]
+
+function IntroTile({
+    p,
+    conf,
+    accent,
+}: {
+    p: MotionValue<number>
+    conf: TileConf
+    accent: string
+}) {
+    const { start } = conf
+    const opacity = useTransform(
+        p,
+        [start, start + 0.08, 0.42, 0.52],
+        [0, 1, 1, 0]
+    )
+    const y = useTransform(p, [start, start + 0.14], [40, 0])
+    const s = useTransform(p, [start, start + 0.14], [0.8, 1])
+    return (
+        <motion.div
+            style={{
+                position: "absolute",
+                left: conf.left,
+                top: conf.top,
+                width: conf.w,
+                height: conf.h,
+                rotate: conf.rot,
+                opacity,
+                y,
+                scale: s,
+                border: "3px solid #EDEDED",
+                background: "#111",
+                overflow: "hidden",
+                zIndex: 1,
+            }}
+        >
+            <TilePattern pattern={conf.pattern} accent={accent} />
+        </motion.div>
+    )
+}
+
+function TilePattern({
+    pattern,
+    accent,
+}: {
+    pattern: TileConf["pattern"]
+    accent: string
+}) {
+    if (pattern === "dots")
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    background:
+                        "radial-gradient(#EDEDED 30%, transparent 31%) 0 0/9px 9px, #111",
+                }}
+            />
+        )
+    if (pattern === "lines")
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    background:
+                        "repeating-linear-gradient(45deg,#EDEDED 0 3px,#111 3px 8px)",
+                }}
+            />
+        )
+    if (pattern === "grad")
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    background:
+                        "linear-gradient(135deg,#EDEDED,#111 70%)",
+                }}
+            />
+        )
+    return (
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                background: "#111",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "#EDEDED",
+                fontFamily: DISPLAY,
+                fontSize: 60,
+            }}
+        >
+            <span style={{ color: accent }}>✳</span>
+        </div>
+    )
+}
+
 function IntroWordmark({
     text,
     accent,
@@ -371,10 +537,10 @@ function IntroWordmark({
             style={{
                 margin: 0,
                 fontFamily: DISPLAY,
-                fontSize: "clamp(48px, 12vw, 180px)",
+                fontSize: "clamp(48px, 12vw, 176px)",
                 lineHeight: 0.86,
                 letterSpacing: -4,
-                color: "#F4F2EC",
+                color: PAPER,
                 textTransform: "uppercase",
                 display: "flex",
                 flexWrap: "wrap",
@@ -409,6 +575,8 @@ function IntroWordmark({
     )
 }
 
+// ==========================================================================
+// DESK
 function DeskStage({
     name,
     role,
@@ -416,6 +584,7 @@ function DeskStage({
     cases,
     scale,
     onCase,
+    onNav,
 }: {
     name: string
     role: string
@@ -423,7 +592,13 @@ function DeskStage({
     cases: CaseItem[]
     scale: number
     onCase: (href: string) => void
+    onNav: (s: Section) => void
 }) {
+    const devices: Array<"laptop" | "monitor" | "tablet"> = [
+        "laptop",
+        "monitor",
+        "tablet",
+    ]
     return (
         <div
             style={{
@@ -434,7 +609,6 @@ function DeskStage({
                 position: "relative",
             }}
         >
-            {/* Desk title + role */}
             <h1
                 style={{
                     position: "absolute",
@@ -442,11 +616,11 @@ function DeskStage({
                     top: 8,
                     margin: 0,
                     fontFamily: DISPLAY,
-                    fontSize: 64,
+                    fontSize: 60,
                     letterSpacing: -2,
                     lineHeight: 0.9,
                     textTransform: "uppercase",
-                    zIndex: 5,
+                    zIndex: 8,
                 }}
             >
                 {name}
@@ -455,21 +629,14 @@ function DeskStage({
                 style={{
                     position: "absolute",
                     left: 4,
-                    top: 82,
+                    top: 78,
                     display: "flex",
                     alignItems: "center",
                     gap: 12,
-                    zIndex: 5,
+                    zIndex: 8,
                 }}
             >
-                <span
-                    style={{
-                        width: 46,
-                        height: 10,
-                        background: accent,
-                        display: "inline-block",
-                    }}
-                />
+                <span style={{ width: 46, height: 10, background: accent }} />
                 <span
                     style={{
                         fontFamily: MONO,
@@ -487,57 +654,50 @@ function DeskStage({
                 style={{
                     position: "absolute",
                     left: 0,
-                    top: 150,
+                    top: 140,
                     right: 0,
-                    height: STAGE_H - 150,
-                    border: "2px solid #0A0A0A",
+                    height: STAGE_H - 140,
+                    border: `2px solid ${INK}`,
                     background:
-                        "repeating-linear-gradient(90deg,#EDEBE4 0 2px,#E4E1D8 2px 4px)",
+                        "radial-gradient(rgba(10,10,10,0.16) 22%, transparent 23%) 0 0/16px 16px, #E7E4DB",
                 }}
             />
 
-            {/* 3 case-study objects */}
+            {/* CASE STUDY device screens */}
             {cases.slice(0, 3).map((c, i) => (
-                <CaseObject
+                <CaseScreen
                     key={c.slug}
                     index={i}
                     item={c}
+                    device={devices[i]}
                     accent={accent}
-                    onClick={() => onCase(`/work/${c.slug}`)}
                     style={casePos[i]}
+                    onClick={() => onCase(`/work/${c.slug}`)}
                 />
             ))}
 
-            {/* nav objects */}
-            <NavObject label="ABOUT" href="/about" accent={accent} style={{ left: 40, top: 400 }}>
+            {/* NAV objects (open pop-ups) */}
+            <NavObject label="ABOUT" accent={accent} style={{ left: 44, top: 300 }} onClick={() => onNav("about")}>
                 <Journal />
             </NavObject>
-            <NavObject label="GALLERY" href="/gallery" accent={accent} style={{ left: 900, top: 190 }}>
+            <NavObject label="GALLERY" accent={accent} style={{ left: 1090, top: 210 }} onClick={() => onNav("gallery")}>
                 <PhotoStack accent={accent} />
             </NavObject>
-            <NavObject label="CLIENTS" href="/clients" accent={accent} style={{ left: 1070, top: 450 }}>
+            <NavObject label="CLIENTS" accent={accent} style={{ left: 1095, top: 470 }} onClick={() => onNav("clients")}>
                 <Rolodex />
             </NavObject>
-            <NavObject label="CONTACT" href="/contact" accent={accent} style={{ left: 120, top: 610 }}>
+            <NavObject label="CONTACT" accent={accent} style={{ left: 70, top: 560 }} onClick={() => onNav("contact")}>
                 <Envelope accent={accent} />
             </NavObject>
 
-            {/* atmosphere */}
-            <div
-                style={{
-                    position: "absolute",
-                    left: 980,
-                    top: 620,
-                    width: 110,
-                    height: 110,
-                    borderRadius: "50%",
-                    border: "2px solid #0A0A0A",
-                    background:
-                        "radial-gradient(#0A0A0A 30%, transparent 31%) 0 0/12px 12px",
-                }}
-            />
+            {/* decorative objects */}
+            <Decoration style={{ left: 250, top: 630 }}>
+                <Pen accent={accent} />
+            </Decoration>
+            <Decoration style={{ left: 980, top: 640 }}>
+                <PostIt accent={accent} />
+            </Decoration>
 
-            {/* corner chrome */}
             <Corner pos={{ top: -30, right: 0 }}>[ NY / EST 2019 ]</Corner>
             <Corner pos={{ bottom: -34, left: 0 }}>studio@nabiashaikh.com</Corner>
             <Corner pos={{ bottom: -34, right: 0 }}>
@@ -548,26 +708,32 @@ function DeskStage({
 }
 
 const casePos: CSSProperties[] = [
-    { left: 300, top: 200, width: 250, height: 320 },
-    { left: 560, top: 240, width: 250, height: 320 },
-    { left: 620, top: 470, width: 250, height: 210 },
+    { left: 250, top: 240, width: 340, height: 250 }, // laptop
+    { left: 660, top: 210, width: 300, height: 260 }, // monitor
+    { left: 470, top: 500, width: 190, height: 240 }, // tablet
 ]
 
-function CaseObject({
+// ---- Case study device screens ----
+function CaseScreen({
     index,
     item,
+    device,
     accent,
-    onClick,
     style,
+    onClick,
 }: {
     index: number
     item: CaseItem
+    device: "laptop" | "monitor" | "tablet"
     accent: string
-    onClick: () => void
     style: CSSProperties
+    onClick: () => void
 }) {
     const [hover, setHover] = useState(false)
     const num = String(index + 1).padStart(2, "0")
+    const still = (
+        <Still title={item.label} tag={item.tag} num={num} accent={accent} invert={hover} />
+    )
     return (
         <button
             type="button"
@@ -576,122 +742,312 @@ function CaseObject({
             onMouseLeave={() => setHover(false)}
             onFocus={() => setHover(true)}
             onBlur={() => setHover(false)}
-            aria-label={`Case study: ${item.label}`}
+            aria-label={`Open case study: ${item.label}`}
             style={{
                 position: "absolute",
                 padding: 0,
+                border: "none",
+                background: "transparent",
                 cursor: "pointer",
-                border: "3px solid #0A0A0A",
-                background: hover ? "#0A0A0A" : "#F4F2EC",
-                color: hover ? "#F4F2EC" : "#0A0A0A",
-                boxShadow: hover ? `10px 10px 0 ${accent}` : "6px 6px 0 #0A0A0A",
-                transition: "background 0.08s, color 0.08s, box-shadow 0.12s",
+                transform: hover ? "translateY(-6px) scale(1.03)" : "none",
+                transition: "transform 0.09s ease-out",
+                zIndex: hover ? 9 : 3,
+                ...style,
+            }}
+        >
+            {device === "laptop" && <Laptop accent={accent} hover={hover}>{still}</Laptop>}
+            {device === "monitor" && <Monitor accent={accent} hover={hover}>{still}</Monitor>}
+            {device === "tablet" && <Tablet accent={accent} hover={hover}>{still}</Tablet>}
+        </button>
+    )
+}
+
+function Still({
+    title,
+    tag,
+    num,
+    accent,
+    invert,
+}: {
+    title: string
+    tag: string
+    num: string
+    accent: string
+    invert: boolean
+}) {
+    const fg = invert ? PAPER : INK
+    const bg = invert ? INK : PAPER
+    return (
+        <div
+            style={{
+                position: "absolute",
+                inset: 0,
+                background: bg,
                 display: "flex",
                 flexDirection: "column",
-                textAlign: "left",
                 overflow: "hidden",
-                ...style,
             }}
         >
             <div
                 style={{
                     flex: 1,
                     position: "relative",
-                    borderBottom: "3px solid currentColor",
-                    background: hover
-                        ? `radial-gradient(${accent} 32%, transparent 33%) 0 0/10px 10px`
-                        : "radial-gradient(#0A0A0A 32%, transparent 33%) 0 0/10px 10px",
+                    backgroundImage: `radial-gradient(${fg} 30%, transparent 31%)`,
+                    backgroundSize: "8px 8px",
                 }}
             >
                 <span
                     style={{
                         position: "absolute",
-                        top: 8,
-                        left: 8,
+                        top: 6,
+                        left: 6,
                         fontFamily: PIXEL,
-                        fontSize: 12,
+                        fontSize: 10,
                         background: accent,
                         color: "#fff",
-                        padding: "2px 6px",
+                        padding: "2px 5px",
                     }}
                 >
                     CASE {num}
                 </span>
+            </div>
+            <div
+                style={{
+                    background: fg,
+                    color: bg,
+                    padding: "6px 8px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    gap: 6,
+                }}
+            >
                 <span
                     style={{
-                        position: "absolute",
-                        right: 8,
-                        bottom: 8,
                         fontFamily: DISPLAY,
-                        fontSize: 40,
-                        color: "#F4F2EC",
-                        mixBlendMode: "difference",
+                        fontSize: 13,
+                        lineHeight: 1,
+                        overflow: "hidden",
+                        whiteSpace: "nowrap",
+                        textOverflow: "ellipsis",
                     }}
                 >
-                    {num}
+                    {title}
+                </span>
+                <span style={{ fontFamily: MONO, fontSize: 9, opacity: 0.8, whiteSpace: "nowrap" }}>
+                    {invert ? "OPEN ▸" : tag}
                 </span>
             </div>
-            <div style={{ padding: "10px 12px" }}>
-                <div style={{ fontFamily: DISPLAY, fontSize: 18 }}>{item.label}</div>
-                <div
-                    style={{
-                        fontFamily: MONO,
-                        fontSize: 11,
-                        letterSpacing: 1,
-                        opacity: 0.8,
-                    }}
-                >
-                    {item.tag} {hover ? "▸ OPEN" : ""}
-                </div>
-            </div>
-        </button>
+        </div>
     )
 }
 
+function Laptop({
+    children,
+    accent,
+    hover,
+}: {
+    children: ReactNode
+    accent: string
+    hover: boolean
+}) {
+    const frame = hover ? accent : INK
+    return (
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+            <div
+                style={{
+                    flex: 1,
+                    border: `5px solid ${frame}`,
+                    borderRadius: "10px 10px 0 0",
+                    background: frame,
+                    padding: 5,
+                    position: "relative",
+                }}
+            >
+                <div style={{ position: "absolute", inset: 5, overflow: "hidden" }}>
+                    {children}
+                </div>
+            </div>
+            {/* base / keyboard deck */}
+            <div style={{ position: "relative", height: 20 }}>
+                <div
+                    style={{
+                        position: "absolute",
+                        left: "-8%",
+                        width: "116%",
+                        height: 20,
+                        background: PAPER,
+                        border: `4px solid ${frame}`,
+                        borderRadius: "0 0 8px 8px",
+                    }}
+                >
+                    <div
+                        style={{
+                            position: "absolute",
+                            top: 2,
+                            left: "50%",
+                            transform: "translateX(-50%)",
+                            width: 60,
+                            height: 4,
+                            background: frame,
+                            borderRadius: 3,
+                        }}
+                    />
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function Monitor({
+    children,
+    accent,
+    hover,
+}: {
+    children: ReactNode
+    accent: string
+    hover: boolean
+}) {
+    const frame = hover ? accent : INK
+    return (
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+            <div
+                style={{
+                    flex: 1,
+                    border: `6px solid ${frame}`,
+                    borderRadius: 8,
+                    background: frame,
+                    padding: 6,
+                    position: "relative",
+                }}
+            >
+                <div style={{ position: "absolute", inset: 6, overflow: "hidden" }}>
+                    {children}
+                </div>
+            </div>
+            <div style={{ position: "relative", height: 34 }}>
+                <div
+                    style={{
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        top: 0,
+                        width: 34,
+                        height: 20,
+                        background: frame,
+                    }}
+                />
+                <div
+                    style={{
+                        position: "absolute",
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        bottom: 0,
+                        width: 120,
+                        height: 10,
+                        background: frame,
+                        borderRadius: 4,
+                    }}
+                />
+            </div>
+        </div>
+    )
+}
+
+function Tablet({
+    children,
+    accent,
+    hover,
+}: {
+    children: ReactNode
+    accent: string
+    hover: boolean
+}) {
+    const frame = hover ? accent : INK
+    return (
+        <div
+            style={{
+                width: "100%",
+                height: "100%",
+                border: `6px solid ${frame}`,
+                borderRadius: 16,
+                background: frame,
+                padding: 6,
+                position: "relative",
+            }}
+        >
+            <div style={{ position: "absolute", inset: 6, overflow: "hidden", borderRadius: 6 }}>
+                {children}
+            </div>
+            <div
+                style={{
+                    position: "absolute",
+                    right: 10,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: 4,
+                    height: 4,
+                    borderRadius: "50%",
+                    background: PAPER,
+                    zIndex: 2,
+                }}
+            />
+        </div>
+    )
+}
+
+// ---- Nav objects ----
 function NavObject({
     label,
-    href,
     accent,
     style,
+    onClick,
     children,
 }: {
     label: string
-    href: string
     accent: string
     style: CSSProperties
+    onClick: () => void
     children: ReactNode
 }) {
     const [hover, setHover] = useState(false)
     return (
-        <a
-            href={href}
+        <button
+            type="button"
+            onClick={onClick}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             onFocus={() => setHover(true)}
             onBlur={() => setHover(false)}
+            aria-label={`Open ${label}`}
             style={{
                 position: "absolute",
-                width: 140,
-                height: 150,
+                width: 120,
+                height: 132,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
                 justifyContent: "center",
                 gap: 8,
-                textDecoration: "none",
                 outline: "none",
+                transform: hover ? "translateY(-4px) scale(1.06)" : "none",
+                transition: "transform 0.08s ease-out",
+                zIndex: hover ? 9 : 4,
                 ...style,
             }}
         >
             <div
                 style={{
-                    width: 96,
-                    height: 96,
+                    width: 88,
+                    height: 88,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     filter: hover ? "invert(1)" : "none",
-                    transition: "filter 0.06s",
+                    transition: "filter 0.05s",
                 }}
             >
                 {children}
@@ -699,63 +1055,116 @@ function NavObject({
             <span
                 style={{
                     fontFamily: PIXEL,
-                    fontSize: 13,
+                    fontSize: 12,
                     padding: "3px 8px",
-                    background: hover ? accent : "#0A0A0A",
+                    background: hover ? accent : INK,
                     color: "#fff",
                     letterSpacing: 1,
                 }}
             >
                 [{label}]
             </span>
-        </a>
+        </button>
     )
 }
 
+function Decoration({
+    children,
+    style,
+}: {
+    children: ReactNode
+    style: CSSProperties
+}) {
+    const [hover, setHover] = useState(false)
+    return (
+        <div
+            onMouseEnter={() => setHover(true)}
+            onMouseLeave={() => setHover(false)}
+            style={{
+                position: "absolute",
+                width: 90,
+                height: 90,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transform: hover ? "scale(1.06) rotate(-2deg)" : "none",
+                transition: "transform 0.08s",
+                zIndex: 4,
+                ...style,
+            }}
+        >
+            {children}
+        </div>
+    )
+}
+
+// ---- object art ----
 function Journal() {
     return (
-        <svg viewBox="0 0 96 96" width="96" height="96">
-            <rect x="14" y="8" width="68" height="80" fill="#0A0A0A" />
-            <rect x="20" y="14" width="56" height="68" fill="#F4F2EC" />
-            <rect x="20" y="14" width="10" height="68" fill="#0A0A0A" />
-            <line x1="38" y1="30" x2="70" y2="30" stroke="#0A0A0A" strokeWidth="3" />
-            <line x1="38" y1="44" x2="70" y2="44" stroke="#0A0A0A" strokeWidth="3" />
-            <line x1="38" y1="58" x2="60" y2="58" stroke="#0A0A0A" strokeWidth="3" />
+        <svg viewBox="0 0 88 88" width="88" height="88">
+            <rect x="12" y="8" width="64" height="72" fill={INK} />
+            <rect x="18" y="13" width="52" height="62" fill={PAPER} />
+            <rect x="18" y="13" width="9" height="62" fill={INK} />
+            <line x1="34" y1="28" x2="64" y2="28" stroke={INK} strokeWidth="3" />
+            <line x1="34" y1="40" x2="64" y2="40" stroke={INK} strokeWidth="3" />
+            <line x1="34" y1="52" x2="56" y2="52" stroke={INK} strokeWidth="3" />
         </svg>
     )
 }
 function PhotoStack({ accent }: { accent: string }) {
     return (
-        <svg viewBox="0 0 96 96" width="96" height="96">
-            <g transform="rotate(-8 48 48)">
-                <rect x="14" y="20" width="68" height="56" fill="#0A0A0A" />
-                <rect x="18" y="24" width="60" height="40" fill="#F4F2EC" />
+        <svg viewBox="0 0 88 88" width="88" height="88">
+            <g transform="rotate(-8 44 44)">
+                <rect x="12" y="18" width="64" height="52" fill={INK} />
+                <rect x="16" y="22" width="56" height="36" fill={PAPER} />
             </g>
-            <g transform="rotate(6 48 48)">
-                <rect x="16" y="26" width="66" height="52" fill="#0A0A0A" />
-                <rect x="20" y="30" width="58" height="36" fill="#F4F2EC" />
-                <rect x="20" y="30" width="58" height="36" fill={accent} opacity="0.25" />
+            <g transform="rotate(7 44 44)">
+                <rect x="14" y="24" width="62" height="50" fill={INK} />
+                <rect x="18" y="28" width="54" height="34" fill={PAPER} />
+                <rect x="18" y="28" width="54" height="34" fill={accent} opacity="0.22" />
             </g>
         </svg>
     )
 }
 function Rolodex() {
     return (
-        <svg viewBox="0 0 96 96" width="96" height="96">
-            <rect x="10" y="40" width="76" height="44" fill="#0A0A0A" />
-            <rect x="16" y="18" width="64" height="40" fill="#F4F2EC" stroke="#0A0A0A" strokeWidth="3" />
-            <rect x="26" y="10" width="44" height="30" fill="#F4F2EC" stroke="#0A0A0A" strokeWidth="3" />
-            <line x1="34" y1="22" x2="62" y2="22" stroke="#0A0A0A" strokeWidth="3" />
-            <line x1="34" y1="30" x2="56" y2="30" stroke="#0A0A0A" strokeWidth="3" />
+        <svg viewBox="0 0 88 88" width="88" height="88">
+            <rect x="8" y="38" width="72" height="42" fill={INK} />
+            <rect x="14" y="16" width="60" height="38" fill={PAPER} stroke={INK} strokeWidth="3" />
+            <rect x="24" y="9" width="40" height="28" fill={PAPER} stroke={INK} strokeWidth="3" />
+            <line x1="32" y1="20" x2="58" y2="20" stroke={INK} strokeWidth="3" />
+            <line x1="32" y1="28" x2="52" y2="28" stroke={INK} strokeWidth="3" />
         </svg>
     )
 }
 function Envelope({ accent }: { accent: string }) {
     return (
-        <svg viewBox="0 0 96 96" width="96" height="96">
-            <rect x="8" y="24" width="80" height="52" fill="#F4F2EC" stroke="#0A0A0A" strokeWidth="3" />
-            <polyline points="8,26 48,56 88,26" fill="none" stroke="#0A0A0A" strokeWidth="3" />
-            <rect x="64" y="14" width="20" height="20" fill={accent} />
+        <svg viewBox="0 0 88 88" width="88" height="88">
+            <rect x="6" y="22" width="76" height="48" fill={PAPER} stroke={INK} strokeWidth="3" />
+            <polyline points="6,24 44,52 82,24" fill="none" stroke={INK} strokeWidth="3" />
+            <rect x="60" y="12" width="18" height="18" fill={accent} />
+        </svg>
+    )
+}
+function Pen({ accent }: { accent: string }) {
+    return (
+        <svg viewBox="0 0 90 90" width="90" height="90">
+            <g transform="rotate(38 45 45)">
+                <rect x="38" y="10" width="14" height="60" fill={INK} />
+                <rect x="38" y="10" width="14" height="14" fill={accent} />
+                <polygon points="38,70 52,70 45,84" fill={INK} />
+            </g>
+        </svg>
+    )
+}
+function PostIt({ accent }: { accent: string }) {
+    return (
+        <svg viewBox="0 0 90 90" width="90" height="90">
+            <rect x="12" y="12" width="66" height="66" fill={PAPER} stroke={INK} strokeWidth="3" />
+            <rect x="12" y="12" width="66" height="12" fill={accent} />
+            <line x1="22" y1="38" x2="68" y2="38" stroke={INK} strokeWidth="3" />
+            <line x1="22" y1="50" x2="68" y2="50" stroke={INK} strokeWidth="3" />
+            <line x1="22" y1="62" x2="52" y2="62" stroke={INK} strokeWidth="3" />
         </svg>
     )
 }
@@ -768,8 +1177,8 @@ function Corner({ children, pos }: { children: ReactNode; pos: CSSProperties }) 
                 fontFamily: MONO,
                 fontSize: 12,
                 letterSpacing: 1,
-                color: "#0A0A0A",
-                zIndex: 5,
+                color: INK,
+                zIndex: 8,
                 ...pos,
             }}
         >
@@ -796,21 +1205,142 @@ function Clock() {
     return <span>{t}</span>
 }
 
+// ---- Barbiana-style pop-up ----
+function NavPopup({
+    content,
+    accent,
+    onClose,
+    onVisit,
+}: {
+    content: { label: string; heading: string; blurb: string; href: string }
+    accent: string
+    onClose: () => void
+    onVisit: (href: string) => void
+}) {
+    return (
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 80,
+                background: "rgba(10,10,10,0.55)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 20,
+                fontFamily: MONO,
+            }}
+        >
+            <motion.div
+                initial={{ scale: 0.92, y: 10 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.94 }}
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    background: "#FFFFFF",
+                    border: `1px solid ${INK}`,
+                    width: "min(520px, 92vw)",
+                    padding: "44px 34px 34px",
+                    position: "relative",
+                    textAlign: "center",
+                }}
+            >
+                <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close"
+                    style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        fontFamily: MONO,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        letterSpacing: 1,
+                        background: INK,
+                        color: "#fff",
+                        border: "none",
+                        padding: "6px 10px",
+                        cursor: "pointer",
+                    }}
+                >
+                    X CLOSE
+                </button>
+                <div
+                    style={{
+                        fontFamily: PIXEL,
+                        fontSize: 12,
+                        letterSpacing: 1,
+                        color: accent,
+                        marginBottom: 10,
+                    }}
+                >
+                    [{content.label}]
+                </div>
+                <h3
+                    style={{
+                        fontFamily: DISPLAY,
+                        fontSize: 30,
+                        margin: "0 0 14px",
+                        textTransform: "uppercase",
+                        letterSpacing: -1,
+                    }}
+                >
+                    {content.heading}
+                </h3>
+                <p
+                    style={{
+                        fontFamily: "Inter, system-ui, sans-serif",
+                        fontSize: 15,
+                        lineHeight: 1.55,
+                        margin: "0 auto 22px",
+                        maxWidth: 380,
+                        color: "#333",
+                    }}
+                >
+                    {content.blurb}
+                </p>
+                <button
+                    type="button"
+                    onClick={() => onVisit(content.href)}
+                    style={{
+                        fontFamily: PIXEL,
+                        fontSize: 14,
+                        background: INK,
+                        color: "#fff",
+                        border: "none",
+                        padding: "12px 20px",
+                        cursor: "pointer",
+                    }}
+                >
+                    ★ VISIT {content.label} ★
+                </button>
+            </motion.div>
+        </motion.div>
+    )
+}
+
 function MobileHome({
     name,
     role,
     accent,
     cases,
-    nav,
     onCase,
+    onNav,
 }: {
     name: string
     role: string
     accent: string
     cases: CaseItem[]
-    nav: NavItem[]
     onCase: (href: string) => void
+    onNav: (s: Section) => void
 }) {
+    const navs: Section[] = ["about", "gallery", "clients", "contact"]
     return (
         <div style={{ padding: "24px 16px 60px", width: "100%" }}>
             <h1
@@ -825,18 +1355,9 @@ function MobileHome({
             >
                 {name}
             </h1>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    margin: "12px 0 24px",
-                }}
-            >
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "12px 0 24px" }}>
                 <span style={{ width: 30, height: 8, background: accent }} />
-                <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1 }}>
-                    {role}
-                </span>
+                <span style={{ fontFamily: MONO, fontSize: 11, letterSpacing: 1 }}>{role}</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                 {cases.slice(0, 3).map((c, i) => (
@@ -846,73 +1367,38 @@ function MobileHome({
                         onClick={() => onCase(`/work/${c.slug}`)}
                         style={{
                             textAlign: "left",
-                            border: "3px solid #0A0A0A",
-                            background: "#F4F2EC",
-                            boxShadow: `5px 5px 0 ${accent}`,
-                            padding: 0,
-                            overflow: "hidden",
+                            border: `4px solid ${INK}`,
+                            borderRadius: "10px 10px 4px 4px",
+                            background: INK,
+                            padding: 5,
                             cursor: "pointer",
                         }}
                     >
-                        <div
-                            style={{
-                                height: 120,
-                                background:
-                                    "radial-gradient(#0A0A0A 32%, transparent 33%) 0 0/10px 10px",
-                                borderBottom: "3px solid #0A0A0A",
-                                position: "relative",
-                            }}
-                        >
-                            <span
-                                style={{
-                                    position: "absolute",
-                                    top: 8,
-                                    left: 8,
-                                    fontFamily: PIXEL,
-                                    fontSize: 12,
-                                    background: accent,
-                                    color: "#fff",
-                                    padding: "2px 6px",
-                                }}
-                            >
-                                CASE {String(i + 1).padStart(2, "0")}
-                            </span>
-                        </div>
-                        <div style={{ padding: "10px 12px" }}>
-                            <div style={{ fontFamily: DISPLAY, fontSize: 18 }}>
-                                {c.label}
-                            </div>
-                            <div style={{ fontFamily: MONO, fontSize: 11, opacity: 0.8 }}>
-                                {c.tag} ▸ OPEN
-                            </div>
+                        <div style={{ height: 150, position: "relative", overflow: "hidden" }}>
+                            <Still title={c.label} tag={c.tag} num={String(i + 1).padStart(2, "0")} accent={accent} invert={false} />
                         </div>
                     </button>
                 ))}
             </div>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 10,
-                    marginTop: 20,
-                }}
-            >
-                {nav.map((n) => (
-                    <a
-                        key={n.href}
-                        href={n.href}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 20 }}>
+                {navs.map((n) => (
+                    <button
+                        key={n}
+                        type="button"
+                        onClick={() => onNav(n)}
                         style={{
                             fontFamily: PIXEL,
                             fontSize: 14,
-                            textDecoration: "none",
                             textAlign: "center",
                             padding: "14px 8px",
-                            background: "#0A0A0A",
+                            background: INK,
                             color: "#fff",
+                            border: "none",
+                            cursor: "pointer",
                         }}
                     >
-                        [{n.label}]
-                    </a>
+                        [{n.toUpperCase()}]
+                    </button>
                 ))}
             </div>
         </div>
@@ -933,7 +1419,7 @@ function Thumb({ name, accent }: { name: string; accent: string }) {
                 fontFamily: DISPLAY,
                 fontSize: 48,
                 textTransform: "uppercase",
-                color: "#F4F2EC",
+                color: PAPER,
                 borderBottom: `10px solid ${accent}`,
             }}
         >

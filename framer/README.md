@@ -34,11 +34,18 @@ Home entry, not a container for all content, and it is **not** a fake OS/desktop
     the user doesn't scroll within ~1.8s, a timed fallback resolves it. Reduced
     motion skips the intro; mobile uses a single timed fade (touch scroll is
     unreliable). This is not a one-shot CSS animation.
-  - **Desk scene**: top-down, B&W, halftone + grain + scan-lines. Three
-    prominent **CASE 01/02/03** objects are the case studies (click → flash-wipe
-    → `/work/<slug>`). Secondary objects (`[ABOUT] [GALLERY] [CLIENTS]
-    [CONTACT]`) link out. Hover states are snappy — invert / accent flash /
-    box-shadow pop, not soft lift.
+  - **Intro collage** (Heat Bureau style): as you scroll, a scattered grainy B&W
+    collage (halftone / line / gradient tiles) assembles around the wordmark,
+    then the whole intro wipes out as the desk composes in.
+  - **Desk = illustrated scene** (not a grid): a halftone desk surface with three
+    **device-screen** case studies — a laptop (CASE 01), a monitor (CASE 02) and
+    a tablet (CASE 03), each showing a project still + title bar inside the bezel
+    (click → flash-wipe → `/work/<slug>`). Smaller desk objects — journal, photo
+    stack, rolodex, envelope — are the nav; a pen and post-it are decoration.
+    Hover = sharp invert / accent flash + scale-lift.
+  - **Nav pop-up**: clicking a desk object opens a Barbiana-style graphic modal
+    (white card, thin border, bold `X CLOSE` top-right, centered content) with a
+    `★ VISIT ★` link to the full page.
   - Corner UI chrome (mono) + live clock.
   - `prefers-reduced-motion`: skips the intro, shows the desk directly.
   - Mobile: simplified single-fade intro, stacked tap-to-open layout.
