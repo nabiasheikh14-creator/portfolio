@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties } from "react"
+import { useEffect, type CSSProperties, type ReactNode } from "react"
 import {
     addPropertyControls,
     ControlType,
@@ -10,8 +10,9 @@ const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const GRID_BG =
     "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
+const CREAM = "#F3EFE6"
 const INK = "#111111"
-const MUTED = "#666666"
+const MUTED = "#555555"
 const LABEL = "#888888"
 
 interface ProjectRecord {
@@ -19,48 +20,45 @@ interface ProjectRecord {
     subtitle: string
     role: string
     year: string
+    timeline: string
+    tools: string
     overview: string
-    approach: string
+    context: string
+    problem: string
+    goals: string
+    constraints: string
+    process: string
+    decision1: string
+    decision2: string
+    decision3: string
     outcome: string
+    reflection: string
     accent: string
     slug: string
-}
-
-interface RelatedItem {
-    title: string
-    subtitle: string
-    slug: string
-    accent: string
+    heroImage: string
+    processImage: string
+    finalImage1: string
+    finalImage2: string
 }
 
 interface WorkCaseProps {
-    title: string
-    subtitle: string
-    role: string
-    year: string
-    overview: string
-    approach: string
-    outcome: string
-    accent: string
-    gridOpacity: number
-    related: RelatedItem[]
-    /** Full project catalog — used to resolve the active case from the URL slug */
     catalog: ProjectRecord[]
+    gridOpacity: number
     style?: CSSProperties
 }
 
 function slugFromPath(): string {
     if (typeof window === "undefined") return ""
     const parts = window.location.pathname.replace(/\/$/, "").split("/").filter(Boolean)
-    // /work/:slug
     if (parts[0] === "work" && parts[1]) return parts[1]
     return ""
 }
 
 /**
- * Work Case — Heat Bureau–style project detail adapted to Nabia's system.
- * Meta grid (project / bio / deliverables / year) + body sections.
- * White stage + home desk grid. Laptop via DeskCorner on the page.
+ * Work Case — complete UI/UX case study.
+ * Heat-style meta hero, then skimmable → deep sections:
+ * Context → Problem → Goals & constraints → Process → Key decisions →
+ * Final design → Outcome → Reflection.
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 900
@@ -68,42 +66,26 @@ function slugFromPath(): string {
  * @framerSupportedLayoutHeight any-prefer-fixed
  */
 export default function WorkCase(props: WorkCaseProps) {
-    const {
-        catalog = DEFAULT_CATALOG,
-        gridOpacity = 0.5,
-        related: relatedProp,
-    } = props
+    const { catalog = DEFAULT_CATALOG, gridOpacity = 0.12 } = props
     const isStatic = useIsStaticRenderer()
+    const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.12))
 
     const slug = !isStatic ? slugFromPath() : ""
-    const fromCatalog = slug
-        ? (catalog || []).find((p) => p.slug === slug)
-        : null
+    const project =
+        (slug && (catalog || []).find((p) => p.slug === slug)) ||
+        (catalog || [])[0] ||
+        DEFAULT_CATALOG[0]
 
-    const title = fromCatalog?.title || props.title || "Fintech App"
-    const subtitle = fromCatalog?.subtitle || props.subtitle || "Onboarding redesign"
-    const role = fromCatalog?.role || props.role || "Lead Product Designer"
-    const year = fromCatalog?.year || props.year || "2025"
-    const overview = fromCatalog?.overview || props.overview || ""
-    const approach = fromCatalog?.approach || props.approach || ""
-    const outcome = fromCatalog?.outcome || props.outcome || ""
-    const accent = fromCatalog?.accent || props.accent || "#2C6BE0"
+    const related = (catalog || [])
+        .filter((p) => p.slug !== project.slug)
+        .slice(0, 3)
 
-    const related =
-        relatedProp && relatedProp.length
-            ? relatedProp
-            : (catalog || [])
-                  .filter((p) => p.slug !== (fromCatalog?.slug || slug))
-                  .slice(0, 3)
-                  .map((p) => ({
-                      title: p.title,
-                      subtitle: p.subtitle,
-                      slug: p.slug,
-                      accent: p.accent,
-                  }))
+    const decisions = [project.decision1, project.decision2, project.decision3].filter(
+        (d) => d && String(d).trim(),
+    )
 
-    const deliverables = String(role || "")
-        .split(/[,/·|]+/)
+    const tools = String(project.tools || "")
+        .split(/[,/|]+/)
         .map((s) => s.trim())
         .filter(Boolean)
 
@@ -111,7 +93,6 @@ export default function WorkCase(props: WorkCaseProps) {
         if (typeof document === "undefined") return
         document.querySelectorAll("[data-archive-mascot]").forEach((n) => n.remove())
 
-        // Sticky laptop flush bottom-right (same art as home work hotspot)
         if (document.querySelector('[data-desk-corner="laptop"]')) return
         const box: [number, number, number, number] = [570, 526, 354, 245]
         const dw = 280
@@ -155,13 +136,13 @@ export default function WorkCase(props: WorkCaseProps) {
                 style={{
                     width: "100%",
                     height: "100%",
-                    background: "#fff",
+                    background: CREAM,
                     padding: 16,
                     fontFamily: SANS,
                     color: INK,
                 }}
             >
-                <div style={{ fontSize: 22, fontWeight: 600 }}>{title}</div>
+                <div style={{ fontSize: 22, fontWeight: 600 }}>{project.title}</div>
             </div>
         )
     }
@@ -172,7 +153,7 @@ export default function WorkCase(props: WorkCaseProps) {
                 position: "relative",
                 width: "100%",
                 minHeight: isStatic ? "100%" : "100vh",
-                background: "#FFFFFF",
+                background: CREAM,
                 color: INK,
                 fontFamily: SANS,
                 ...props.style,
@@ -191,7 +172,7 @@ export default function WorkCase(props: WorkCaseProps) {
                     backgroundImage: `url(${GRID_BG})`,
                     backgroundSize: "cover",
                     backgroundPosition: "center",
-                    opacity: gridOpacity,
+                    opacity: gridAlpha,
                     pointerEvents: "none",
                     filter: "grayscale(1)",
                     zIndex: 0,
@@ -208,28 +189,28 @@ export default function WorkCase(props: WorkCaseProps) {
                     boxSizing: "border-box",
                 }}
             >
-                {/* Heat-style meta grid */}
+                {/* ——— HERO (5-second skim) ——— */}
                 <div
                     style={{
                         display: "grid",
                         gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
                         gap: 28,
-                        marginBottom: 48,
+                        marginBottom: 36,
                     }}
-                    className="work-case-meta"
+                    className="case-hero"
                 >
                     <MetaCol label="project">
-                        <div
+                        <h1
                             style={{
+                                margin: "0 0 18px",
                                 fontSize: "clamp(28px, 3.2vw, 42px)",
                                 fontWeight: 600,
                                 letterSpacing: "-0.03em",
                                 lineHeight: 1.05,
-                                marginBottom: 18,
                             }}
                         >
-                            {title}
-                        </div>
+                            {project.title}
+                        </h1>
                         <a
                             href="/work"
                             aria-label="Back to work"
@@ -241,8 +222,8 @@ export default function WorkCase(props: WorkCaseProps) {
                                 height: 44,
                                 border: `1.5px solid ${INK}`,
                                 borderRadius: "50%",
-                                background: "rgba(255,255,255,0.9)",
-                                color: accent,
+                                background: "rgba(255,255,255,0.85)",
+                                color: project.accent || "#2C6BE0",
                                 textDecoration: "none",
                                 fontSize: 20,
                                 fontWeight: 600,
@@ -262,7 +243,7 @@ export default function WorkCase(props: WorkCaseProps) {
                                 marginBottom: 12,
                             }}
                         >
-                            {subtitle}
+                            {project.subtitle}
                         </div>
                         <p
                             style={{
@@ -273,29 +254,40 @@ export default function WorkCase(props: WorkCaseProps) {
                                 maxWidth: 320,
                             }}
                         >
-                            {overview}
+                            {project.overview}
                         </p>
                     </MetaCol>
 
-                    <MetaCol label="deliverables">
-                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                            {(deliverables.length ? deliverables : [role]).map((d) => (
-                                <div
-                                    key={d}
-                                    style={{
-                                        fontSize: 22,
-                                        fontWeight: 500,
-                                        letterSpacing: "-0.02em",
-                                        lineHeight: 1.2,
-                                    }}
-                                >
-                                    {d}
-                                </div>
-                            ))}
+                    <MetaCol label="role / tools">
+                        <div
+                            style={{
+                                fontSize: 18,
+                                fontWeight: 500,
+                                letterSpacing: "-0.02em",
+                                marginBottom: 10,
+                            }}
+                        >
+                            {project.role}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                            {(tools.length ? tools : ["Figma", "Research", "Prototype"]).map(
+                                (t) => (
+                                    <div
+                                        key={t}
+                                        style={{
+                                            fontSize: 15,
+                                            color: MUTED,
+                                            letterSpacing: "-0.01em",
+                                        }}
+                                    >
+                                        {t}
+                                    </div>
+                                ),
+                            )}
                         </div>
                     </MetaCol>
 
-                    <MetaCol label="year">
+                    <MetaCol label="timeline">
                         <div
                             style={{
                                 fontSize: 22,
@@ -303,55 +295,122 @@ export default function WorkCase(props: WorkCaseProps) {
                                 letterSpacing: "-0.02em",
                             }}
                         >
-                            {year}
+                            {project.timeline || project.year}
                         </div>
+                        {project.timeline && project.year && project.timeline !== project.year ? (
+                            <div style={{ marginTop: 8, fontSize: 14, color: MUTED }}>
+                                {project.year}
+                            </div>
+                        ) : null}
                     </MetaCol>
                 </div>
 
-                <style>{`
-                    @media (max-width: 900px) {
-                        .work-case-meta { grid-template-columns: 1fr 1fr !important; }
-                    }
-                    @media (max-width: 560px) {
-                        .work-case-meta { grid-template-columns: 1fr !important; }
-                    }
-                `}</style>
-
-                {/* Visual band using project accent */}
-                <div
+                {/* Hero visual / outcome stripe */}
+                <p
                     style={{
-                        width: "100%",
-                        minHeight: 360,
-                        marginBottom: 56,
-                        border: `1.5px solid ${INK}`,
-                        background: `linear-gradient(145deg, ${accent} 0%, #111 125%)`,
-                        display: "flex",
-                        alignItems: "flex-end",
-                        padding: 28,
-                        boxSizing: "border-box",
-                        color: "#fff",
+                        margin: "0 0 20px",
+                        fontSize: 18,
+                        lineHeight: 1.45,
+                        color: INK,
+                        maxWidth: 720,
+                        fontWeight: 500,
+                        letterSpacing: "-0.02em",
                     }}
                 >
+                    {oneLiner(project)}
+                </p>
+                <MediaBlock
+                    src={project.heroImage}
+                    accent={project.accent}
+                    caption="Hero / key screen"
+                    tall
+                />
+
+                {/* ——— DEPTH SECTIONS ——— */}
+                <Section kicker="01" title="Context" body={project.context} />
+                <Section kicker="02" title="The problem" body={project.problem} />
+
+                <div style={{ marginBottom: 56 }}>
+                    <SectionHeading kicker="03" title="Goals & constraints" />
                     <div
                         style={{
-                            fontSize: 13,
-                            fontWeight: 600,
-                            letterSpacing: "-1px",
-                            textTransform: "uppercase",
-                            background: accent,
-                            border: "1.5px solid #fff",
-                            padding: "8px 12px",
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 20,
                         }}
+                        className="case-split"
                     >
-                        {subtitle || "Case study"}
+                        <TextCard title="Goals" body={project.goals} accent={project.accent} />
+                        <TextCard
+                            title="Constraints"
+                            body={project.constraints}
+                            accent={project.accent}
+                        />
                     </div>
                 </div>
 
-                <Section label="Overview" accent={accent} body={overview} />
-                <Section label="Approach" accent={accent} body={approach} />
-                <Section label="Outcome" accent={accent} body={outcome} />
+                <Section kicker="04" title="Process" body={project.process} />
+                <MediaBlock
+                    src={project.processImage}
+                    accent={project.accent}
+                    caption="Sketches, flows, wireframes, iterations — the messy middle."
+                />
 
-                {related?.length > 0 && (
+                {decisions.length > 0 && (
+                    <div style={{ marginBottom: 56 }}>
+                        <SectionHeading kicker="05" title="Key decisions" />
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: `repeat(${Math.min(3, decisions.length)}, minmax(0, 1fr))`,
+                                gap: 16,
+                            }}
+                            className="case-decisions"
+                        >
+                            {decisions.map((d, i) => (
+                                <TextCard
+                                    key={i}
+                                    title={`Decision ${i + 1}`}
+                                    body={d}
+                                    accent={project.accent}
+                                    compact
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <SectionHeading kicker="06" title="Final design" />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 16,
+                        marginBottom: 56,
+                    }}
+                    className="case-split"
+                >
+                    <MediaBlock
+                        src={project.finalImage1}
+                        accent={project.accent}
+                        caption="Primary screen / flow"
+                        fill
+                    />
+                    <MediaBlock
+                        src={project.finalImage2}
+                        accent={project.accent}
+                        caption="Supporting screen / state"
+                        fill
+                    />
+                </div>
+
+                <Section kicker="07" title="Outcome" body={project.outcome} />
+                {project.reflection ? (
+                    <Section kicker="08" title="Reflection" body={project.reflection} />
+                ) : null}
+
+                {/* Related */}
+                {related.length > 0 && (
                     <div style={{ marginTop: 72 }}>
                         <h2
                             style={{
@@ -378,7 +437,6 @@ export default function WorkCase(props: WorkCaseProps) {
                                     style={{
                                         display: "block",
                                         minHeight: 220,
-                                        border: `1.5px solid ${INK}`,
                                         background: `linear-gradient(145deg, ${r.accent} 0%, #111 120%)`,
                                         textDecoration: "none",
                                         color: "#fff",
@@ -387,14 +445,7 @@ export default function WorkCase(props: WorkCaseProps) {
                                         position: "relative",
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            position: "absolute",
-                                            left: 20,
-                                            bottom: 20,
-                                            right: 20,
-                                        }}
-                                    >
+                                    <div style={{ position: "absolute", left: 20, bottom: 20, right: 20 }}>
                                         <div
                                             style={{
                                                 fontSize: 22,
@@ -407,10 +458,7 @@ export default function WorkCase(props: WorkCaseProps) {
                                         <div
                                             style={{
                                                 marginTop: 6,
-                                                fontSize: 12,
-                                                fontWeight: 600,
-                                                letterSpacing: "-1px",
-                                                textTransform: "uppercase",
+                                                fontSize: 13,
                                                 opacity: 0.9,
                                             }}
                                         >
@@ -423,17 +471,27 @@ export default function WorkCase(props: WorkCaseProps) {
                     </div>
                 )}
             </div>
+
+            <style>{`
+                @media (max-width: 900px) {
+                    .case-hero, .case-split, .case-decisions { grid-template-columns: 1fr 1fr !important; }
+                }
+                @media (max-width: 560px) {
+                    .case-hero, .case-split, .case-decisions { grid-template-columns: 1fr !important; }
+                }
+            `}</style>
         </div>
     )
 }
 
-function MetaCol({
-    label,
-    children,
-}: {
-    label: string
-    children: React.ReactNode
-}) {
+function oneLiner(p: ProjectRecord) {
+    const problem = (p.problem || "").split(/[.!?]/)[0]
+    const outcome = (p.outcome || "").split(/[.!?]/)[0]
+    if (problem && outcome) return `${problem.trim()}. → ${outcome.trim()}.`
+    return p.overview
+}
+
+function MetaCol({ label, children }: { label: string; children: ReactNode }) {
     return (
         <div>
             <div
@@ -453,43 +511,195 @@ function MetaCol({
     )
 }
 
-function Section({
-    label,
-    body,
-    accent,
-}: {
-    label: string
-    body: string
-    accent: string
-}) {
-    if (!body) return null
+function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
     return (
-        <div style={{ marginBottom: 40, maxWidth: 720 }}>
+        <div style={{ marginBottom: 18 }}>
             <div
                 style={{
-                    fontSize: 13,
-                    fontWeight: 700,
-                    letterSpacing: 1,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: "-1px",
                     textTransform: "uppercase",
-                    color: INK,
-                    borderLeft: `4px solid ${accent}`,
-                    paddingLeft: 10,
-                    marginBottom: 12,
+                    color: LABEL,
+                    marginBottom: 8,
                 }}
             >
-                // {label}
+                {kicker}
             </div>
+            <h2
+                style={{
+                    margin: 0,
+                    fontSize: "clamp(28px, 4vw, 40px)",
+                    fontWeight: 600,
+                    letterSpacing: "-0.03em",
+                    lineHeight: 1.1,
+                }}
+            >
+                {title}
+            </h2>
+        </div>
+    )
+}
+
+function Section({
+    kicker,
+    title,
+    body,
+}: {
+    kicker: string
+    title: string
+    body: string
+}) {
+    if (!body || !String(body).trim()) return null
+    return (
+        <div style={{ marginBottom: 56, maxWidth: 720 }}>
+            <SectionHeading kicker={kicker} title={title} />
             <p
                 style={{
                     margin: 0,
                     fontSize: 17,
-                    lineHeight: 1.6,
+                    lineHeight: 1.65,
                     color: MUTED,
+                    whiteSpace: "pre-wrap",
                 }}
             >
                 {body}
             </p>
         </div>
+    )
+}
+
+function TextCard({
+    title,
+    body,
+    accent,
+    compact,
+}: {
+    title: string
+    body: string
+    accent: string
+    compact?: boolean
+}) {
+    if (!body || !String(body).trim()) return null
+    return (
+        <div
+            style={{
+                background: "rgba(255,255,255,0.72)",
+                border: `1.5px solid ${INK}`,
+                padding: compact ? "20px 18px" : "28px 24px",
+                boxSizing: "border-box",
+                minHeight: compact ? 160 : 200,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 12,
+                    fontWeight: 700,
+                    letterSpacing: "1px",
+                    textTransform: "uppercase",
+                    color: INK,
+                    borderLeft: `4px solid ${accent}`,
+                    paddingLeft: 10,
+                    marginBottom: 14,
+                }}
+            >
+                {title}
+            </div>
+            <p
+                style={{
+                    margin: 0,
+                    fontSize: 15,
+                    lineHeight: 1.55,
+                    color: MUTED,
+                    whiteSpace: "pre-wrap",
+                }}
+            >
+                {body}
+            </p>
+        </div>
+    )
+}
+
+function MediaBlock({
+    src,
+    accent,
+    caption,
+    tall,
+    fill,
+}: {
+    src?: string
+    accent: string
+    caption?: string
+    tall?: boolean
+    fill?: boolean
+}) {
+    return (
+        <figure
+            style={{
+                width: "100%",
+                margin: tall || !fill ? "0 0 56px" : 0,
+                padding: 0,
+            }}
+        >
+            <div
+                style={{
+                    width: "100%",
+                    minHeight: tall ? 420 : fill ? 280 : 320,
+                    border: `1.5px solid ${INK}`,
+                    background: src
+                        ? "#111"
+                        : `linear-gradient(145deg, ${accent} 0%, #111 125%)`,
+                    position: "relative",
+                    overflow: "hidden",
+                    boxSizing: "border-box",
+                }}
+            >
+                {src ? (
+                    <img
+                        src={src}
+                        alt=""
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                        }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            color: "rgba(255,255,255,0.85)",
+                            fontSize: 14,
+                            fontWeight: 500,
+                            letterSpacing: "-0.01em",
+                            padding: 24,
+                            textAlign: "center",
+                        }}
+                    >
+                        Drop project imagery here
+                    </div>
+                )}
+            </div>
+            {caption ? (
+                <figcaption
+                    style={{
+                        marginTop: 10,
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                        color: LABEL,
+                        letterSpacing: "-0.01em",
+                    }}
+                >
+                    {caption}
+                </figcaption>
+            ) : null}
+        </figure>
     )
 }
 
@@ -499,97 +709,186 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         subtitle: "Onboarding redesign",
         role: "Lead Product Designer",
         year: "2025",
+        timeline: "8 weeks",
+        tools: "Figma, User interviews, Prototyping",
         overview:
-            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up.",
-        approach:
-            "Mapped the existing funnel, cut steps that didn't earn their place, and rebuilt the flow around clarity.",
+            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
+        context:
+            "A mobile-first consumer fintech product for people managing everyday money. New users landed in a dense sign-up flow written for compliance, not for humans — and most bounced before they ever saw value.",
+        problem:
+            "Completion dropped hard between account creation and first funded action. Support tickets clustered around “what do you need this for?” moments. Business impact: paid acquisition was leaking before activation.",
+        goals:
+            "Raise sign-up completion, reduce time-to-first-value, and keep KYC/compliance intact without scaring people off.",
+        constraints:
+            "Legacy API order, fixed legal copy requirements, 8-week window, engineering bandwidth for one major flow rewrite — not a full redesign.",
+        process:
+            "Mapped the live funnel and drop-off points → interviewed recent drop-offs and completers → sketched alternate question orders → wireframed a “one clear ask per screen” flow → prototype-tested with 8 participants → iterated copy and progress cues with compliance.",
+        decision1:
+            "Chose progressive disclosure over a single long form — even though it meant more screens — because testing showed cognitive load beat click count.",
+        decision2:
+            "Kept mandatory KYC fields but moved “why we ask” inline next to each field instead of a separate FAQ, after users skipped the FAQ entirely.",
+        decision3:
+            "Cut a “product tour” after sign-up; first success action replaced it. Tour completion was vanity — funded accounts were the real metric.",
         outcome:
-            "Sign-up completion improved noticeably in testing and the flow now sets expectations early.",
+            "Sign-up completion improved noticeably in testing; the flow now sets expectations before asking for sensitive details. Shipped to production in the following release train.",
+        reflection:
+            "I’d bring compliance into the first workshop earlier — we lost a week negotiating copy that could have been co-authored up front.",
         accent: "#7457C9",
         slug: "fintech-app",
+        heroImage: "",
+        processImage: "",
+        finalImage1: "",
+        finalImage2: "",
     },
     {
         title: "Health Platform",
         subtitle: "Design system",
         role: "Senior Product Designer",
         year: "2024",
+        timeline: "4 months",
+        tools: "Figma, Tokens, Storybook",
         overview:
             "A growing health platform had drifting UI across teams. I led the creation of a shared system.",
-        approach:
-            "Audited every surface, defined tokens and components, and paired with engineers to land adoption.",
+        context:
+            "Multi-squad health platform spanning patient and clinician surfaces. Visual language had forked as teams shipped fast without a shared source of truth.",
+        problem:
+            "Inconsistent components slowed engineering, eroded trust in clinical UI, and made every new feature a redesign debate.",
+        goals:
+            "One tokenized system, documented components, and adoption across squads without freezing product velocity.",
+        constraints:
+            "Live product (no greenfield), mixed React native web, limited design-eng pairing time, accessibility bar for clinical use.",
+        process:
+            "Audit → token proposal → core components → pilot with one squad → harden docs in Storybook → expand coverage → governance rituals.",
+        decision1:
+            "Started with tokens + 8 primitives instead of 40 components — adoption needed a thin wedge, not a catalog.",
+        decision2:
+            "Favored semantic tokens (color.text.danger) over raw palettes so clinical meaning stayed portable across themes.",
+        decision3:
+            "Made “escape hatches” explicit rather than banning one-offs — squads needed a path for experiments without forking the system.",
         outcome:
-            "Teams now build faster from one source of truth, and the product feels like a single product.",
+            "Teams now build faster from one source of truth, and the product feels like a single product again.",
+        reflection:
+            "I’d measure adoption weekly from day one — qualitative buy-in looked fine while two squads quietly kept local components.",
         accent: "#28A06A",
         slug: "health-platform",
+        heroImage: "",
+        processImage: "",
+        finalImage1: "",
+        finalImage2: "",
     },
     {
         title: "Chutney Studios",
         subtitle: "Brand + site",
         role: "Founder & Designer",
         year: "2025",
+        timeline: "6 weeks",
+        tools: "Figma, Framer, Brand",
         overview:
             "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
-        approach:
-            "Started from a warm, personal tone, chose a friendly type pairing, and kept the system light.",
+        context:
+            "A personal studio for branding and sites for small, good-taste brands. Needed a presence that felt warm and clear — not agency-slick.",
+        problem:
+            "Without a sharp site, inquiries were vague and mismatched. I needed a filter as much as a brochure.",
+        goals:
+            "Sound like me, show craft, and give freelancers/clients a low-pressure way to start a conversation.",
+        constraints:
+            "Evenings/weekends only, solo build, budget of time not money.",
+        process:
+            "Tone board → type pairing tests → logo sketches → site IA → build in Framer → soft launch to peers for feedback.",
+        decision1:
+            "Picked a friendly type pairing over a colder “premium” stack — the studio’s edge is approachable taste, not intimidation.",
+        decision2:
+            "Kept case studies short on the marketing site; deep work lives in this portfolio instead of duplicating.",
+        decision3:
+            "Used a single CTA (email/book) rather than a form maze — conversion quality over lead volume.",
         outcome:
             "A site that sounds like me and gives freelance clients a clear, low-pressure way in.",
+        reflection:
+            "I’d ship a rough site in week two and iterate live — I polished offline longer than I needed to.",
         accent: "#D17BB0",
         slug: "chutney-studios",
+        heroImage: "",
+        processImage: "",
+        finalImage1: "",
+        finalImage2: "",
     },
     {
         title: "Travel App",
         subtitle: "0→1 product",
         role: "Product Designer",
         year: "2023",
+        timeline: "10 weeks",
+        tools: "Figma, Prototyping, Field tests",
         overview:
             "A 0→1 travel app that needed to feel effortless for people planning trips on the move.",
-        approach:
-            "Prototyped the core planning loop early, tested with real travellers, and let that steer scope.",
+        context:
+            "Early-stage travel planning app for people who plan in scraps of time — trains, queues, couches — not desktop research marathons.",
+        problem:
+            "Competitive apps assumed leisurely desktop sessions. Our users abandoned complex planners mid-commute.",
+        goals:
+            "One-handed core loop, first trip plan under 5 minutes, clarity over feature breadth for v1.",
+        constraints:
+            "Tiny eng team, no backend for fancy collaboration yet, App Store deadline.",
+        process:
+            "Street interviews → paper flows → clickable prototype → ride-along tests on transit → scope cut → UI polish → handoff.",
+        decision1:
+            "Cut collaborative planning from v1 despite stakeholder love — it doubled complexity before the solo loop worked.",
+        decision2:
+            "Defaulted to “good enough itinerary” templates users could mutate, instead of a blank canvas.",
+        decision3:
+            "Used large tap targets and bottom-sheet edits for one-handed use, even when it looked less “minimal” on desktop mocks.",
         outcome:
-            "Shipped a first version that people could use one-handed on a train without a tutorial.",
+            "Shipped a first version people could use one-handed on a train without a tutorial.",
+        reflection:
+            "I’d prototype offline states earlier — transit users hit dead zones constantly and we treated online as default too long.",
         accent: "#E0902F",
         slug: "travel-app",
+        heroImage: "",
+        processImage: "",
+        finalImage1: "",
+        finalImage2: "",
     },
 ]
+
+const catalogControls = {
+    title: { type: ControlType.String, defaultValue: "Project" },
+    subtitle: { type: ControlType.String, defaultValue: "Type" },
+    role: { type: ControlType.String, defaultValue: "Role" },
+    year: { type: ControlType.String, defaultValue: "2025" },
+    timeline: { type: ControlType.String, defaultValue: "8 weeks" },
+    tools: { type: ControlType.String, defaultValue: "Figma, Research" },
+    overview: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    context: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    problem: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    goals: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    constraints: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    process: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    decision1: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    decision2: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    decision3: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    outcome: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    reflection: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
+    accent: { type: ControlType.Color, defaultValue: "#2C6BE0" },
+    slug: { type: ControlType.String, defaultValue: "project" },
+    heroImage: { type: ControlType.String, defaultValue: "" },
+    processImage: { type: ControlType.String, defaultValue: "" },
+    finalImage1: { type: ControlType.String, defaultValue: "" },
+    finalImage2: { type: ControlType.String, defaultValue: "" },
+}
 
 addPropertyControls(WorkCase, {
     catalog: {
         type: ControlType.Array,
         title: "Catalog (Projects CMS)",
-        control: {
-            type: ControlType.Object,
-            controls: {
-                title: { type: ControlType.String, defaultValue: "Project" },
-                subtitle: { type: ControlType.String, defaultValue: "Type" },
-                role: { type: ControlType.String, defaultValue: "Role" },
-                year: { type: ControlType.String, defaultValue: "2025" },
-                overview: {
-                    type: ControlType.String,
-                    displayTextArea: true,
-                    defaultValue: "",
-                },
-                approach: {
-                    type: ControlType.String,
-                    displayTextArea: true,
-                    defaultValue: "",
-                },
-                outcome: {
-                    type: ControlType.String,
-                    displayTextArea: true,
-                    defaultValue: "",
-                },
-                accent: { type: ControlType.Color, defaultValue: "#2C6BE0" },
-                slug: { type: ControlType.String, defaultValue: "project" },
-            },
-        },
+        control: { type: ControlType.Object, controls: catalogControls },
         defaultValue: DEFAULT_CATALOG,
     },
     gridOpacity: {
         type: ControlType.Number,
         title: "Grid Opacity",
-        defaultValue: 0.5,
+        defaultValue: 0.12,
         min: 0,
-        max: 1,
-        step: 0.05,
+        max: 0.4,
+        step: 0.01,
     },
 })
