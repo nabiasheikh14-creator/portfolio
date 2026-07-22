@@ -13,6 +13,24 @@ bold display + pixel/mono type). Strict **black & white with a single accent —
 electric blue (`#0F27FF`)**. This is a real multi-page site; the desk is the
 Home entry, not a container for all content, and it is **not** a fake OS/desktop.
 
+## Latest updates
+
+- **Scroll-controlled desk** (`DeskWorkspace`): the load is now driven by scroll
+  (spring-smoothed) — a welcome message, then the **desk surface first**, then
+  each object is "placed" one-by-one as you scroll further. Objects still jiggle
+  on hover; radio still toggles rain + speakers.
+- **`TopBar.tsx`** — a constant **floating** header (sticky, blurred): "NABIA
+  SHAIKH" (→ home), **Archive** + **Projects** links, and a **Contact me**
+  button. Added to Home, Archive, Projects and case-study pages. Editable code
+  component (name/links/accent as props).
+- **`ArchiveFrame.tsx` + Archive CMS** — the `/archive` page is a CMS-backed,
+  infinitely-scrolling **broken-grid gallery** of grainy image frames of varying
+  sizes that gently float. Each frame is a component driven by the **Archive**
+  collection (Title, Image, Description, Size = S/M/L). Hover shows the project
+  title; click opens a pop-up with the image, title and description. Frames carry
+  a heavy, very visible grain/noise texture. **Edit everything in the Archive
+  CMS collection** — add/remove items, set image + title + description + size.
+
 ## Current Home — `DeskWorkspace.tsx` (illustrated desk)
 
 The Home page now uses Nabia's uploaded **"Desk Animation"** illustration (layers

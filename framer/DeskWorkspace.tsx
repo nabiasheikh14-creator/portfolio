@@ -5,9 +5,16 @@ import {
     useState,
     startTransition,
     type CSSProperties,
-    type ReactNode,
 } from "react"
-import { motion, AnimatePresence, type Variants } from "framer-motion"
+import {
+    motion,
+    AnimatePresence,
+    useScroll,
+    useSpring,
+    useTransform,
+    useMotionValueEvent,
+    type MotionValue,
+} from "framer-motion"
 import {
     addPropertyControls,
     ControlType,
@@ -17,6 +24,7 @@ import {
 
 const STAGE_W = 1440
 const STAGE_H = 900
+const INTRO_VH = 300
 const IMG = "https://framerusercontent.com/images/"
 
 const HAND = '"Caveat", "Bradley Hand", cursive'
@@ -28,7 +36,6 @@ interface Layer {
     speaker?: boolean
 }
 
-// Full desk illustration, back-to-front. Each PNG is a full 1440x900 layer.
 const LAYERS: Layer[] = [
     { key: "bg", hash: "uTiMeYZo7Cgq17Mt2w60JYMnptc" },
     { key: "archive", hash: "969XNx9nZpgbsuyO98EvRf52B4w" },
@@ -74,6 +81,52 @@ const LAYERS: Layer[] = [
     { key: "sooraj-2", hash: "O3MmyItiSJFvHk9GjYSG9NdqSc" },
 ]
 
+// Reveal order (what appears first as you scroll) — base/surface first so
+// objects that sit on the desk come after it. Z-order stays = LAYERS order.
+const REVEAL_ORDER = [
+    "bg",
+    "desk",
+    "shelf-2",
+    "shelf-3",
+    "books-shelf",
+    "lamp",
+    "frames",
+    "frame-drawing",
+    "drawing",
+    "picture-frame",
+    "archive",
+    "book",
+    "book-2",
+    "calendar",
+    "briefcase-calendar",
+    "projects-books",
+    "radiobox",
+    "candle-2",
+    "candle-3",
+    "candle-2b",
+    "candle-4",
+    "tea",
+    "water",
+    "pencil-holder",
+    "pen",
+    "tablet",
+    "chutney",
+    "sooraj",
+    "sooraj-2",
+    "laptop",
+    "work-laptop",
+    "open-notebook",
+    "notes",
+    "to-dos",
+    "sticky",
+    "sticky-empty-1",
+    "sticky-empty-2",
+    "phone",
+    "journal",
+]
+const REVEAL_START = 0.08
+const REVEAL_END = 0.96
+
 type Action = "popup" | "page" | "sound"
 interface Click {
     key: string
@@ -87,109 +140,18 @@ interface Click {
 }
 
 const CLICKS: Click[] = [
-    {
-        key: "archive",
-        box: [329, 292, 384, 140],
-        label: "ARCHIVE",
-        action: "page",
-        href: "/archive",
-    },
-    {
-        key: "laptop",
-        box: [570, 526, 354, 245],
-        label: "WORK",
-        action: "page",
-        href: "/work",
-        jiggle: ["laptop", "work-laptop"],
-        labelPos: "below",
-    },
-    {
-        key: "projects-books",
-        box: [560, 95, 190, 150],
-        label: "PROJECTS",
-        action: "popup",
-        labelPos: "below",
-        popup: {
-            heading: "PROJECT BOOKS",
-            blurb: "The work I keep coming back to — full case studies live on the work laptop.",
-        },
-    },
-    {
-        key: "radiobox",
-        box: [366, 51, 190, 133],
-        label: "SOUND",
-        action: "sound",
-        labelPos: "below",
-    },
-    {
-        key: "journal",
-        box: [241, 717, 167, 126],
-        label: "JOURNAL",
-        action: "popup",
-        popup: {
-            heading: "THE JOURNAL",
-            blurb: "Day-to-day notes, sketches, and process. Mostly thinking out loud.",
-        },
-    },
-    {
-        key: "notes",
-        box: [1056, 691, 113, 88],
-        label: "NOTES",
-        action: "popup",
-        popup: {
-            heading: "STICKY BRAIN",
-            blurb: "Configs, wireframes and reminders I swear I'll get to.",
-        },
-    },
-    {
-        key: "chutney",
-        box: [542, 493, 84, 75],
-        label: "CHUTNEY",
-        action: "popup",
-        popup: {
-            heading: "CHUTNEY STUDIOS",
-            blurb: "My after-hours studio — branding and sites for small, good-taste brands.",
-            visit: "VISIT STUDIO",
-            href: "/about",
-        },
-    },
-    {
-        key: "phone",
-        box: [963, 717, 100, 98],
-        label: "CALL",
-        action: "popup",
-        popup: {
-            heading: "SAY HELLO",
-            blurb: "Ring ring. Email or a DM works too — I actually pick up.",
-            visit: "CONTACT ME",
-            href: "/contact",
-        },
-    },
-    {
-        key: "briefcase-calendar",
-        box: [388, 485, 76, 68],
-        label: "SCHEDULE",
-        action: "popup",
-        popup: {
-            heading: "THE SCHEDULE",
-            blurb: "Booked with client work + content. Grab a slot if you want to team up.",
-        },
-    },
-    {
-        key: "sooraj",
-        box: [556, 428, 68, 60],
-        label: "SOORAJ",
-        action: "popup",
-        popup: {
-            heading: "SOORAJ",
-            blurb: "A little friend keeping me company on the desk. Say hi.",
-        },
-    },
+    { key: "archive", box: [329, 292, 384, 140], label: "ARCHIVE", action: "page", href: "/archive" },
+    { key: "laptop", box: [570, 526, 354, 245], label: "WORK", action: "page", href: "/work", jiggle: ["laptop", "work-laptop"], labelPos: "below" },
+    { key: "projects-books", box: [560, 95, 190, 150], label: "PROJECTS", action: "page", href: "/work", labelPos: "below" },
+    { key: "radiobox", box: [366, 51, 190, 133], label: "SOUND", action: "sound", labelPos: "below" },
+    { key: "journal", box: [241, 717, 167, 126], label: "JOURNAL", action: "popup", popup: { heading: "THE JOURNAL", blurb: "Day-to-day notes, sketches, and process. Mostly thinking out loud." } },
+    { key: "notes", box: [1056, 691, 113, 88], label: "NOTES", action: "popup", popup: { heading: "STICKY BRAIN", blurb: "Configs, wireframes and reminders I swear I'll get to." } },
+    { key: "chutney", box: [542, 493, 84, 75], label: "CHUTNEY", action: "popup", popup: { heading: "CHUTNEY STUDIOS", blurb: "My after-hours studio — branding and sites for small, good-taste brands.", visit: "VISIT STUDIO", href: "/about" } },
+    { key: "phone", box: [963, 717, 100, 98], label: "CALL", action: "popup", popup: { heading: "SAY HELLO", blurb: "Ring ring. Email or a DM works too — I actually pick up.", visit: "CONTACT ME", href: "/contact" } },
+    { key: "briefcase-calendar", box: [388, 485, 76, 68], label: "SCHEDULE", action: "popup", popup: { heading: "THE SCHEDULE", blurb: "Booked with client work + content. Grab a slot if you want to team up." } },
+    { key: "sooraj", box: [556, 428, 68, 60], label: "SOORAJ", action: "popup", popup: { heading: "SOORAJ", blurb: "A little friend keeping me company on the desk. Say hi." } },
 ]
-// large hotspots first so small ones sit on top and stay clickable
-const CLICKS_ORDERED = [...CLICKS].sort(
-    (a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3]
-)
+const CLICKS_ORDERED = [...CLICKS].sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
 
 interface DeskWorkspaceProps {
     welcomeText: string
@@ -198,10 +160,11 @@ interface DeskWorkspaceProps {
 }
 
 /**
- * Desk Workspace — Nabia's illustrated desk (layered PNGs). A welcome message
- * dissolves in, then the desk is "placed" element-by-element. Objects jiggle on
- * hover, the radio toggles rain sound (speakers appear when playing), and each
- * object opens a pop-up — except the work laptop and archive, which are pages.
+ * Desk Workspace — Nabia's illustrated desk (layered PNGs), revealed by scroll:
+ * a welcome message, then the desk surface, then each object is "placed" as you
+ * scroll. Objects jiggle on hover, the radio toggles rain (speakers show when
+ * playing), and each object opens a pop-up — except the work laptop / projects
+ * (→ Work page) and archive (→ Archive page).
  *
  * @framerIntrinsicWidth 1440
  * @framerIntrinsicHeight 900
@@ -209,10 +172,7 @@ interface DeskWorkspaceProps {
  * @framerSupportedLayoutHeight any-prefer-fixed
  */
 export default function DeskWorkspace(props: DeskWorkspaceProps) {
-    const {
-        welcomeText = "hey, welcome to my workspace",
-        accent = "#2C6BE0",
-    } = props
+    const { welcomeText = "hey, welcome to my workspace", accent = "#2C6BE0" } = props
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
@@ -232,60 +192,47 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     }, [])
 
     const animated = !isStatic && !reduced
-    const [phase, setPhase] = useState<"welcome" | "placing" | "ready">(
-        animated ? "welcome" : "ready"
-    )
-    useEffect(() => {
-        if (!animated) {
-            setPhase("ready")
-            return
-        }
-        const t1 = window.setTimeout(
-            () => startTransition(() => setPhase("placing")),
-            2300
-        )
-        const t2 = window.setTimeout(
-            () => startTransition(() => setPhase("ready")),
-            3400
-        )
-        return () => {
-            window.clearTimeout(t1)
-            window.clearTimeout(t2)
-        }
-    }, [animated])
+
+    const rootRef = useRef<HTMLDivElement>(null)
+    const { scrollYProgress } = useScroll({
+        target: rootRef,
+        offset: ["start start", "end end"],
+    })
+    const p = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.5 })
+
+    const welcomeOpacity = useTransform(p, [0, 0.06], [1, 0])
+    const hintOpacity = useTransform(p, [0, 0.04], [1, 0])
 
     const scale = useMemo(() => {
         const pad = vp.w < 820 ? 8 : 48
-        return Math.max(
-            0.2,
-            Math.min((vp.w - pad) / STAGE_W, (vp.h - pad) / STAGE_H, 1.1)
-        )
+        return Math.max(0.2, Math.min((vp.w - pad) / STAGE_W, (vp.h - pad) / STAGE_H, 1.1))
     }, [vp])
 
     const [hovered, setHovered] = useState<string | null>(null)
     const [popup, setPopup] = useState<Click | null>(null)
     const [flash, setFlash] = useState(false)
+    const [revealed, setRevealed] = useState(!animated)
+    useMotionValueEvent(p, "change", (v) => {
+        const r = v > 0.8
+        startTransition(() => setRevealed(r))
+    })
+    useEffect(() => {
+        if (!animated) setRevealed(true)
+    }, [animated])
 
-    // ---- rain sound ----
+    // rain sound
     const [soundOn, setSoundOn] = useState(true)
     const [playing, setPlaying] = useState(false)
-    const audioRef = useRef<{
-        ctx: AudioContext
-        gain: GainNode
-        src: AudioBufferSourceNode
-    } | null>(null)
-
+    const audioRef = useRef<{ ctx: AudioContext; gain: GainNode } | null>(null)
     const startRain = () => {
-        if (typeof window === "undefined" || audioRef.current) {
-            audioRef.current?.ctx.resume()
+        if (typeof window === "undefined") return
+        if (audioRef.current) {
+            audioRef.current.ctx.resume()
             setPlaying(true)
             return
         }
         try {
-            const AC =
-                window.AudioContext ||
-                (window as unknown as { webkitAudioContext: typeof AudioContext })
-                    .webkitAudioContext
+            const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
             const ctx = new AC()
             const size = 2 * ctx.sampleRate
             const buffer = ctx.createBuffer(1, size, ctx.sampleRate)
@@ -307,7 +254,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             lp.connect(gain)
             gain.connect(ctx.destination)
             src.start()
-            audioRef.current = { ctx, gain, src }
+            audioRef.current = { ctx, gain }
             setPlaying(true)
         } catch {
             /* ignore */
@@ -317,8 +264,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         audioRef.current?.ctx.suspend()
         setPlaying(false)
     }
-
-    // start rain on first gesture if enabled (autoplay policy)
     useEffect(() => {
         if (isStatic) return
         const onGesture = () => {
@@ -329,7 +274,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         return () => window.removeEventListener("pointerdown", onGesture)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isStatic, soundOn])
-
     function toggleSound() {
         if (soundOn) {
             setSoundOn(false)
@@ -353,13 +297,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     }
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
-        return (
-            <img
-                src={`${IMG}uTiMeYZo7Cgq17Mt2w60JYMnptc.png`}
-                alt="Desk"
-                style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-        )
+        return <img src={`${IMG}uTiMeYZo7Cgq17Mt2w60JYMnptc.png`} alt="Desk" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
     }
 
     const jiggleFor = (key: string): boolean => {
@@ -368,46 +306,46 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         if (!c) return false
         return c.key === key || (c.jiggle?.includes(key) ?? false)
     }
+    const revealCount = REVEAL_ORDER.length
 
     return (
         <div
+            ref={rootRef}
             onPointerDown={() => {
                 if (soundOn && !playing) startRain()
             }}
             style={{
                 position: "relative",
                 width: "100%",
-                minHeight: "100vh",
+                height: animated ? `${INTRO_VH}vh` : undefined,
+                minHeight: animated ? undefined : "100vh",
                 background: "#F3EFE6",
-                overflow: "hidden",
                 fontFamily: SANS,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                ...props.style,
             }}
         >
-            <link
-                href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap"
-                rel="stylesheet"
-            />
+            <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap" rel="stylesheet" />
 
             <div
                 style={{
-                    width: STAGE_W,
-                    height: STAGE_H,
-                    transform: `scale(${scale})`,
-                    transformOrigin: "center center",
-                    position: "relative",
-                    flex: "none",
+                    position: animated ? "sticky" : "relative",
+                    top: 0,
+                    height: "100vh",
+                    width: "100%",
+                    overflow: "hidden",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                 }}
             >
-                {/* layers */}
-                <motion.div
-                    variants={containerVariants}
-                    initial={animated ? "hidden" : "visible"}
-                    animate={phase === "welcome" ? "hidden" : "visible"}
-                    style={{ position: "absolute", inset: 0 }}
+                <div
+                    style={{
+                        width: STAGE_W,
+                        height: STAGE_H,
+                        transform: `scale(${scale})`,
+                        transformOrigin: "center center",
+                        position: "relative",
+                        flex: "none",
+                    }}
                 >
                     {LAYERS.map((l) => {
                         if (l.speaker) {
@@ -416,110 +354,65 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                     key={l.key}
                                     src={`${IMG}${l.hash}.png`}
                                     alt=""
-                                    animate={{
-                                        opacity: playing ? 1 : 0,
-                                        scale: playing ? [1, 1.015, 1] : 1,
-                                    }}
-                                    transition={{
-                                        opacity: { duration: 0.4 },
-                                        scale: {
-                                            duration: 0.9,
-                                            repeat: playing ? Infinity : 0,
-                                        },
-                                    }}
+                                    animate={{ opacity: playing ? 1 : 0, scale: playing ? [1, 1.015, 1] : 1 }}
+                                    transition={{ opacity: { duration: 0.4 }, scale: { duration: 0.9, repeat: playing ? Infinity : 0 } }}
                                     style={layerImgStyle}
                                 />
                             )
                         }
-                        const active = jiggleFor(l.key)
+                        const ri = REVEAL_ORDER.indexOf(l.key)
+                        const idx = ri < 0 ? revealCount - 1 : ri
+                        const t = REVEAL_START + (idx / (revealCount - 1)) * (REVEAL_END - REVEAL_START)
                         return (
-                            <motion.div
+                            <RevealLayer
                                 key={l.key}
-                                variants={itemVariants}
-                                style={{ position: "absolute", inset: 0 }}
-                            >
-                                <motion.img
-                                    src={`${IMG}${l.hash}.png`}
-                                    alt=""
-                                    animate={
-                                        active
-                                            ? { rotate: [0, -3, 3, -2, 1, 0], scale: 1.03 }
-                                            : { rotate: 0, scale: 1 }
-                                    }
-                                    transition={
-                                        active
-                                            ? { duration: 0.55, ease: "easeInOut" }
-                                            : { duration: 0.2 }
-                                    }
-                                    style={{
-                                        ...layerImgStyle,
-                                        transformOrigin: originFor(l.key),
-                                    }}
-                                />
-                            </motion.div>
+                                src={`${IMG}${l.hash}.png`}
+                                p={p}
+                                threshold={t}
+                                show={!animated}
+                                active={jiggleFor(l.key)}
+                                origin={originFor(l.key)}
+                            />
                         )
                     })}
-                </motion.div>
 
-                {/* hotspots + labels */}
-                {phase !== "welcome" && (
-                    <div style={{ position: "absolute", inset: 0, zIndex: 20 }}>
+                    <div style={{ position: "absolute", inset: 0, zIndex: 20, pointerEvents: revealed ? "auto" : "none" }}>
                         {CLICKS_ORDERED.map((c) => (
                             <Hotspot
                                 key={c.key}
                                 c={c}
                                 accent={accent}
                                 soundOn={soundOn}
+                                visible={revealed}
                                 onEnter={() => setHovered(c.key)}
-                                onLeave={() =>
-                                    setHovered((h) => (h === c.key ? null : h))
-                                }
+                                onLeave={() => setHovered((h) => (h === c.key ? null : h))}
                                 onClick={() => activate(c)}
                             />
                         ))}
                     </div>
-                )}
+                </div>
+
+                <AnimatePresence>
+                    {animated && (
+                        <>
+                            <motion.div
+                                style={{ position: "absolute", inset: 0, background: "#F3EFE6", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40, padding: 24, opacity: welcomeOpacity, pointerEvents: "none" }}
+                            >
+                                <h1 style={{ margin: 0, fontFamily: HAND, fontSize: "clamp(34px, 6vw, 72px)", color: "#111", textAlign: "center", fontWeight: 700 }}>
+                                    {welcomeText}
+                                </h1>
+                            </motion.div>
+                            <motion.div
+                                style={{ position: "absolute", bottom: 34, left: 0, right: 0, textAlign: "center", zIndex: 41, opacity: hintOpacity, color: "#111", fontFamily: HAND, fontSize: 26, pointerEvents: "none" }}
+                            >
+                                <div>scroll to set up the desk</div>
+                                <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ fontSize: 22 }}>↓</motion.div>
+                            </motion.div>
+                        </>
+                    )}
+                </AnimatePresence>
             </div>
 
-            {/* welcome */}
-            <AnimatePresence>
-                {phase === "welcome" && (
-                    <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.9 }}
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            background: "#F3EFE6",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            zIndex: 40,
-                            padding: 24,
-                        }}
-                    >
-                        <motion.h1
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 1, delay: 0.2 }}
-                            style={{
-                                margin: 0,
-                                fontFamily: HAND,
-                                fontSize: "clamp(34px, 6vw, 72px)",
-                                color: "#111",
-                                textAlign: "center",
-                                fontWeight: 700,
-                            }}
-                        >
-                            {welcomeText}
-                        </motion.h1>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* pop-up */}
             <AnimatePresence>
                 {popup && popup.popup && (
                     <Popup
@@ -540,22 +433,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 )}
             </AnimatePresence>
 
-            {/* flash-wipe */}
             <AnimatePresence>
                 {flash && (
-                    <motion.div
-                        initial={{ scaleY: 0 }}
-                        animate={{ scaleY: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.24, ease: "easeIn" }}
-                        style={{
-                            position: "fixed",
-                            inset: 0,
-                            background: "#111",
-                            transformOrigin: "bottom",
-                            zIndex: 90,
-                        }}
-                    />
+                    <motion.div initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.24, ease: "easeIn" }} style={{ position: "fixed", inset: 0, background: "#111", transformOrigin: "bottom", zIndex: 90 }} />
                 )}
             </AnimatePresence>
         </div>
@@ -572,20 +452,41 @@ const layerImgStyle: CSSProperties = {
     userSelect: "none",
 }
 
-const containerVariants: Variants = {
-    hidden: {},
-    visible: {
-        transition: { staggerChildren: 0.09, delayChildren: 0.15 },
-    },
-}
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: -26, scale: 0.92 },
-    visible: {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        transition: { type: "spring", stiffness: 300, damping: 19 },
-    },
+function RevealLayer({
+    src,
+    p,
+    threshold,
+    show,
+    active,
+    origin,
+}: {
+    src: string
+    p: MotionValue<number>
+    threshold: number
+    show: boolean
+    active: boolean
+    origin: string
+}) {
+    const opacity = useTransform(p, [threshold, threshold + 0.05], [0, 1])
+    const y = useTransform(p, [threshold, threshold + 0.09], [-26, 0])
+    const sc = useTransform(p, [threshold, threshold + 0.09], [0.9, 1])
+    return (
+        <motion.div
+            style={
+                show
+                    ? { position: "absolute", inset: 0 }
+                    : { position: "absolute", inset: 0, opacity, y, scale: sc }
+            }
+        >
+            <motion.img
+                src={src}
+                alt=""
+                animate={active ? { rotate: [0, -3, 3, -2, 1, 0], scale: 1.03 } : { rotate: 0, scale: 1 }}
+                transition={active ? { duration: 0.55, ease: "easeInOut" } : { duration: 0.2 }}
+                style={{ ...layerImgStyle, transformOrigin: origin }}
+            />
+        </motion.div>
+    )
 }
 
 function originFor(key: string): string {
@@ -599,6 +500,7 @@ function Hotspot({
     c,
     accent,
     soundOn,
+    visible,
     onEnter,
     onLeave,
     onClick,
@@ -606,14 +508,14 @@ function Hotspot({
     c: Click
     accent: string
     soundOn: boolean
+    visible: boolean
     onEnter: () => void
     onLeave: () => void
     onClick: () => void
 }) {
     const [x, y, w, h] = c.box
     const below = c.labelPos === "below"
-    const label =
-        c.action === "sound" ? (soundOn ? "SOUND ON" : "SOUND OFF") : c.label
+    const label = c.action === "sound" ? (soundOn ? "SOUND ON" : "SOUND OFF") : c.label
     return (
         <button
             type="button"
@@ -623,20 +525,12 @@ function Hotspot({
             onBlur={onLeave}
             onClick={onClick}
             aria-label={c.label}
-            style={{
-                position: "absolute",
-                left: x,
-                top: y,
-                width: w,
-                height: h,
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                padding: 0,
-                outline: "none",
-            }}
+            style={{ position: "absolute", left: x, top: y, width: w, height: h, border: "none", background: "transparent", cursor: "pointer", padding: 0, outline: "none" }}
         >
-            <span
+            <motion.span
+                initial={false}
+                animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
+                transition={{ duration: 0.25 }}
                 style={{
                     position: "absolute",
                     left: "50%",
@@ -656,7 +550,7 @@ function Hotspot({
                 } as CSSProperties}
             >
                 {label}
-            </span>
+            </motion.span>
         </button>
     )
 }
@@ -679,100 +573,13 @@ function Popup({
     onVisit: (href: string) => void
 }) {
     return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={onClose}
-            style={{
-                position: "fixed",
-                inset: 0,
-                zIndex: 80,
-                background: "rgba(30,26,18,0.45)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                padding: 20,
-            }}
-        >
-            <motion.div
-                initial={{ scale: 0.92, y: 12 }}
-                animate={{ scale: 1, y: 0 }}
-                exit={{ scale: 0.94 }}
-                transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                    background: "#fff",
-                    border: "1.5px solid #111",
-                    width: "min(500px, 92vw)",
-                    padding: "48px 34px 34px",
-                    position: "relative",
-                    textAlign: "center",
-                    fontFamily: SANS,
-                }}
-            >
-                <button
-                    type="button"
-                    onClick={onClose}
-                    aria-label="Close"
-                    style={{
-                        position: "absolute",
-                        top: 12,
-                        right: 12,
-                        fontFamily: SANS,
-                        fontWeight: 700,
-                        fontSize: 13,
-                        letterSpacing: 1,
-                        background: "#111",
-                        color: "#fff",
-                        border: "none",
-                        padding: "6px 10px",
-                        cursor: "pointer",
-                    }}
-                >
-                    X CLOSE
-                </button>
-                <h3
-                    style={{
-                        fontFamily: HAND,
-                        fontSize: 40,
-                        margin: "0 0 12px",
-                        color: "#111",
-                    }}
-                >
-                    {title}
-                </h3>
-                <p
-                    style={{
-                        fontSize: 16,
-                        lineHeight: 1.55,
-                        margin: "0 auto",
-                        maxWidth: 360,
-                        color: "#333",
-                    }}
-                >
-                    {blurb}
-                </p>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(30,26,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: SANS }}>
+                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: SANS, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer" }}>X CLOSE</button>
+                <h3 style={{ fontFamily: HAND, fontSize: 40, margin: "0 0 12px", color: "#111" }}>{title}</h3>
+                <p style={{ fontSize: 16, lineHeight: 1.55, margin: "0 auto", maxWidth: 360, color: "#333" }}>{blurb}</p>
                 {visit && href && (
-                    <button
-                        type="button"
-                        onClick={() => onVisit(href)}
-                        style={{
-                            marginTop: 22,
-                            fontFamily: SANS,
-                            fontWeight: 700,
-                            fontSize: 14,
-                            letterSpacing: 0.5,
-                            background: accent,
-                            color: "#fff",
-                            border: "none",
-                            padding: "12px 20px",
-                            cursor: "pointer",
-                            borderRadius: 4,
-                        }}
-                    >
-                        ★ {visit} ★
-                    </button>
+                    <button type="button" onClick={() => onVisit(href)} style={{ marginTop: 22, fontFamily: SANS, fontWeight: 700, fontSize: 14, letterSpacing: 0.5, background: accent, color: "#fff", border: "none", padding: "12px 20px", cursor: "pointer", borderRadius: 4 }}>★ {visit} ★</button>
                 )}
             </motion.div>
         </motion.div>
@@ -780,10 +587,6 @@ function Popup({
 }
 
 addPropertyControls(DeskWorkspace, {
-    welcomeText: {
-        type: ControlType.String,
-        title: "Welcome",
-        defaultValue: "hey, welcome to my workspace",
-    },
+    welcomeText: { type: ControlType.String, title: "Welcome", defaultValue: "hey, welcome to my workspace" },
     accent: { type: ControlType.Color, title: "Label Color", defaultValue: "#2C6BE0" },
 })
