@@ -24,11 +24,12 @@ import {
 
 const STAGE_W = 1440
 const STAGE_H = 900
-const INTRO_VH = 300
+const INTRO_VH = 480 // more scroll distance = slower reveal
 const IMG = "https://framerusercontent.com/images/"
 
-const HAND = '"Caveat", "Bradley Hand", cursive'
-const SANS = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
+const INTER =
+    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
 interface Layer {
     key: string
@@ -156,6 +157,7 @@ const CLICKS_ORDERED = [...CLICKS].sort((a, b) => b.box[2] * b.box[3] - a.box[2]
 interface DeskWorkspaceProps {
     welcomeText: string
     accent: string
+    font?: { fontFamily?: string }
     style?: CSSProperties
 }
 
@@ -173,6 +175,7 @@ interface DeskWorkspaceProps {
  */
 export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const { welcomeText = "hey, welcome to my workspace", accent = "#2C6BE0" } = props
+    const family = props.font?.fontFamily || INTER
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
@@ -198,10 +201,10 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         target: rootRef,
         offset: ["start start", "end end"],
     })
-    const p = useSpring(scrollYProgress, { stiffness: 120, damping: 28, mass: 0.5 })
+    const p = useSpring(scrollYProgress, { stiffness: 80, damping: 26, mass: 0.6 })
 
-    const welcomeOpacity = useTransform(p, [0, 0.06], [1, 0])
-    const hintOpacity = useTransform(p, [0, 0.04], [1, 0])
+    const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
+    const hintOpacity = useTransform(p, [0, 0.05], [1, 0])
 
     const scale = useMemo(() => {
         const pad = vp.w < 820 ? 8 : 48
@@ -320,10 +323,10 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 height: animated ? `${INTRO_VH}vh` : undefined,
                 minHeight: animated ? undefined : "100vh",
                 background: "#F3EFE6",
-                fontFamily: SANS,
+                fontFamily: family,
             }}
         >
-            <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&display=swap" rel="stylesheet" />
+            <link href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
             <div
                 style={{
@@ -382,6 +385,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 key={c.key}
                                 c={c}
                                 accent={accent}
+                                family={family}
                                 soundOn={soundOn}
                                 visible={revealed}
                                 onEnter={() => setHovered(c.key)}
@@ -398,15 +402,20 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                             <motion.div
                                 style={{ position: "absolute", inset: 0, background: "#F3EFE6", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40, padding: 24, opacity: welcomeOpacity, pointerEvents: "none" }}
                             >
-                                <h1 style={{ margin: 0, fontFamily: HAND, fontSize: "clamp(34px, 6vw, 72px)", color: "#111", textAlign: "center", fontWeight: 700 }}>
+                                <motion.h1
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 2, ease: "easeInOut", delay: 0.3 }}
+                                    style={{ margin: 0, fontFamily: ANNIE, fontSize: "clamp(38px, 7vw, 92px)", color: "#111", textAlign: "center", fontWeight: 400, lineHeight: 1.1 }}
+                                >
                                     {welcomeText}
-                                </h1>
+                                </motion.h1>
                             </motion.div>
                             <motion.div
-                                style={{ position: "absolute", bottom: 34, left: 0, right: 0, textAlign: "center", zIndex: 41, opacity: hintOpacity, color: "#111", fontFamily: HAND, fontSize: 26, pointerEvents: "none" }}
+                                style={{ position: "absolute", bottom: 34, left: 0, right: 0, textAlign: "center", zIndex: 41, opacity: hintOpacity, color: "#111", fontFamily: ANNIE, fontSize: 28, pointerEvents: "none" }}
                             >
-                                <div>scroll to set up the desk</div>
-                                <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ fontSize: 22 }}>↓</motion.div>
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 1.6 }}>scroll to set up the desk</motion.div>
+                                <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ fontSize: 24 }}>↓</motion.div>
                             </motion.div>
                         </>
                     )}
@@ -421,6 +430,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         visit={popup.popup.visit}
                         href={popup.popup.href}
                         accent={accent}
+                        family={family}
                         onClose={() => setPopup(null)}
                         onVisit={(h) => {
                             setPopup(null)
@@ -499,6 +509,7 @@ function originFor(key: string): string {
 function Hotspot({
     c,
     accent,
+    family,
     soundOn,
     visible,
     onEnter,
@@ -507,6 +518,7 @@ function Hotspot({
 }: {
     c: Click
     accent: string
+    family: string
     soundOn: boolean
     visible: boolean
     onEnter: () => void
@@ -538,7 +550,7 @@ function Hotspot({
                     transform: "translateX(-50%)",
                     background: accent,
                     color: "#fff",
-                    fontFamily: SANS,
+                    fontFamily: family,
                     fontWeight: 700,
                     fontSize: 12,
                     letterSpacing: 0.6,
@@ -561,6 +573,7 @@ function Popup({
     visit,
     href,
     accent,
+    family,
     onClose,
     onVisit,
 }: {
@@ -569,17 +582,18 @@ function Popup({
     visit?: string
     href?: string
     accent: string
+    family: string
     onClose: () => void
     onVisit: (href: string) => void
 }) {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(30,26,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: SANS }}>
-                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: SANS, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer" }}>X CLOSE</button>
-                <h3 style={{ fontFamily: HAND, fontSize: 40, margin: "0 0 12px", color: "#111" }}>{title}</h3>
+            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: family }}>
+                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: family, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer" }}>X CLOSE</button>
+                <h3 style={{ fontFamily: family, fontWeight: 700, fontSize: 30, margin: "0 0 12px", color: "#111", letterSpacing: "-0.01em" }}>{title}</h3>
                 <p style={{ fontSize: 16, lineHeight: 1.55, margin: "0 auto", maxWidth: 360, color: "#333" }}>{blurb}</p>
                 {visit && href && (
-                    <button type="button" onClick={() => onVisit(href)} style={{ marginTop: 22, fontFamily: SANS, fontWeight: 700, fontSize: 14, letterSpacing: 0.5, background: accent, color: "#fff", border: "none", padding: "12px 20px", cursor: "pointer", borderRadius: 4 }}>★ {visit} ★</button>
+                    <button type="button" onClick={() => onVisit(href)} style={{ marginTop: 22, fontFamily: family, fontWeight: 700, fontSize: 14, letterSpacing: 0.5, background: accent, color: "#fff", border: "none", padding: "12px 20px", cursor: "pointer", borderRadius: 4 }}>★ {visit} ★</button>
                 )}
             </motion.div>
         </motion.div>
@@ -589,4 +603,11 @@ function Popup({
 addPropertyControls(DeskWorkspace, {
     welcomeText: { type: ControlType.String, title: "Welcome", defaultValue: "hey, welcome to my workspace" },
     accent: { type: ControlType.Color, title: "Label Color", defaultValue: "#2C6BE0" },
+    font: {
+        type: ControlType.Font,
+        title: "Body Font",
+        controls: "extended",
+        defaultFontType: "sans-serif",
+        defaultValue: { fontSize: 15, variant: "Regular", lineHeight: "1.5em" },
+    },
 })

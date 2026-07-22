@@ -13,7 +13,18 @@ bold display + pixel/mono type). Strict **black & white with a single accent —
 electric blue (`#0F27FF`)**. This is a real multi-page site; the desk is the
 Home entry, not a container for all content, and it is **not** a fake OS/desktop.
 
-## Latest updates
+## Latest updates (fonts + pill bar + timing)
+
+- **Welcome message** now **slowly fades in** (≈2s) in **Annie Use Your Telescope**,
+  then fades out as you scroll.
+- **Scroll reveal is slower** (longer scroll distance + softer spring).
+- **Inter Display** is the site body font, with a **Font** control on the
+  components (DeskWorkspace, TopBar) so you can change it in Framer, plus
+  **Body** / **Heading** Text Style presets in the Styles panel.
+- **TopBar** redesigned into a **centered floating pill** (curved/cylinder) with
+  "NABIA SHAIKH NADEEM" + Work / Archive / Contact.
+
+## Earlier updates
 
 - **Scroll-controlled desk** (`DeskWorkspace`): the load is now driven by scroll
   (spring-smoothed) — a welcome message, then the **desk surface first**, then

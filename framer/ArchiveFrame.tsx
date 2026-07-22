@@ -7,7 +7,7 @@ import {
     useIsStaticRenderer,
 } from "framer"
 
-const SANS = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const SANS = '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
 // Heavy, very visible film grain.
 const GRAIN =
@@ -92,6 +92,7 @@ export default function ArchiveFrame(props: ArchiveFrameProps) {
                 ease: "easeInOut",
             }}
         >
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
             <button
                 type="button"
                 onClick={() => setOpen(true)}
