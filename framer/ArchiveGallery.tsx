@@ -43,72 +43,94 @@ const ARCHIVE_HASH = "969XNx9nZpgbsuyO98EvRf52B4w"
 const ARCHIVE_BOX: [number, number, number, number] = [300, 255, 450, 210]
 
 function ArchiveMascot() {
-    const [x, y, w, h] = ARCHIVE_BOX
-    // Large, flush to the bottom-right — matches the desk art scale in reference
-    const displayW = 420
-    const displayH = (h / w) * displayW
-    const scale = displayW / w
-    return (
-        <div
-            aria-hidden
-            style={{
-                position: "fixed",
-                right: 0,
-                bottom: 0,
-                width: displayW,
-                height: displayH,
-                zIndex: 40,
-                pointerEvents: "none",
-                overflow: "hidden",
-            }}
-        >
-            <div
-                style={{
-                    position: "absolute",
-                    width: STAGE_W * scale,
-                    height: STAGE_H * scale,
-                    left: -x * scale,
-                    top: -y * scale,
-                    backgroundImage: `url(https://framerusercontent.com/images/${ARCHIVE_HASH}.png)`,
-                    backgroundSize: "100% 100%",
-                    backgroundRepeat: "no-repeat",
-                }}
-            />
-        </div>
-    )
+    useEffect(() => {
+        if (typeof document === "undefined") return
+        const [x, y, w, h] = ARCHIVE_BOX
+        const displayW = 420
+        const displayH = (h / w) * displayW
+        const scale = displayW / w
+
+        const host = document.createElement("div")
+        host.setAttribute("aria-hidden", "true")
+        host.dataset.archiveMascot = "true"
+        Object.assign(host.style, {
+            position: "fixed",
+            right: "0px",
+            bottom: "0px",
+            width: `${displayW}px`,
+            height: `${displayH}px`,
+            zIndex: "40",
+            pointerEvents: "none",
+            overflow: "hidden",
+        } as Partial<CSSStyleDeclaration>)
+
+        const inner = document.createElement("div")
+        Object.assign(inner.style, {
+            position: "absolute",
+            width: `${STAGE_W * scale}px`,
+            height: `${STAGE_H * scale}px`,
+            left: `${-x * scale}px`,
+            top: `${-y * scale}px`,
+            backgroundImage: `url(https://framerusercontent.com/images/${ARCHIVE_HASH}.png)`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+        } as Partial<CSSStyleDeclaration>)
+        host.appendChild(inner)
+        document.body.appendChild(host)
+
+        return () => {
+            host.remove()
+        }
+    }, [])
+
+    return null
 }
 
 function ArchiveBack({ accent }: { accent: string }) {
-    return (
-        <a
-            href="/"
-            aria-label="Back to desk"
-            style={{
-                position: "fixed",
-                top: 22,
-                left: 22,
-                zIndex: 50,
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "10px 14px",
-                background: "rgba(255,255,255,0.92)",
-                border: "1.5px solid #111",
-                borderRadius: 999,
-                color: "#111",
-                textDecoration: "none",
-                fontFamily: SANS,
-                fontWeight: 600,
-                fontSize: 13,
-                letterSpacing: "-1px",
-                textTransform: "uppercase",
-                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-            }}
-        >
-            <span style={{ color: accent, fontSize: 16, lineHeight: 1 }}>←</span>
-            Back
-        </a>
-    )
+    useEffect(() => {
+        if (typeof document === "undefined") return
+        const a = document.createElement("a")
+        a.href = "/"
+        a.setAttribute("aria-label", "Back to desk")
+        a.textContent = ""
+        Object.assign(a.style, {
+            position: "fixed",
+            top: "22px",
+            left: "22px",
+            zIndex: "1200",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 14px",
+            background: "rgba(255,255,255,0.92)",
+            border: "1.5px solid #111",
+            borderRadius: "999px",
+            color: "#111",
+            textDecoration: "none",
+            fontFamily: SANS,
+            fontWeight: "600",
+            fontSize: "13px",
+            letterSpacing: "-1px",
+            textTransform: "uppercase",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            cursor: "pointer",
+            pointerEvents: "auto",
+        } as Partial<CSSStyleDeclaration>)
+
+        const arrow = document.createElement("span")
+        arrow.textContent = "←"
+        Object.assign(arrow.style, { color: accent, fontSize: "16px", lineHeight: "1" })
+        const label = document.createElement("span")
+        label.textContent = "Back"
+        a.append(arrow, label)
+        document.body.appendChild(a)
+
+        return () => {
+            a.remove()
+        }
+    }, [accent])
+
+    return null
 }
 
 /**
