@@ -39,11 +39,13 @@ const CREAM = "#F3EFE6"
 const STAGE_W = 1440
 const STAGE_H = 900
 const ARCHIVE_HASH = "969XNx9nZpgbsuyO98EvRf52B4w"
-const ARCHIVE_BOX: [number, number, number, number] = [329, 292, 384, 140]
+// Slightly padded crop so the boxes read clearly at large size
+const ARCHIVE_BOX: [number, number, number, number] = [300, 255, 450, 210]
 
 function ArchiveMascot() {
     const [x, y, w, h] = ARCHIVE_BOX
-    const displayW = 220
+    // Large, flush to the bottom-right — matches the desk art scale in reference
+    const displayW = 420
     const displayH = (h / w) * displayW
     const scale = displayW / w
     return (
@@ -55,7 +57,7 @@ function ArchiveMascot() {
                 bottom: 0,
                 width: displayW,
                 height: displayH,
-                zIndex: 1100,
+                zIndex: 40,
                 pointerEvents: "none",
                 overflow: "hidden",
             }}
@@ -73,6 +75,39 @@ function ArchiveMascot() {
                 }}
             />
         </div>
+    )
+}
+
+function ArchiveBack({ accent }: { accent: string }) {
+    return (
+        <a
+            href="/"
+            aria-label="Back to desk"
+            style={{
+                position: "fixed",
+                top: 22,
+                left: 22,
+                zIndex: 50,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "10px 14px",
+                background: "rgba(255,255,255,0.92)",
+                border: "1.5px solid #111",
+                borderRadius: 999,
+                color: "#111",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontWeight: 600,
+                fontSize: 13,
+                letterSpacing: "-1px",
+                textTransform: "uppercase",
+                boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
+            }}
+        >
+            <span style={{ color: accent, fontSize: 16, lineHeight: 1 }}>←</span>
+            Back
+        </a>
     )
 }
 
@@ -270,6 +305,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
 
             {RenderTarget.current() !== RenderTarget.canvas && (
                 <>
+                    <ArchiveBack accent={accent} />
                     <ArchiveMascot />
                     <AnimatePresence>
                         {open && (

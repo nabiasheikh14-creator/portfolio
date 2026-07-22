@@ -15,7 +15,7 @@ export const DESK_OBJECTS: Record<
     string,
     { hash: string; box: [number, number, number, number]; width: number }
 > = {
-    archive: { hash: "969XNx9nZpgbsuyO98EvRf52B4w", box: [329, 292, 384, 140], width: 220 },
+    archive: { hash: "969XNx9nZpgbsuyO98EvRf52B4w", box: [300, 255, 450, 210], width: 420 },
     laptop: { hash: "ffeeCWEVauyRc2jUztvEkKArptM", box: [570, 526, 354, 245], width: 210 },
     "projects-books": { hash: "z3PLroDJfbET05ZaDmzpA5lIAk", box: [560, 95, 190, 150], width: 160 },
     journal: { hash: "JPLbpkF1Jd17vRUT1rfmmgPhfQ", box: [241, 717, 167, 126], width: 150 },
