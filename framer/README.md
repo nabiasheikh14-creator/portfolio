@@ -13,6 +13,29 @@ bold display + pixel/mono type). Strict **black & white with a single accent —
 electric blue (`#0F27FF`)**. This is a real multi-page site; the desk is the
 Home entry, not a container for all content, and it is **not** a fake OS/desktop.
 
+## Current Home — `DeskWorkspace.tsx` (illustrated desk)
+
+The Home page now uses Nabia's uploaded **"Desk Animation"** illustration (layers
+of full-frame PNGs), rebuilt in code so it can animate and be interactive:
+
+- **Load sequence**: a handwritten "hey, welcome to my workspace" message
+  dissolves in (black), then the desk background appears and each element is
+  "placed" one-by-one with a smooth staggered spring settle.
+- **Hover**: clickable objects jiggle (rotate/scale) in place.
+- **Radio (boombox)**: toggles ambient **rain** (synthesized via WebAudio —
+  starts on first tap per browser autoplay rules); the **speaker** layers fade
+  in/out to show whether sound is playing.
+- **Labels**: each clickable object has a small blue label (SOUND, PROJECTS,
+  ARCHIVE, WORK, JOURNAL, NOTES, CALL, CHUTNEY, SCHEDULE, SOORAJ).
+- **Actions**: the **work laptop** → `/work` page and **archive** → `/archive`
+  page (hard flash-wipe). Everything else opens a **graphic pop-up** (white
+  card, thin border, bold `X CLOSE`, centered content, optional `★ VISIT ★`).
+- The central laptop is one object in the art, so "laptop"/"work-laptop" are
+  treated as a single `WORK` → `/work` action.
+
+`Y2KHome.tsx` (the earlier B&W kinetic home) and `SiteRoutes.tsx` remain in the
+project but Home now renders `DeskWorkspace`.
+
 ## Pages
 
 | Route | What |
