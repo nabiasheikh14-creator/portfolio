@@ -61,9 +61,9 @@ function slugFromPath(): string {
  * Final design → Outcome → Reflection.
  *
  * @framerIntrinsicWidth 1200
- * @framerIntrinsicHeight 900
+ * @framerIntrinsicHeight 2400
  * @framerSupportedLayoutWidth any-prefer-fixed
- * @framerSupportedLayoutHeight any-prefer-fixed
+ * @framerSupportedLayoutHeight any
  */
 export default function WorkCase(props: WorkCaseProps) {
     const { catalog = DEFAULT_CATALOG, gridOpacity = 0.12 } = props
@@ -147,16 +147,30 @@ export default function WorkCase(props: WorkCaseProps) {
         )
     }
 
+    // Framer may pass a collapsed width/height via props.style — never let that win.
+    const framerStyle = { ...(props.style || {}) } as CSSProperties
+    delete framerStyle.width
+    delete framerStyle.height
+    delete framerStyle.minWidth
+    delete framerStyle.minHeight
+    delete framerStyle.maxWidth
+    delete framerStyle.maxHeight
+
     return (
         <div
             style={{
+                ...framerStyle,
                 position: "relative",
                 width: "100%",
+                minWidth: 0,
+                maxWidth: "100%",
+                height: "auto",
                 minHeight: isStatic ? "100%" : "100vh",
                 background: CREAM,
                 color: INK,
                 fontFamily: SANS,
-                ...props.style,
+                boxSizing: "border-box",
+                overflow: "visible",
             }}
         >
             <link
@@ -190,14 +204,14 @@ export default function WorkCase(props: WorkCaseProps) {
                 }}
             >
                 {/* ——— HERO (5-second skim) ——— */}
+                {/* auto-fit: no @media — Framer strips media queries from code-component <style> */}
                 <div
                     style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                         gap: 28,
                         marginBottom: 36,
                     }}
-                    className="case-hero"
                 >
                     <MetaCol label="project">
                         <h1
@@ -335,10 +349,9 @@ export default function WorkCase(props: WorkCaseProps) {
                     <div
                         style={{
                             display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
                             gap: 20,
                         }}
-                        className="case-split"
                     >
                         <TextCard title="Goals" body={project.goals} accent={project.accent} />
                         <TextCard
@@ -362,10 +375,10 @@ export default function WorkCase(props: WorkCaseProps) {
                         <div
                             style={{
                                 display: "grid",
-                                gridTemplateColumns: `repeat(${Math.min(3, decisions.length)}, minmax(0, 1fr))`,
+                                gridTemplateColumns:
+                                    "repeat(auto-fit, minmax(220px, 1fr))",
                                 gap: 16,
                             }}
-                            className="case-decisions"
                         >
                             {decisions.map((d, i) => (
                                 <TextCard
@@ -384,11 +397,10 @@ export default function WorkCase(props: WorkCaseProps) {
                 <div
                     style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                         gap: 16,
                         marginBottom: 56,
                     }}
-                    className="case-split"
                 >
                     <MediaBlock
                         src={project.finalImage1}
@@ -472,14 +484,6 @@ export default function WorkCase(props: WorkCaseProps) {
                 )}
             </div>
 
-            <style>{`
-                @media (max-width: 900px) {
-                    .case-hero, .case-split, .case-decisions { grid-template-columns: 1fr 1fr !important; }
-                }
-                @media (max-width: 560px) {
-                    .case-hero, .case-split, .case-decisions { grid-template-columns: 1fr !important; }
-                }
-            `}</style>
         </div>
     )
 }
