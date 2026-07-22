@@ -5,6 +5,7 @@ import {
     useState,
     startTransition,
     type CSSProperties,
+    type MutableRefObject,
 } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -23,7 +24,6 @@ const GRID_BG =
 interface GalleryItem {
     title: string
     description: string
-    /** Image URL from the Archive CMS */
     imageUrl: string
 }
 
@@ -32,16 +32,14 @@ interface ArchiveGalleryProps {
     accent: string
     columns: number
     gridOpacity: number
-    /** How tall the scroll track is (more = longer scroll influence), in vh */
-    scrollLength: number
     style?: CSSProperties
 }
 
 /**
- * Archive Gallery — AIC Creator Awards–style:
- * 4 columns auto-drift slowly in opposite directions; page scroll speeds them
- * up (cols 1+3 one way, 2+4 the other). Content loops forever. No edge masks.
- * Bind / sync items from the Archive CMS collection.
+ * Archive Gallery — fixed full-viewport black stage (page does NOT scroll).
+ * Columns 1+3 and 2+4 auto-drift opposite ways in an infinite loop.
+ * Mouse wheel / trackpad speeds the columns (does not move the page).
+ * Items synced from the Archive CMS.
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 900
@@ -54,12 +52,16 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         accent = "#2C6BE0",
         columns = 4,
         gridOpacity = 0.1,
-        scrollLength = 320,
     } = props
 
     const isStatic = useIsStaticRenderer()
     const [open, setOpen] = useState<GalleryItem | null>(null)
     const colCount = Math.max(2, Math.min(5, Math.round(columns)))
+
+    // Shared speed multiplier for all columns (wheel boosts this)
+    const speedRef = useRef(1)
+    const scrollingRef = useRef(false)
+    const scrollTimeout = useRef<number | null>(null)
 
     const sourceItems = useMemo(() => {
         const normalized = (items || [])
@@ -80,19 +82,70 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         return normalized.length ? normalized : DEFAULT_ITEMS
     }, [items])
 
-    // Distribute across columns, then repeat enough times for a seamless loop
     const colItems = useMemo(() => {
         const buckets: GalleryItem[][] = Array.from({ length: colCount }, () => [])
         sourceItems.forEach((item, i) => {
             buckets[i % colCount].push(item)
         })
-        // Ensure each column has at least a few tiles
         return buckets.map((col) => {
             const base = col.length ? col : sourceItems
-            // 4 copies → loop on 25% of track height
             return [...base, ...base, ...base, ...base]
         })
     }, [sourceItems, colCount])
+
+    // Lock page scroll on this route; wheel only drives column speed
+    useEffect(() => {
+        if (isStatic || typeof window === "undefined") return
+
+        const html = document.documentElement
+        const body = document.body
+        const prevHtmlOverflow = html.style.overflow
+        const prevBodyOverflow = body.style.overflow
+        const prevHtmlBg = html.style.background
+        const prevBodyBg = body.style.background
+
+        html.style.overflow = "hidden"
+        body.style.overflow = "hidden"
+        html.style.background = "#050505"
+        body.style.background = "#050505"
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault()
+            scrollingRef.current = true
+            const delta = Math.abs(e.deltaY)
+            const goingDown = e.deltaY > 0
+            const bump = Math.min(8, 0.06 * delta)
+            if (goingDown) {
+                speedRef.current = Math.min(speedRef.current + bump, 36)
+            } else {
+                speedRef.current = Math.max(speedRef.current - bump, -36)
+            }
+            if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current)
+            scrollTimeout.current = window.setTimeout(() => {
+                scrollingRef.current = false
+            }, 50)
+        }
+
+        // Settle speed back toward idle (1)
+        const settle = window.setInterval(() => {
+            if (scrollingRef.current) return
+            const s = speedRef.current
+            if (s > 1) speedRef.current = Math.max(s - 0.9, 1)
+            else if (s < 1) speedRef.current = Math.min(s + 0.9, 1)
+        }, 25)
+
+        window.addEventListener("wheel", onWheel, { passive: false })
+
+        return () => {
+            window.removeEventListener("wheel", onWheel)
+            window.clearInterval(settle)
+            if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current)
+            html.style.overflow = prevHtmlOverflow
+            body.style.overflow = prevBodyOverflow
+            html.style.background = prevHtmlBg
+            body.style.background = prevBodyBg
+        }
+    }, [isStatic])
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -119,9 +172,10 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
             style={{
                 position: "relative",
                 width: "100%",
-                height: isStatic ? "100%" : `${scrollLength}vh`,
+                height: isStatic ? "100%" : "100vh",
                 minHeight: "100vh",
                 background: "#050505",
+                overflow: "hidden",
                 fontFamily: SANS,
                 ...props.style,
             }}
@@ -131,58 +185,46 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 rel="stylesheet"
             />
 
-            {/* Full-bleed black stage — no edge masks / vignettes */}
+            {/* Desk grid at low opacity — inside the black stage only */}
+            <div
+                aria-hidden
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundImage: `url(${GRID_BG})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    opacity: gridOpacity,
+                    pointerEvents: "none",
+                    filter: "grayscale(1) brightness(0.35)",
+                    zIndex: 0,
+                }}
+            />
+
             <div
                 style={{
-                    position: isStatic ? "relative" : "sticky",
-                    top: 0,
-                    height: "100vh",
-                    width: "100%",
+                    position: "relative",
                     zIndex: 1,
-                    background: "#050505",
+                    display: "flex",
+                    gap: 14,
+                    padding: "0 14px",
+                    boxSizing: "border-box",
+                    height: "100%",
+                    width: "100%",
                     overflow: "hidden",
                 }}
             >
-                {/* Desk grid only inside the black stage (low opacity) */}
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        backgroundImage: `url(${GRID_BG})`,
-                        backgroundSize: "cover",
-                        backgroundPosition: "center",
-                        opacity: gridOpacity,
-                        pointerEvents: "none",
-                        filter: "grayscale(1) brightness(0.35)",
-                        zIndex: 0,
-                    }}
-                />
-
-                <div
-                    style={{
-                        position: "relative",
-                        zIndex: 1,
-                        display: "flex",
-                        gap: 14,
-                        padding: "0 14px",
-                        boxSizing: "border-box",
-                        height: "100%",
-                        width: "100%",
-                        overflow: "hidden",
-                    }}
-                >
-                    {colItems.map((col, ci) => (
-                        <Column
-                            key={ci}
-                            items={col}
-                            index={ci}
-                            accent={accent}
-                            animated={!isStatic}
-                            onOpen={(item) => startTransition(() => setOpen(item))}
-                        />
-                    ))}
-                </div>
+                {colItems.map((col, ci) => (
+                    <Column
+                        key={ci}
+                        items={col}
+                        index={ci}
+                        accent={accent}
+                        animated={!isStatic}
+                        speedRef={speedRef}
+                        onOpen={(item) => startTransition(() => setOpen(item))}
+                    />
+                ))}
             </div>
 
             {RenderTarget.current() !== RenderTarget.canvas && (
@@ -200,70 +242,31 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
     )
 }
 
-/**
- * One vertical column. Even columns drift up; odd drift down.
- * Page scroll raises timeScale (AIC pattern); settles back to idle when idle.
- */
 function Column({
     items,
     index,
     accent,
     animated,
+    speedRef,
     onOpen,
 }: {
     items: GalleryItem[]
     index: number
     accent: string
     animated: boolean
+    speedRef: MutableRefObject<number>
     onOpen: (item: GalleryItem) => void
 }) {
     const trackRef = useRef<HTMLDivElement>(null)
     const offsetRef = useRef(0)
-    const speedRef = useRef(1) // timeScale, AIC-style
-    const lastScrollY = useRef(0)
-    const scrollingRef = useRef(false)
-    const scrollTimeout = useRef<number | null>(null)
     const loopH = useRef(1)
 
     // Even cols → up (−), odd cols → down (+)
     const direction = index % 2 === 0 ? -1 : 1
-    const idlePxPerSec = 18 // slow auto drift
+    const idlePxPerSec = 16
 
     useEffect(() => {
         if (!animated || typeof window === "undefined") return
-
-        lastScrollY.current = window.scrollY
-
-        const onScroll = () => {
-            scrollingRef.current = true
-            const y = Math.max(0, window.scrollY)
-            const delta = Math.abs(y - lastScrollY.current)
-            const goingDown = y > lastScrollY.current
-            lastScrollY.current = y
-
-            // Boost timeScale from scroll — mirrors AIC (clamped ±~40)
-            const bump = 0.08 * delta
-            if (goingDown) {
-                speedRef.current = Math.min(speedRef.current + bump, 40)
-            } else {
-                speedRef.current = Math.max(speedRef.current - bump, -40)
-            }
-
-            if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current)
-            scrollTimeout.current = window.setTimeout(() => {
-                scrollingRef.current = false
-            }, 40)
-        }
-
-        window.addEventListener("scroll", onScroll, { passive: true })
-
-        // Settle timeScale back toward 1 when not scrolling
-        const settle = window.setInterval(() => {
-            if (scrollingRef.current) return
-            const s = speedRef.current
-            if (s > 1) speedRef.current = Math.max(s - 0.85, 1)
-            else if (s < 1) speedRef.current = Math.min(s + 0.85, 1)
-        }, 25)
 
         let raf = 0
         let last = performance.now()
@@ -271,11 +274,9 @@ function Column({
         const measure = () => {
             const el = trackRef.current
             if (!el) return
-            // 4 copies → one loop is 1/4 of scrollHeight
             loopH.current = Math.max(1, el.scrollHeight / 4)
         }
 
-        // Remeasure after images load
         const ro =
             typeof ResizeObserver !== "undefined"
                 ? new ResizeObserver(measure)
@@ -294,7 +295,6 @@ function Column({
             offsetRef.current += px
 
             const h = loopH.current
-            // Wrap into [0, h)
             if (offsetRef.current >= h) offsetRef.current -= h
             if (offsetRef.current < 0) offsetRef.current += h
 
@@ -307,12 +307,9 @@ function Column({
 
         return () => {
             cancelAnimationFrame(raf)
-            window.clearInterval(settle)
-            if (scrollTimeout.current) window.clearTimeout(scrollTimeout.current)
-            window.removeEventListener("scroll", onScroll)
             ro?.disconnect()
         }
-    }, [animated, direction])
+    }, [animated, direction, speedRef])
 
     return (
         <div
@@ -331,7 +328,7 @@ function Column({
                     flexDirection: "column",
                     gap: 14,
                     willChange: animated ? "transform" : undefined,
-                    paddingTop: index % 2 === 0 ? 0 : 40, // stagger columns like AIC
+                    paddingTop: index % 2 === 0 ? 0 : 40,
                 }}
             >
                 {items.map((item, ii) => (
@@ -597,14 +594,5 @@ addPropertyControls(ArchiveGallery, {
         min: 0,
         max: 0.4,
         step: 0.01,
-    },
-    scrollLength: {
-        type: ControlType.Number,
-        title: "Scroll Length (vh)",
-        defaultValue: 320,
-        min: 150,
-        max: 600,
-        step: 10,
-        displayStepper: true,
     },
 })
