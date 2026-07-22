@@ -378,7 +378,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     const [hovered, setHovered] = useState<string | null>(null)
     const [popup, setPopup] = useState<Click | null>(null)
-    const [flash, setFlash] = useState(false)
     // All desk interactions (page links, popups, hover jiggles) unlock together
     // once the welcome fades and the illustration starts revealing.
     const [deskReady, setDeskReady] = useState(!animated)
@@ -457,23 +456,12 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         }
     }
 
-    function goToDeskPage(path: string) {
-        const clean = path.startsWith("/") ? path : `/${String(path).replace(/^\.\//, "")}`
-        // Hard navigate with origin — Framer's relative SPA routing can 404
-        // (/work/archive) when these desk links are treated as nested paths.
-        const url = `${window.location.origin}${clean}`
-        setPopup(null)
-        setFlash(true)
-        window.setTimeout(() => {
-            window.location.href = url
-        }, 120)
-    }
-
     function activate(c: Click) {
         playUiClick()
         if (c.action === "sound") return toggleSound()
         if (c.action === "page" && c.href) {
-            goToDeskPage(c.href)
+            // Page hotspots are real <a href> — native navigation handles routing.
+            // (A previous full-screen "flash" overlay could get stuck and block all clicks.)
             return
         }
         // Replace any open modal so popup targets never feel stuck/dead.
@@ -741,23 +729,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 )}
             </AnimatePresence>
 
-            <AnimatePresence>
-                {flash && (
-                    <motion.div
-                        initial={{ scaleY: 0 }}
-                        animate={{ scaleY: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.24, ease: "easeIn" }}
-                        style={{
-                            position: "fixed",
-                            inset: 0,
-                            background: "#111",
-                            transformOrigin: "bottom",
-                            zIndex: 90,
-                        }}
-                    />
-                )}
-            </AnimatePresence>
         </div>
     )
 }
@@ -930,18 +901,14 @@ function Hotspot({
         </motion.span>
     )
 
-    // Real absolute links for Work / Archive (hard navigation in activate).
+    // Native links for Work / Archive — do not preventDefault (lets Framer route).
     if (c.action === "page" && c.href) {
         const path = c.href.startsWith("/")
             ? c.href
             : `/${String(c.href).replace(/^\.\//, "")}`
-        const abs =
-            typeof window !== "undefined"
-                ? `${window.location.origin}${path}`
-                : path
         return (
             <a
-                href={abs}
+                href={path}
                 aria-label={c.label}
                 data-desk-page={c.key}
                 data-desk-path={path}
@@ -949,9 +916,8 @@ function Hotspot({
                 onMouseLeave={onLeave}
                 onFocus={onEnter}
                 onBlur={onLeave}
-                onClick={(e) => {
-                    e.preventDefault()
-                    e.stopPropagation()
+                onClick={() => {
+                    // Click sound only; browser/Framer follow href.
                     onClick()
                 }}
                 style={boxStyle}
