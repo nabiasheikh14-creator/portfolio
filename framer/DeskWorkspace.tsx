@@ -5,6 +5,7 @@ import {
     useState,
     startTransition,
     type CSSProperties,
+    type ReactNode,
 } from "react"
 import {
     motion,
@@ -24,12 +25,14 @@ import {
 
 const STAGE_W = 1440
 const STAGE_H = 900
-const INTRO_VH = 480 // more scroll distance = slower reveal
+const INTRO_VH = 480
 const IMG = "https://framerusercontent.com/images/"
 
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const INTER =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const INK = "#111111"
+const MUTED = "#444444"
 
 interface Layer {
     key: string
@@ -82,8 +85,6 @@ const LAYERS: Layer[] = [
     { key: "sooraj-2", hash: "O3MmyItiSJFvHk9GjYSG9NdqSc" },
 ]
 
-// Reveal order (what appears first as you scroll) — base/surface first so
-// objects that sit on the desk come after it. Z-order stays = LAYERS order.
 const REVEAL_ORDER = [
     "bg",
     "desk",
@@ -128,6 +129,14 @@ const REVEAL_ORDER = [
 const REVEAL_START = 0.08
 const REVEAL_END = 0.96
 
+type PopupKind =
+    | "experience"
+    | "schedule"
+    | "socials"
+    | "chutney"
+    | "substack"
+    | "about"
+
 type Action = "popup" | "page" | "sound"
 interface Click {
     key: string
@@ -137,36 +146,121 @@ interface Click {
     href?: string
     jiggle?: string[]
     labelPos?: "above" | "below"
-    popup?: { heading: string; blurb: string; href?: string; visit?: string }
+    popupKind?: PopupKind
 }
 
 const CLICKS: Click[] = [
-    { key: "archive", box: [329, 292, 384, 140], label: "ARCHIVE", action: "page", href: "/archive" },
-    { key: "laptop", box: [570, 526, 354, 245], label: "WORK", action: "page", href: "/work", jiggle: ["laptop", "work-laptop"], labelPos: "below" },
-    { key: "projects-books", box: [560, 95, 190, 150], label: "PROJECTS", action: "page", href: "/work", labelPos: "below" },
-    { key: "radiobox", box: [366, 51, 190, 133], label: "SOUND", action: "sound", labelPos: "below" },
-    { key: "journal", box: [241, 717, 167, 126], label: "JOURNAL", action: "popup", popup: { heading: "THE JOURNAL", blurb: "Day-to-day notes, sketches, and process. Mostly thinking out loud." } },
-    { key: "notes", box: [1056, 691, 113, 88], label: "NOTES", action: "popup", popup: { heading: "STICKY BRAIN", blurb: "Configs, wireframes and reminders I swear I'll get to." } },
-    { key: "chutney", box: [542, 493, 84, 75], label: "CHUTNEY", action: "popup", popup: { heading: "CHUTNEY STUDIOS", blurb: "My after-hours studio — branding and sites for small, good-taste brands.", visit: "VISIT STUDIO", href: "/about" } },
-    { key: "phone", box: [963, 717, 100, 98], label: "CALL", action: "popup", popup: { heading: "SAY HELLO", blurb: "Ring ring. Email or a DM works too — I actually pick up.", visit: "CONTACT ME", href: "/contact" } },
-    { key: "briefcase-calendar", box: [388, 485, 76, 68], label: "SCHEDULE", action: "popup", popup: { heading: "THE SCHEDULE", blurb: "Booked with client work + content. Grab a slot if you want to team up." } },
-    { key: "sooraj", box: [556, 428, 68, 60], label: "SOORAJ", action: "popup", popup: { heading: "SOORAJ", blurb: "A little friend keeping me company on the desk. Say hi." } },
+    {
+        key: "archive",
+        box: [329, 292, 384, 140],
+        label: "ARCHIVE",
+        action: "page",
+        href: "/archive",
+    },
+    {
+        key: "laptop",
+        box: [570, 526, 354, 245],
+        label: "WORK",
+        action: "page",
+        href: "/work",
+        jiggle: ["laptop", "work-laptop"],
+        labelPos: "below",
+    },
+    {
+        key: "projects-books",
+        box: [560, 95, 190, 150],
+        label: "EXPERIENCE",
+        action: "popup",
+        popupKind: "experience",
+        labelPos: "below",
+    },
+    {
+        key: "radiobox",
+        box: [366, 51, 190, 133],
+        label: "SOUND",
+        action: "sound",
+        labelPos: "below",
+    },
+    {
+        key: "journal",
+        box: [241, 717, 167, 126],
+        label: "GET TO KNOW ME",
+        action: "popup",
+        popupKind: "about",
+    },
+    {
+        key: "notes",
+        box: [1056, 691, 113, 88],
+        label: "SUBSTACK",
+        action: "popup",
+        popupKind: "substack",
+    },
+    {
+        key: "chutney",
+        box: [542, 493, 84, 75],
+        label: "CHUTNEY STUDIOS",
+        action: "popup",
+        popupKind: "chutney",
+    },
+    {
+        key: "phone",
+        box: [963, 717, 100, 98],
+        label: "SOCIALS",
+        action: "popup",
+        popupKind: "socials",
+    },
+    {
+        key: "briefcase-calendar",
+        box: [388, 485, 76, 68],
+        label: "SCHEDULE",
+        action: "popup",
+        popupKind: "schedule",
+    },
 ]
-const CLICKS_ORDERED = [...CLICKS].sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
+const CLICKS_ORDERED = [...CLICKS].sort(
+    (a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3],
+)
+
+interface ExperienceJob {
+    company: string
+    role: string
+    duration: string
+    status: string
+    learning1: string
+    learning2: string
+    learning3: string
+    learning4: string
+    order?: number
+    slug?: string
+}
 
 interface DeskWorkspaceProps {
     welcomeText: string
     accent: string
     font?: { fontFamily?: string }
+    experience: ExperienceJob[]
+    clients: string[]
+    email: string
+    instagramUrl: string
+    linkedinUrl: string
+    chutneyHeading: string
+    chutneyText: string
+    chutneyImage: string
+    chutneyLink: string
+    chutneyLinkLabel: string
+    substackText: string
+    substackImage: string
+    substackUrl: string
+    aboutMessage: string
+    aboutImage: string
     style?: CSSProperties
 }
 
 /**
- * Desk Workspace — Nabia's illustrated desk (layered PNGs), revealed by scroll:
- * a welcome message, then the desk surface, then each object is "placed" as you
- * scroll. Objects jiggle on hover, the radio toggles rain (speakers show when
- * playing), and each object opens a pop-up — except the work laptop / projects
- * (→ Work page) and archive (→ Archive page).
+ * Desk Workspace — illustrated desk homepage.
+ * Labels open in-page popups (no sticky/mascot crops inside modals).
+ * Experience is CMS-backed; Schedule / Socials / Chutney / Substack / About
+ * are structured popups editable via property controls.
  *
  * @framerIntrinsicWidth 1440
  * @framerIntrinsicHeight 900
@@ -174,7 +268,25 @@ interface DeskWorkspaceProps {
  * @framerSupportedLayoutHeight any-prefer-fixed
  */
 export default function DeskWorkspace(props: DeskWorkspaceProps) {
-    const { welcomeText = "hey, welcome to my workspace", accent = "#2C6BE0" } = props
+    const {
+        welcomeText = "hey, welcome to my workspace",
+        accent = "#2C6BE0",
+        experience = DEFAULT_EXPERIENCE,
+        clients = DEFAULT_CLIENTS,
+        email = "hello@example.com",
+        instagramUrl = "https://instagram.com/",
+        linkedinUrl = "https://linkedin.com/",
+        chutneyHeading = "Chutney Studios",
+        chutneyText = "My after-hours studio — branding and sites for small, good-taste brands.",
+        chutneyImage = "",
+        chutneyLink = "https://",
+        chutneyLinkLabel = "Visit studio",
+        substackText = "Hey, naming side quests I have a substack too! Follow my writing",
+        substackImage = "",
+        substackUrl = "https://substack.com/",
+        aboutMessage = "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
+        aboutImage = "",
+    } = props
     const family = props.font?.fontFamily || INTER
 
     const isStatic = useIsStaticRenderer()
@@ -206,8 +318,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
     const hintOpacity = useTransform(p, [0, 0.05], [1, 0])
 
-    // Cover the viewport edge-to-edge (like the bg layer filling the screen),
-    // instead of letterboxing with cream margins.
     const scale = useMemo(() => {
         return Math.max(vp.w / STAGE_W, vp.h / STAGE_H)
     }, [vp])
@@ -224,7 +334,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         if (!animated) setRevealed(true)
     }, [animated])
 
-    // rain sound
     const [soundOn, setSoundOn] = useState(true)
     const [playing, setPlaying] = useState(false)
     const audioRef = useRef<{ ctx: AudioContext; gain: GainNode } | null>(null)
@@ -236,7 +345,10 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             return
         }
         try {
-            const AC = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+            const AC =
+                window.AudioContext ||
+                (window as unknown as { webkitAudioContext: typeof AudioContext })
+                    .webkitAudioContext
             const ctx = new AC()
             const size = 2 * ctx.sampleRate
             const buffer = ctx.createBuffer(1, size, ctx.sampleRate)
@@ -301,7 +413,13 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     }
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
-        return <img src={`${IMG}uTiMeYZo7Cgq17Mt2w60JYMnptc.png`} alt="Desk" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        return (
+            <img
+                src={`${IMG}uTiMeYZo7Cgq17Mt2w60JYMnptc.png`}
+                alt="Desk"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+        )
     }
 
     const jiggleFor = (key: string): boolean => {
@@ -311,6 +429,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         return c.key === key || (c.jiggle?.includes(key) ?? false)
     }
     const revealCount = REVEAL_ORDER.length
+
+    const jobs = normalizeExperience(experience)
 
     return (
         <div
@@ -325,9 +445,13 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 minHeight: animated ? undefined : "100vh",
                 background: "#F3EFE6",
                 fontFamily: family,
+                ...stripSize(props.style),
             }}
         >
-            <link href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+            <link
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@300;400;500;600;700&display=swap"
+                rel="stylesheet"
+            />
 
             <div
                 style={{
@@ -358,15 +482,26 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                     key={l.key}
                                     src={`${IMG}${l.hash}.png`}
                                     alt=""
-                                    animate={{ opacity: playing ? 1 : 0, scale: playing ? [1, 1.015, 1] : 1 }}
-                                    transition={{ opacity: { duration: 0.4 }, scale: { duration: 0.9, repeat: playing ? Infinity : 0 } }}
+                                    animate={{
+                                        opacity: playing ? 1 : 0,
+                                        scale: playing ? [1, 1.015, 1] : 1,
+                                    }}
+                                    transition={{
+                                        opacity: { duration: 0.4 },
+                                        scale: {
+                                            duration: 0.9,
+                                            repeat: playing ? Infinity : 0,
+                                        },
+                                    }}
                                     style={layerImgStyle}
                                 />
                             )
                         }
                         const ri = REVEAL_ORDER.indexOf(l.key)
                         const idx = ri < 0 ? revealCount - 1 : ri
-                        const t = REVEAL_START + (idx / (revealCount - 1)) * (REVEAL_END - REVEAL_START)
+                        const t =
+                            REVEAL_START +
+                            (idx / (revealCount - 1)) * (REVEAL_END - REVEAL_START)
                         return (
                             <RevealLayer
                                 key={l.key}
@@ -380,7 +515,14 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         )
                     })}
 
-                    <div style={{ position: "absolute", inset: 0, zIndex: 20, pointerEvents: revealed ? "auto" : "none" }}>
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: 20,
+                            pointerEvents: revealed ? "auto" : "none",
+                        }}
+                    >
                         {CLICKS_ORDERED.map((c) => (
                             <Hotspot
                                 key={c.key}
@@ -390,7 +532,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 soundOn={soundOn}
                                 visible={revealed}
                                 onEnter={() => setHovered(c.key)}
-                                onLeave={() => setHovered((h) => (h === c.key ? null : h))}
+                                onLeave={() =>
+                                    setHovered((h) => (h === c.key ? null : h))
+                                }
                                 onClick={() => activate(c)}
                             />
                         ))}
@@ -401,22 +545,69 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                     {animated && (
                         <>
                             <motion.div
-                                style={{ position: "absolute", inset: 0, background: "#F3EFE6", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 40, padding: 24, opacity: welcomeOpacity, pointerEvents: "none" }}
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    background: "#F3EFE6",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    zIndex: 40,
+                                    padding: 24,
+                                    opacity: welcomeOpacity,
+                                    pointerEvents: "none",
+                                }}
                             >
                                 <motion.h1
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
-                                    transition={{ duration: 2, ease: "easeInOut", delay: 0.3 }}
-                                    style={{ margin: 0, fontFamily: ANNIE, fontSize: "clamp(38px, 7vw, 92px)", color: "#111", textAlign: "center", fontWeight: 400, lineHeight: 1.1 }}
+                                    transition={{
+                                        duration: 2,
+                                        ease: "easeInOut",
+                                        delay: 0.3,
+                                    }}
+                                    style={{
+                                        margin: 0,
+                                        fontFamily: ANNIE,
+                                        fontSize: "clamp(38px, 7vw, 92px)",
+                                        color: "#111",
+                                        textAlign: "center",
+                                        fontWeight: 400,
+                                        lineHeight: 1.1,
+                                    }}
                                 >
                                     {welcomeText}
                                 </motion.h1>
                             </motion.div>
                             <motion.div
-                                style={{ position: "absolute", bottom: 34, left: 0, right: 0, textAlign: "center", zIndex: 41, opacity: hintOpacity, color: "#111", fontFamily: ANNIE, fontSize: 28, pointerEvents: "none" }}
+                                style={{
+                                    position: "absolute",
+                                    bottom: 34,
+                                    left: 0,
+                                    right: 0,
+                                    textAlign: "center",
+                                    zIndex: 41,
+                                    opacity: hintOpacity,
+                                    color: "#111",
+                                    fontFamily: ANNIE,
+                                    fontSize: 28,
+                                    pointerEvents: "none",
+                                }}
                             >
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.4, delay: 1.6 }}>scroll to set up the desk</motion.div>
-                                <motion.div animate={{ y: [0, 7, 0] }} transition={{ duration: 1.4, repeat: Infinity }} style={{ fontSize: 24 }}>↓</motion.div>
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    transition={{ duration: 1.4, delay: 1.6 }}
+                                >
+                                    scroll to set up the desk
+                                </motion.div>
+                                <motion.div
+                                    animate={{ y: [0, 7, 0] }}
+                                    transition={{ duration: 1.4, repeat: Infinity }}
+                                    style={{ fontSize: 24 }}
+                                >
+                                    ↓
+                                </motion.div>
                             </motion.div>
                         </>
                     )}
@@ -424,34 +615,117 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             </div>
 
             <AnimatePresence>
-                {popup && popup.popup && (
-                    <Popup
-                        title={popup.popup.heading}
-                        blurb={popup.popup.blurb}
-                        visit={popup.popup.visit}
-                        href={popup.popup.href}
+                {popup?.popupKind === "experience" && (
+                    <ExperiencePopup
+                        jobs={jobs}
+                        clients={clients}
                         accent={accent}
                         family={family}
-                        objectKey={popup.key === "briefcase-calendar" ? "schedule" : popup.key}
                         onClose={() => setPopup(null)}
-                        onVisit={(h) => {
-                            setPopup(null)
-                            setFlash(true)
-                            window.setTimeout(() => {
-                                window.location.href = h
-                            }, 260)
-                        }}
+                    />
+                )}
+                {popup?.popupKind === "schedule" && (
+                    <SchedulePopup
+                        email={email}
+                        accent={accent}
+                        family={family}
+                        onClose={() => setPopup(null)}
+                    />
+                )}
+                {popup?.popupKind === "socials" && (
+                    <SocialsPopup
+                        instagramUrl={instagramUrl}
+                        linkedinUrl={linkedinUrl}
+                        accent={accent}
+                        family={family}
+                        onClose={() => setPopup(null)}
+                    />
+                )}
+                {popup?.popupKind === "chutney" && (
+                    <MediaCtaPopup
+                        heading={chutneyHeading}
+                        text={chutneyText}
+                        image={chutneyImage}
+                        link={chutneyLink}
+                        linkLabel={chutneyLinkLabel}
+                        accent={accent}
+                        family={family}
+                        onClose={() => setPopup(null)}
+                    />
+                )}
+                {popup?.popupKind === "substack" && (
+                    <MediaCtaPopup
+                        heading="Substack"
+                        text={substackText}
+                        image={substackImage}
+                        link={substackUrl}
+                        linkLabel="Read on Substack"
+                        accent={accent}
+                        family={family}
+                        handwritten
+                        onClose={() => setPopup(null)}
+                    />
+                )}
+                {popup?.popupKind === "about" && (
+                    <AboutPopup
+                        message={aboutMessage}
+                        image={aboutImage}
+                        accent={accent}
+                        family={family}
+                        onClose={() => setPopup(null)}
                     />
                 )}
             </AnimatePresence>
 
             <AnimatePresence>
                 {flash && (
-                    <motion.div initial={{ scaleY: 0 }} animate={{ scaleY: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.24, ease: "easeIn" }} style={{ position: "fixed", inset: 0, background: "#111", transformOrigin: "bottom", zIndex: 90 }} />
+                    <motion.div
+                        initial={{ scaleY: 0 }}
+                        animate={{ scaleY: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.24, ease: "easeIn" }}
+                        style={{
+                            position: "fixed",
+                            inset: 0,
+                            background: "#111",
+                            transformOrigin: "bottom",
+                            zIndex: 90,
+                        }}
+                    />
                 )}
             </AnimatePresence>
         </div>
     )
+}
+
+function stripSize(style?: CSSProperties): CSSProperties {
+    if (!style) return {}
+    const next = { ...style }
+    delete next.width
+    delete next.height
+    delete next.minWidth
+    delete next.minHeight
+    delete next.maxWidth
+    delete next.maxHeight
+    return next
+}
+
+function normalizeExperience(list: ExperienceJob[]): ExperienceJob[] {
+    const rows = (list || [])
+        .map((j, i) => ({
+            company: String(j?.company || "Company"),
+            role: String(j?.role || "Role"),
+            duration: String(j?.duration || ""),
+            status: String(j?.status || "Past"),
+            learning1: String(j?.learning1 || ""),
+            learning2: String(j?.learning2 || ""),
+            learning3: String(j?.learning3 || ""),
+            learning4: String(j?.learning4 || ""),
+            order: Number(j?.order ?? i + 1),
+            slug: String(j?.slug || `job-${i}`),
+        }))
+        .sort((a, b) => a.order - b.order)
+    return rows.length ? rows : DEFAULT_EXPERIENCE
 }
 
 const layerImgStyle: CSSProperties = {
@@ -493,8 +767,16 @@ function RevealLayer({
             <motion.img
                 src={src}
                 alt=""
-                animate={active ? { rotate: [0, -3, 3, -2, 1, 0], scale: 1.03 } : { rotate: 0, scale: 1 }}
-                transition={active ? { duration: 0.55, ease: "easeInOut" } : { duration: 0.2 }}
+                animate={
+                    active
+                        ? { rotate: [0, -3, 3, -2, 1, 0], scale: 1.03 }
+                        : { rotate: 0, scale: 1 }
+                }
+                transition={
+                    active
+                        ? { duration: 0.55, ease: "easeInOut" }
+                        : { duration: 0.2 }
+                }
                 style={{ ...layerImgStyle, transformOrigin: origin }}
             />
         </motion.div>
@@ -529,7 +811,8 @@ function Hotspot({
 }) {
     const [x, y, w, h] = c.box
     const below = c.labelPos === "below"
-    const label = c.action === "sound" ? (soundOn ? "SOUND ON" : "SOUND OFF") : c.label
+    const label =
+        c.action === "sound" ? (soundOn ? "SOUND ON" : "SOUND OFF") : c.label
     return (
         <button
             type="button"
@@ -539,29 +822,42 @@ function Hotspot({
             onBlur={onLeave}
             onClick={onClick}
             aria-label={c.label}
-            style={{ position: "absolute", left: x, top: y, width: w, height: h, border: "none", background: "transparent", cursor: "pointer", padding: 0, outline: "none" }}
+            style={{
+                position: "absolute",
+                left: x,
+                top: y,
+                width: w,
+                height: h,
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                padding: 0,
+                outline: "none",
+            }}
         >
             <motion.span
                 initial={false}
                 animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
                 transition={{ duration: 0.25 }}
-                style={{
-                    position: "absolute",
-                    left: "50%",
-                    [below ? "bottom" : "top"]: -26,
-                    transform: "translateX(-50%)",
-                    background: accent,
-                    color: "#fff",
-                    fontFamily: family,
-                    fontWeight: 700,
-                    fontSize: 12,
-                    letterSpacing: 0.6,
-                    padding: "3px 8px",
-                    borderRadius: 4,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                    pointerEvents: "none",
-                } as CSSProperties}
+                style={
+                    {
+                        position: "absolute",
+                        left: "50%",
+                        [below ? "bottom" : "top"]: -26,
+                        transform: "translateX(-50%)",
+                        background: accent,
+                        color: "#fff",
+                        fontFamily: family,
+                        fontWeight: 700,
+                        fontSize: 12,
+                        letterSpacing: 0.6,
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                        pointerEvents: "none",
+                    } as CSSProperties
+                }
             >
                 {label}
             </motion.span>
@@ -569,89 +865,775 @@ function Hotspot({
     )
 }
 
-function Popup({
-    title,
-    blurb,
-    visit,
-    href,
-    accent,
-    family,
-    objectKey,
+function ModalShell({
     onClose,
-    onVisit,
+    family,
+    width = "min(920px, 94vw)",
+    children,
 }: {
-    title: string
-    blurb: string
-    visit?: string
-    href?: string
-    accent: string
-    family: string
-    objectKey: string
     onClose: () => void
-    onVisit: (href: string) => void
+    family: string
+    width?: string
+    children: ReactNode
 }) {
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(30,26,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: family, overflow: "visible" }}>
-                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: family, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer", zIndex: 2 }}>X CLOSE</button>
-                <h3 style={{ fontFamily: family, fontWeight: 700, fontSize: 30, margin: "0 0 12px", color: "#111", letterSpacing: "-0.01em" }}>{title}</h3>
-                <p style={{ fontSize: 16, lineHeight: 1.55, margin: "0 auto", maxWidth: 360, color: "#333" }}>{blurb}</p>
-                {visit && href && (
-                    <button type="button" onClick={() => onVisit(href)} style={{ marginTop: 22, fontFamily: family, fontWeight: 700, fontSize: 14, letterSpacing: 0.5, background: accent, color: "#fff", border: "none", padding: "12px 20px", cursor: "pointer", borderRadius: 4 }}>★ {visit} ★</button>
-                )}
-                <PopupMascot objectKey={objectKey} />
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 80,
+                background: "rgba(30,26,18,0.45)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: 20,
+            }}
+        >
+            <motion.div
+                initial={{ scale: 0.94, y: 14 }}
+                animate={{ scale: 1, y: 0 }}
+                exit={{ scale: 0.96, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                    background: "#fff",
+                    border: `1.5px solid ${INK}`,
+                    width,
+                    maxHeight: "min(86vh, 820px)",
+                    overflow: "auto",
+                    position: "relative",
+                    fontFamily: family,
+                    boxSizing: "border-box",
+                }}
+            >
+                <button
+                    type="button"
+                    onClick={onClose}
+                    aria-label="Close"
+                    style={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        fontFamily: family,
+                        fontWeight: 700,
+                        fontSize: 13,
+                        letterSpacing: 1,
+                        background: INK,
+                        color: "#fff",
+                        border: "none",
+                        padding: "6px 10px",
+                        cursor: "pointer",
+                        zIndex: 2,
+                    }}
+                >
+                    X CLOSE
+                </button>
+                {children}
             </motion.div>
         </motion.div>
     )
 }
 
-/** Desk crop stuck flush to the bottom-right of a popup modal */
-function PopupMascot({ objectKey }: { objectKey: string }) {
-    const click = CLICKS.find((c) => c.key === objectKey || (objectKey === "schedule" && c.key === "briefcase-calendar"))
-    const layer = LAYERS.find((l) => l.key === (objectKey === "schedule" ? "briefcase-calendar" : objectKey))
-    if (!click || !layer) return null
-    const [x, y, w, h] = click.box
-    const displayW = Math.min(150, Math.max(90, w * 0.55))
-    const displayH = (h / w) * displayW
-    const scale = displayW / w
+function SectionLabel({ children }: { children: ReactNode }) {
     return (
         <div
-            aria-hidden
             style={{
-                position: "absolute",
-                right: 0,
-                bottom: 0,
-                width: displayW,
-                height: displayH,
-                pointerEvents: "none",
-                overflow: "hidden",
-                zIndex: 1,
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 1,
+                textTransform: "uppercase",
+                color: MUTED,
+                marginBottom: 10,
             }}
         >
-            <div
-                style={{
-                    position: "absolute",
-                    width: STAGE_W * scale,
-                    height: STAGE_H * scale,
-                    left: -x * scale,
-                    top: -y * scale,
-                    backgroundImage: `url(${IMG}${layer.hash}.png)`,
-                    backgroundSize: "100% 100%",
-                    backgroundRepeat: "no-repeat",
-                }}
-            />
+            [{children}]
         </div>
     )
 }
 
+function ExperiencePopup({
+    jobs,
+    clients,
+    accent,
+    family,
+    onClose,
+}: {
+    jobs: ExperienceJob[]
+    clients: string[]
+    accent: string
+    family: string
+    onClose: () => void
+}) {
+    const current = jobs.filter((j) => /current/i.test(j.status))
+    const past = jobs.filter((j) => !/current/i.test(j.status))
+    const [selected, setSelected] = useState<ExperienceJob>(
+        current[0] || past[0] || jobs[0],
+    )
+
+    const learnings = [
+        selected?.learning1,
+        selected?.learning2,
+        selected?.learning3,
+        selected?.learning4,
+    ].filter((x) => x && String(x).trim())
+
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(980px, 95vw)">
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                    minHeight: 420,
+                }}
+            >
+                <aside
+                    style={{
+                        borderRight: `1.5px solid ${INK}`,
+                        padding: "48px 22px 28px",
+                        boxSizing: "border-box",
+                    }}
+                >
+                    {current.length > 0 && (
+                        <div style={{ marginBottom: 28 }}>
+                            <SectionLabel>Currently</SectionLabel>
+                            {current.map((j) => (
+                                <JobLink
+                                    key={j.slug || j.company}
+                                    job={j}
+                                    active={selected === j}
+                                    accent={accent}
+                                    onClick={() => setSelected(j)}
+                                />
+                            ))}
+                        </div>
+                    )}
+
+                    {clients.length > 0 && (
+                        <div style={{ marginBottom: 28 }}>
+                            <SectionLabel>Past clients</SectionLabel>
+                            <ul
+                                style={{
+                                    margin: 0,
+                                    padding: 0,
+                                    listStyle: "none",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 6,
+                                }}
+                            >
+                                {clients.map((c) => (
+                                    <li
+                                        key={c}
+                                        style={{
+                                            fontSize: 15,
+                                            color: INK,
+                                            letterSpacing: "-0.01em",
+                                        }}
+                                    >
+                                        {c}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {past.length > 0 && (
+                        <div>
+                            <SectionLabel>Experience</SectionLabel>
+                            {past.map((j) => (
+                                <JobLink
+                                    key={j.slug || j.company}
+                                    job={j}
+                                    active={selected === j}
+                                    accent={accent}
+                                    onClick={() => setSelected(j)}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </aside>
+
+                <div style={{ padding: "48px 36px 36px", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            fontFamily: ANNIE,
+                            fontSize: 34,
+                            lineHeight: 1.1,
+                            marginBottom: 8,
+                            color: INK,
+                        }}
+                    >
+                        {selected?.role}
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 18,
+                            fontWeight: 600,
+                            letterSpacing: "-0.02em",
+                            marginBottom: 4,
+                        }}
+                    >
+                        {selected?.company}
+                    </div>
+                    <div
+                        style={{
+                            fontSize: 14,
+                            color: MUTED,
+                            marginBottom: 28,
+                        }}
+                    >
+                        {selected?.duration}
+                    </div>
+
+                    <SectionLabel>What I learned</SectionLabel>
+                    <ul
+                        style={{
+                            margin: 0,
+                            padding: "0 0 0 18px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 12,
+                        }}
+                    >
+                        {learnings.map((line, i) => (
+                            <li
+                                key={i}
+                                style={{
+                                    fontSize: 16,
+                                    lineHeight: 1.55,
+                                    color: MUTED,
+                                }}
+                            >
+                                {line}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function JobLink({
+    job,
+    active,
+    accent,
+    onClick,
+}: {
+    job: ExperienceJob
+    active: boolean
+    accent: string
+    onClick: () => void
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                border: "none",
+                background: active ? "rgba(0,0,0,0.05)" : "transparent",
+                borderLeft: active ? `3px solid ${accent}` : "3px solid transparent",
+                padding: "8px 10px",
+                cursor: "pointer",
+                marginBottom: 4,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: 15,
+                    fontWeight: 600,
+                    color: INK,
+                    letterSpacing: "-0.01em",
+                }}
+            >
+                {job.company}
+            </div>
+            <div style={{ fontSize: 13, color: MUTED }}>{job.role}</div>
+        </button>
+    )
+}
+
+function SchedulePopup({
+    email,
+    accent,
+    family,
+    onClose,
+}: {
+    email: string
+    accent: string
+    family: string
+    onClose: () => void
+}) {
+    const mailto = `mailto:${email}?subject=${encodeURIComponent("Let's work together")}&body=${encodeURIComponent("Hi Nabia,\n\nI'd love to chat about a project.\n\n")}`
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(560px, 94vw)">
+            <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
+                <div
+                    style={{
+                        fontFamily: ANNIE,
+                        fontSize: 42,
+                        lineHeight: 1.1,
+                        marginBottom: 14,
+                        color: INK,
+                    }}
+                >
+                    Got a project?
+                </div>
+                <p
+                    style={{
+                        margin: "0 auto 28px",
+                        maxWidth: 380,
+                        fontSize: 16,
+                        lineHeight: 1.6,
+                        color: MUTED,
+                    }}
+                >
+                    My calendar fills with client work and content days — but I always
+                    make room for thoughtful collaborations. Drop me a note and tell me
+                    what you’re building.
+                </p>
+                <a
+                    href={mailto}
+                    style={{
+                        display: "inline-block",
+                        background: accent,
+                        color: "#fff",
+                        textDecoration: "none",
+                        fontWeight: 700,
+                        fontSize: 14,
+                        letterSpacing: 0.4,
+                        padding: "14px 22px",
+                        borderRadius: 4,
+                    }}
+                >
+                    Email me
+                </a>
+                <div style={{ marginTop: 14, fontSize: 13, color: MUTED }}>{email}</div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function SocialsPopup({
+    instagramUrl,
+    linkedinUrl,
+    accent,
+    family,
+    onClose,
+}: {
+    instagramUrl: string
+    linkedinUrl: string
+    accent: string
+    family: string
+    onClose: () => void
+}) {
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(520px, 94vw)">
+            <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
+                <div
+                    style={{
+                        fontFamily: ANNIE,
+                        fontSize: 40,
+                        lineHeight: 1.1,
+                        marginBottom: 12,
+                        color: INK,
+                    }}
+                >
+                    Come say hi
+                </div>
+                <p
+                    style={{
+                        margin: "0 auto 28px",
+                        maxWidth: 340,
+                        fontSize: 16,
+                        lineHeight: 1.6,
+                        color: MUTED,
+                    }}
+                >
+                    Bits of process, finished pieces, and the occasional desk snack —
+                    find me on the apps I actually check.
+                </p>
+                <div
+                    style={{
+                        display: "flex",
+                        gap: 12,
+                        justifyContent: "center",
+                        flexWrap: "wrap",
+                    }}
+                >
+                    <SocialButton href={instagramUrl} label="Instagram" accent={accent} />
+                    <SocialButton href={linkedinUrl} label="LinkedIn" accent={accent} />
+                </div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function SocialButton({
+    href,
+    label,
+    accent,
+}: {
+    href: string
+    label: string
+    accent: string
+}) {
+    return (
+        <a
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            style={{
+                display: "inline-block",
+                border: `1.5px solid ${INK}`,
+                color: INK,
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: 14,
+                letterSpacing: 0.4,
+                padding: "12px 18px",
+                background: "#fff",
+                boxShadow: `3px 3px 0 ${accent}`,
+            }}
+        >
+            {label}
+        </a>
+    )
+}
+
+function MediaCtaPopup({
+    heading,
+    text,
+    image,
+    link,
+    linkLabel,
+    accent,
+    family,
+    handwritten,
+    onClose,
+}: {
+    heading: string
+    text: string
+    image: string
+    link: string
+    linkLabel: string
+    accent: string
+    family: string
+    handwritten?: boolean
+    onClose: () => void
+}) {
+    const img = resolveImage(image)
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(720px, 94vw)">
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                    minHeight: 340,
+                }}
+            >
+                <div
+                    style={{
+                        minHeight: 280,
+                        background: img
+                            ? `#111 url(${img}) center/cover no-repeat`
+                            : `linear-gradient(145deg, ${accent} 0%, #111 125%)`,
+                        borderRight: `1.5px solid ${INK}`,
+                    }}
+                />
+                <div
+                    style={{
+                        padding: "56px 32px 36px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        boxSizing: "border-box",
+                    }}
+                >
+                    <h3
+                        style={{
+                            margin: "0 0 14px",
+                            fontFamily: handwritten ? ANNIE : family,
+                            fontSize: handwritten ? 36 : 28,
+                            fontWeight: handwritten ? 400 : 700,
+                            letterSpacing: handwritten ? 0 : "-0.02em",
+                            lineHeight: 1.15,
+                            color: INK,
+                        }}
+                    >
+                        {heading}
+                    </h3>
+                    <p
+                        style={{
+                            margin: "0 0 24px",
+                            fontFamily: handwritten ? ANNIE : family,
+                            fontSize: handwritten ? 24 : 16,
+                            lineHeight: 1.45,
+                            color: MUTED,
+                        }}
+                    >
+                        {text}
+                    </p>
+                    {link ? (
+                        <a
+                            href={link}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                                alignSelf: "flex-start",
+                                background: accent,
+                                color: "#fff",
+                                textDecoration: "none",
+                                fontWeight: 700,
+                                fontSize: 14,
+                                letterSpacing: 0.4,
+                                padding: "12px 18px",
+                                borderRadius: 4,
+                            }}
+                        >
+                            {linkLabel}
+                        </a>
+                    ) : null}
+                </div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function AboutPopup({
+    message,
+    image,
+    accent,
+    family,
+    onClose,
+}: {
+    message: string
+    image: string
+    accent: string
+    family: string
+    onClose: () => void
+}) {
+    const img = resolveImage(image)
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(760px, 94vw)">
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                    minHeight: 360,
+                }}
+            >
+                <div
+                    style={{
+                        minHeight: 300,
+                        background: img
+                            ? `#111 url(${img}) center/cover no-repeat`
+                            : `linear-gradient(160deg, ${accent} 0%, #1a1a1a 120%)`,
+                        borderRight: `1.5px solid ${INK}`,
+                    }}
+                />
+                <div style={{ padding: "56px 36px 36px", boxSizing: "border-box" }}>
+                    <div
+                        style={{
+                            fontFamily: ANNIE,
+                            fontSize: 38,
+                            lineHeight: 1.1,
+                            marginBottom: 18,
+                            color: INK,
+                        }}
+                    >
+                        Get to know me
+                    </div>
+                    <p
+                        style={{
+                            margin: 0,
+                            fontFamily: ANNIE,
+                            fontSize: 26,
+                            lineHeight: 1.45,
+                            color: MUTED,
+                            whiteSpace: "pre-wrap",
+                        }}
+                    >
+                        {message}
+                    </p>
+                </div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function resolveImage(value: unknown): string {
+    if (!value) return ""
+    if (typeof value === "string") return value
+    if (typeof value === "object" && value !== null) {
+        const v = value as { src?: string; url?: string }
+        return String(v.src || v.url || "")
+    }
+    return ""
+}
+
+const DEFAULT_CLIENTS = ["Lemme", "Adobe", "Wellness Co.", "Atelier"]
+
+const DEFAULT_EXPERIENCE: ExperienceJob[] = [
+    {
+        company: "Independent",
+        role: "Freelance Designer",
+        duration: "2024 — Present",
+        status: "Currently",
+        learning1: "How to scope projects so both sides stay sane.",
+        learning2: "Taste is a deliverable — not just pixels.",
+        learning3: "Clear async updates beat long meetings.",
+        learning4: "Saying no early protects the work.",
+        order: 1,
+        slug: "freelance",
+    },
+    {
+        company: "Wellness Studio Co.",
+        role: "Product Designer",
+        duration: "2023 — 2024",
+        status: "Past",
+        learning1: "Calm UI still needs decisive hierarchy.",
+        learning2: "Research without synthesis is just notes.",
+        learning3: "Design systems only work if squads adopt them.",
+        learning4: "Ship the thin wedge first.",
+        order: 2,
+        slug: "studio-residency",
+    },
+    {
+        company: "Brand Lab",
+        role: "Visual Designer",
+        duration: "2022 — 2023",
+        status: "Past",
+        learning1: "Brand systems need room to bend.",
+        learning2: "Photography direction changes everything.",
+        learning3: "Type pairing is half the personality.",
+        learning4: "Clients feel cared for when you show process.",
+        order: 3,
+        slug: "brand-lab",
+    },
+]
+
 addPropertyControls(DeskWorkspace, {
-    welcomeText: { type: ControlType.String, title: "Welcome", defaultValue: "hey, welcome to my workspace" },
-    accent: { type: ControlType.Color, title: "Label Color", defaultValue: "#2C6BE0" },
+    welcomeText: {
+        type: ControlType.String,
+        title: "Welcome",
+        defaultValue: "hey, welcome to my workspace",
+    },
+    accent: {
+        type: ControlType.Color,
+        title: "Label Color",
+        defaultValue: "#2C6BE0",
+    },
     font: {
         type: ControlType.Font,
         title: "Body Font",
         controls: "extended",
         defaultFontType: "sans-serif",
         defaultValue: { fontSize: 15, variant: "Regular", lineHeight: "1.5em" },
+    },
+    experience: {
+        type: ControlType.Array,
+        title: "Experience (CMS)",
+        control: {
+            type: ControlType.Object,
+            controls: {
+                company: { type: ControlType.String, title: "Company", defaultValue: "Company" },
+                role: { type: ControlType.String, title: "Role", defaultValue: "Role" },
+                duration: { type: ControlType.String, title: "Duration", defaultValue: "2024" },
+                status: {
+                    type: ControlType.Enum,
+                    title: "Status",
+                    options: ["Currently", "Past"],
+                    optionTitles: ["Currently", "Past"],
+                    defaultValue: "Past",
+                },
+                learning1: { type: ControlType.String, title: "Learning 1", displayTextArea: true, defaultValue: "" },
+                learning2: { type: ControlType.String, title: "Learning 2", displayTextArea: true, defaultValue: "" },
+                learning3: { type: ControlType.String, title: "Learning 3", displayTextArea: true, defaultValue: "" },
+                learning4: { type: ControlType.String, title: "Learning 4", displayTextArea: true, defaultValue: "" },
+                order: { type: ControlType.Number, title: "Order", defaultValue: 1 },
+                slug: { type: ControlType.String, title: "Slug", defaultValue: "job" },
+            },
+        },
+        defaultValue: DEFAULT_EXPERIENCE,
+    },
+    clients: {
+        type: ControlType.Array,
+        title: "Past Clients",
+        control: { type: ControlType.String },
+        defaultValue: DEFAULT_CLIENTS,
+    },
+    email: {
+        type: ControlType.String,
+        title: "Email",
+        defaultValue: "hello@example.com",
+    },
+    instagramUrl: {
+        type: ControlType.String,
+        title: "Instagram URL",
+        defaultValue: "https://instagram.com/",
+    },
+    linkedinUrl: {
+        type: ControlType.String,
+        title: "LinkedIn URL",
+        defaultValue: "https://linkedin.com/",
+    },
+    chutneyHeading: {
+        type: ControlType.String,
+        title: "Chutney Heading",
+        defaultValue: "Chutney Studios",
+    },
+    chutneyText: {
+        type: ControlType.String,
+        title: "Chutney Text",
+        displayTextArea: true,
+        defaultValue:
+            "My after-hours studio — branding and sites for small, good-taste brands.",
+    },
+    chutneyImage: {
+        type: ControlType.Image,
+        title: "Chutney Image",
+    },
+    chutneyLink: {
+        type: ControlType.Link,
+        title: "Chutney Link",
+    },
+    chutneyLinkLabel: {
+        type: ControlType.String,
+        title: "Chutney Button",
+        defaultValue: "Visit studio",
+    },
+    substackText: {
+        type: ControlType.String,
+        title: "Substack Text",
+        displayTextArea: true,
+        defaultValue:
+            "Hey, naming side quests I have a substack too! Follow my writing",
+    },
+    substackImage: {
+        type: ControlType.Image,
+        title: "Substack Image",
+    },
+    substackUrl: {
+        type: ControlType.Link,
+        title: "Substack Link",
+    },
+    aboutMessage: {
+        type: ControlType.String,
+        title: "Get to Know Me",
+        displayTextArea: true,
+        defaultValue:
+            "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
+    },
+    aboutImage: {
+        type: ControlType.Image,
+        title: "About Image",
     },
 })
