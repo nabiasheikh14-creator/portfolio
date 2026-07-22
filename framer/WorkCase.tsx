@@ -599,7 +599,7 @@ export default function WorkCase(props: WorkCaseProps) {
             </div>
 
             <DeskWorkFooter
-                accent={project.accent || accent}
+                accent={accent}
                 cream={cream}
                 ink={ink}
                 muted={muted}
@@ -1123,8 +1123,10 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         <footer
             style={{
                 position: "relative",
-                width: "100%",
+                width: "100vw",
+                maxWidth: "100vw",
                 marginTop: 64,
+                marginLeft: "calc(50% - 50vw)",
                 background: cream,
                 overflow: "hidden",
                 fontFamily: family,
