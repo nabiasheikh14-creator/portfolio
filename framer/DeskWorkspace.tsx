@@ -7,6 +7,7 @@ import {
     type CSSProperties,
     type ReactNode,
 } from "react"
+import { createPortal } from "react-dom"
 import {
     motion,
     AnimatePresence,
@@ -152,14 +153,16 @@ interface Click {
 const CLICKS: Click[] = [
     {
         key: "archive",
-        box: [329, 292, 384, 140],
+        // Tighter board hit-area so it doesn't swallow neighboring hotspots.
+        box: [360, 310, 300, 110],
         label: "ARCHIVE",
         action: "page",
         href: "/archive",
     },
     {
         key: "laptop",
-        box: [570, 526, 354, 245],
+        // Keep below Chutney / schedule so popup hovers stay reachable.
+        box: [590, 560, 310, 200],
         label: "WORK",
         action: "page",
         href: "/work",
@@ -217,6 +220,7 @@ const CLICKS: Click[] = [
         popupKind: "schedule",
     },
 ]
+// Largest first so smaller hotspots paint/hit-test on top.
 const CLICKS_ORDERED = [...CLICKS].sort(
     (a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3],
 )
@@ -374,21 +378,14 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [hovered, setHovered] = useState<string | null>(null)
     const [popup, setPopup] = useState<Click | null>(null)
     const [flash, setFlash] = useState(false)
-    const [revealed, setRevealed] = useState(!animated)
-    // Page routes (Work / Archive) become live as soon as the desk intro starts,
-    // not after the full scroll reveal — otherwise those hotspots feel dead.
+    // All desk interactions (page links, popups, hover jiggles) unlock together
+    // once the welcome fades and the illustration starts revealing.
     const [deskReady, setDeskReady] = useState(!animated)
     useMotionValueEvent(p, "change", (v) => {
-        startTransition(() => {
-            setDeskReady(v > REVEAL_START)
-            setRevealed(v > 0.55)
-        })
+        startTransition(() => setDeskReady(v > REVEAL_START))
     })
     useEffect(() => {
-        if (!animated) {
-            setRevealed(true)
-            setDeskReady(true)
-        }
+        if (!animated) setDeskReady(true)
     }, [animated])
 
     const [soundOn, setSoundOn] = useState(true)
@@ -466,17 +463,16 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             const href = c.href.startsWith("/")
                 ? c.href
                 : `/${String(c.href).replace(/^\.\//, "")}`
+            setPopup(null)
             setFlash(true)
             window.setTimeout(() => {
                 window.location.assign(href)
             }, 180)
             return
         }
+        // Replace any open modal so popup targets never feel stuck/dead.
         setPopup(c)
     }
-
-    const pageClicks = CLICKS_ORDERED.filter((c) => c.action === "page")
-    const otherClicks = CLICKS_ORDERED.filter((c) => c.action !== "page")
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -581,43 +577,18 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         )
                     })}
 
-                    {/* Work + Archive: always live on the desk (not gated by reveal). */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            zIndex: 22,
-                            pointerEvents: "auto",
-                        }}
-                    >
-                        {pageClicks.map((c) => (
-                            <Hotspot
-                                key={c.key}
-                                c={c}
-                                accent={accent}
-                                family={family}
-                                labelSize={labelSize}
-                                soundOn={soundOn}
-                                visible={deskReady || revealed || !animated}
-                                onEnter={() => setHovered(c.key)}
-                                onLeave={() =>
-                                    setHovered((h) => (h === c.key ? null : h))
-                                }
-                                onClick={() => activate(c)}
-                            />
-                        ))}
-                    </div>
-
-                    {/* Popups / sound: wait for fuller desk reveal */}
+                    {/* One hotspot stack: Work/Archive + popups/hovers share hit-testing.
+                        Always interactive so adding CMS/images can't leave the desk "dead".
+                        Smaller targets render later so they stay above large page hit-areas. */}
                     <div
                         style={{
                             position: "absolute",
                             inset: 0,
                             zIndex: 20,
-                            pointerEvents: revealed ? "auto" : "none",
+                            pointerEvents: "auto",
                         }}
                     >
-                        {otherClicks.map((c) => (
+                        {CLICKS_ORDERED.map((c) => (
                             <Hotspot
                                 key={c.key}
                                 c={c}
@@ -625,7 +596,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 family={family}
                                 labelSize={labelSize}
                                 soundOn={soundOn}
-                                visible={revealed}
+                                visible={deskReady || !animated}
                                 onEnter={() => setHovered(c.key)}
                                 onLeave={() =>
                                     setHovered((h) => (h === c.key ? null : h))
@@ -1006,21 +977,25 @@ function ModalShell({
     width?: string
     children: ReactNode
 }) {
-    return (
+    // Portal to body so sticky/overflow/transform on the desk never clips popups
+    // or breaks hover + fixed positioning after CMS/image edits.
+    const modal = (
         <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
+            data-desk-modal="true"
             style={{
                 position: "fixed",
                 inset: 0,
-                zIndex: 80,
+                zIndex: 10050,
                 background: "rgba(30,26,18,0.45)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 padding: 20,
+                pointerEvents: "auto",
             }}
         >
             <motion.div
@@ -1038,6 +1013,7 @@ function ModalShell({
                     position: "relative",
                     fontFamily: family,
                     boxSizing: "border-box",
+                    pointerEvents: "auto",
                 }}
             >
                 <button
@@ -1066,6 +1042,9 @@ function ModalShell({
             </motion.div>
         </motion.div>
     )
+
+    if (typeof document === "undefined") return modal
+    return createPortal(modal, document.body)
 }
 
 /** Shared CTA style — white fill, ink border, accent offset shadow (Socials popup) */
