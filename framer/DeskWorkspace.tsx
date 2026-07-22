@@ -262,8 +262,14 @@ interface DeskWorkspaceProps {
     substackUrl: string
     aboutMessage: string
     aboutImage: string
+    /** Radio track URL (mp3). Defaults to Belle & Sebastian — Wrapped Up In Books (live). */
+    radioTrackUrl?: string
     style?: CSSProperties
 }
+
+/** Live recording of “Wrapped Up In Books” — Belle & Sebastian (Archive.org LMA). */
+const DEFAULT_RADIO_TRACK =
+    "https://archive.org/download/BS2023-07-14.dpa/2023-07-14%20Institute%2C%20Birmingham%2C%20England/2023-07-14_belle_and_sebastian_02.mp3"
 
 /**
  * Desk Workspace — illustrated desk homepage.
@@ -303,10 +309,12 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         substackUrl = "https://substack.com/",
         aboutMessage = "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
         aboutImage = "",
+        radioTrackUrl = DEFAULT_RADIO_TRACK,
     } = props
     const family = props.font?.fontFamily || INTER
     const displayFamily = props.displayFont?.fontFamily || ANNIE
     const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
+    const trackUrl = resolveRadioUrl(radioTrackUrl) || DEFAULT_RADIO_TRACK
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
@@ -354,67 +362,69 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     const [soundOn, setSoundOn] = useState(true)
     const [playing, setPlaying] = useState(false)
-    const audioRef = useRef<{ ctx: AudioContext; gain: GainNode } | null>(null)
-    const startRain = () => {
-        if (typeof window === "undefined") return
-        if (audioRef.current) {
-            audioRef.current.ctx.resume()
-            setPlaying(true)
-            return
-        }
+    const audioRef = useRef<HTMLAudioElement | null>(null)
+
+    const ensureRadio = () => {
+        if (typeof window === "undefined") return null
+        if (audioRef.current) return audioRef.current
+        const audio = new Audio(trackUrl)
+        audio.loop = true
+        audio.preload = "auto"
+        audio.volume = 0.55
+        audioRef.current = audio
+        return audio
+    }
+
+    const startRadio = async () => {
+        const audio = ensureRadio()
+        if (!audio) return
         try {
-            const AC =
-                window.AudioContext ||
-                (window as unknown as { webkitAudioContext: typeof AudioContext })
-                    .webkitAudioContext
-            const ctx = new AC()
-            const size = 2 * ctx.sampleRate
-            const buffer = ctx.createBuffer(1, size, ctx.sampleRate)
-            const data = buffer.getChannelData(0)
-            for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1
-            const src = ctx.createBufferSource()
-            src.buffer = buffer
-            src.loop = true
-            const hp = ctx.createBiquadFilter()
-            hp.type = "highpass"
-            hp.frequency.value = 380
-            const lp = ctx.createBiquadFilter()
-            lp.type = "lowpass"
-            lp.frequency.value = 1100
-            const gain = ctx.createGain()
-            gain.gain.value = 0.055
-            src.connect(hp)
-            hp.connect(lp)
-            lp.connect(gain)
-            gain.connect(ctx.destination)
-            src.start()
-            audioRef.current = { ctx, gain }
+            const abs = new URL(trackUrl, window.location.href).href
+            if (audio.src !== abs) {
+                audio.src = trackUrl
+                audio.load()
+            }
+            await audio.play()
             setPlaying(true)
         } catch {
-            /* ignore */
+            setPlaying(false)
         }
     }
-    const stopRain = () => {
-        audioRef.current?.ctx.suspend()
+
+    const stopRadio = () => {
+        const audio = audioRef.current
+        if (!audio) return
+        audio.pause()
         setPlaying(false)
     }
+
+    useEffect(() => {
+        return () => {
+            const audio = audioRef.current
+            if (!audio) return
+            audio.pause()
+            audioRef.current = null
+        }
+    }, [])
+
     useEffect(() => {
         if (isStatic) return
         const onGesture = () => {
-            if (soundOn) startRain()
+            if (soundOn) void startRadio()
             window.removeEventListener("pointerdown", onGesture)
         }
         window.addEventListener("pointerdown", onGesture)
         return () => window.removeEventListener("pointerdown", onGesture)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isStatic, soundOn])
+    }, [isStatic, soundOn, trackUrl])
+
     function toggleSound() {
         if (soundOn) {
             setSoundOn(false)
-            stopRain()
+            stopRadio()
         } else {
             setSoundOn(true)
-            startRain()
+            void startRadio()
         }
     }
 
@@ -454,7 +464,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         <div
             ref={rootRef}
             onPointerDown={() => {
-                if (soundOn && !playing) startRain()
+                if (soundOn && !playing) void startRadio()
             }}
             style={{
                 position: "relative",
@@ -825,7 +835,11 @@ function Hotspot({
     const [x, y, w, h] = c.box
     const below = c.labelPos === "below"
     const label =
-        c.action === "sound" ? (soundOn ? "SOUND ON" : "SOUND OFF") : c.label
+        c.action === "sound"
+            ? soundOn
+                ? "WRAPPED UP IN BOOKS"
+                : "SOUND OFF"
+            : c.label
     return (
         <button
             type="button"
@@ -1642,6 +1656,16 @@ function resolveImage(value: unknown): string {
     return ""
 }
 
+function resolveRadioUrl(value: unknown): string {
+    if (!value) return ""
+    if (typeof value === "string") return value.trim()
+    if (typeof value === "object" && value !== null) {
+        const v = value as { src?: string; url?: string }
+        return String(v.src || v.url || "").trim()
+    }
+    return ""
+}
+
 const DEFAULT_CLIENTS = ["Lemme", "Adobe", "Wellness Co.", "Atelier"]
 
 const DEFAULT_EXPERIENCE: ExperienceJob[] = [
@@ -1880,5 +1904,10 @@ addPropertyControls(DeskWorkspace, {
     aboutImage: {
         type: ControlType.Image,
         title: "About Image",
+    },
+    radioTrackUrl: {
+        type: ControlType.String,
+        title: "Radio Track URL",
+        defaultValue: DEFAULT_RADIO_TRACK,
     },
 })

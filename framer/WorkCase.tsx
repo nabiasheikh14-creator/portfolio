@@ -8,6 +8,7 @@ import {
 
 const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const GRID_BG =
     "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
 const CREAM = "#F3EFE6"
@@ -61,12 +62,13 @@ interface WorkCaseProps {
     accent: string
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
-    footerHeadline: string
     footerSubline: string
-    footerObjectScale: number
-    footerRailHeight: number
+    footerDeskScale: number
+    footerHeight: number
     footerHeadlineSize: number
-    footerObjects: any[]
+    footerInstagramUrl: string
+    footerLinkedinUrl: string
+    footerEmail: string
     style?: CSSProperties
 }
 
@@ -96,12 +98,13 @@ export default function WorkCase(props: WorkCaseProps) {
         ink = INK,
         muted = MUTED,
         accent = "#2C6BE0",
-        footerHeadline = "back to the desk",
-        footerSubline = "Case closed for now — wander home for the rest of the desk.",
-        footerObjectScale = 1,
-        footerRailHeight = 220,
-        footerHeadlineSize = 48,
-        footerObjects = DEFAULT_FOOTER_OBJECTS,
+        footerSubline = "The rest of the story lives on the homepage.",
+        footerDeskScale = 1,
+        footerHeight = 280,
+        footerHeadlineSize = 36,
+        footerInstagramUrl = "https://instagram.com/",
+        footerLinkedinUrl = "https://linkedin.com/",
+        footerEmail = "hello@example.com",
     } = props
     const family = props.font?.fontFamily || SANS
     const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
@@ -225,6 +228,7 @@ export default function WorkCase(props: WorkCaseProps) {
                                 fontWeight: 600,
                                 letterSpacing: "-0.03em",
                                 lineHeight: 1.05,
+                                fontFamily: displayFamily,
                             }}
                         >
                             {project.title}
@@ -597,14 +601,14 @@ export default function WorkCase(props: WorkCaseProps) {
                 cream={cream}
                 ink={ink}
                 muted={muted}
-                headline={footerHeadline}
                 subline={footerSubline}
-                objectScale={footerObjectScale}
-                railHeight={footerRailHeight}
+                deskScale={footerDeskScale}
+                railHeight={footerHeight}
                 headlineSize={footerHeadlineSize}
-                displayFont={props.displayFont}
-                bodyFont={props.font}
-                objects={footerObjects}
+                instagramUrl={footerInstagramUrl}
+                linkedinUrl={footerLinkedinUrl}
+                email={footerEmail}
+                font={props.font}
             />
         </div>
     )
@@ -967,387 +971,334 @@ function resolveMedia(value: unknown): string {
 
 const STAGE_W = 1440
 const STAGE_H = 900
-const DEFAULT_IMG = "https://framerusercontent.com/images/"
-const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
-const DEFAULT_SANS =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const IMG = "https://framerusercontent.com/images/"
+const FOOTER_ANNIE = DEFAULT_ANNIE
 
-type FooterObject = {
-    key: string
-    imageUrl: string
-    cropX: number
-    cropY: number
-    cropW: number
-    cropH: number
-    width: number
-    bottom: number
-    rotate: number
-    z: number
-}
-
-const DEFAULT_FOOTER_OBJECTS: FooterObject[] = [
-    {
-        key: "books",
-        imageUrl: `${DEFAULT_IMG}z3PLroDJfbET05ZaDmzpA5lIAk.png`,
-        cropX: 560,
-        cropY: 95,
-        cropW: 190,
-        cropH: 150,
-        width: 150,
-        bottom: 18,
-        rotate: -6,
-        z: 2,
-    },
-    {
-        key: "journal",
-        imageUrl: `${DEFAULT_IMG}JPLbpkF1Jd17vRUT1rfmmgPhfQ.png`,
-        cropX: 241,
-        cropY: 717,
-        cropW: 167,
-        cropH: 126,
-        width: 168,
-        bottom: 8,
-        rotate: -3,
-        z: 3,
-    },
-    {
-        key: "schedule",
-        imageUrl: `${DEFAULT_IMG}NDoJcAe2hm9jNoRn1l3KPiH88kM.png`,
-        cropX: 388,
-        cropY: 485,
-        cropW: 76,
-        cropH: 68,
-        width: 96,
-        bottom: 42,
-        rotate: 8,
-        z: 4,
-    },
-    {
-        key: "chutney",
-        imageUrl: `${DEFAULT_IMG}AwkrKCuhUkRurlYPAzFRI4yw.png`,
-        cropX: 542,
-        cropY: 493,
-        cropW: 84,
-        cropH: 75,
-        width: 108,
-        bottom: 36,
-        rotate: -4,
-        z: 5,
-    },
-    {
-        key: "sooraj",
-        imageUrl: `${DEFAULT_IMG}O3MmyItiSJFvHk9GjYSG9NdqSc.png`,
-        cropX: 556,
-        cropY: 428,
-        cropW: 68,
-        cropH: 60,
-        width: 92,
-        bottom: 78,
-        rotate: 0,
-        z: 6,
-    },
-    {
-        key: "laptop",
-        imageUrl: `${DEFAULT_IMG}ffeeCWEVauyRc2jUztvEkKArptM.png`,
-        cropX: 570,
-        cropY: 526,
-        cropW: 354,
-        cropH: 245,
-        width: 280,
-        bottom: 0,
-        rotate: 0,
-        z: 7,
-    },
-    {
-        key: "phone",
-        imageUrl: `${DEFAULT_IMG}iokbHxpk1MBj2DyMk1qoueeeQM.png`,
-        cropX: 963,
-        cropY: 717,
-        cropW: 100,
-        cropH: 98,
-        width: 110,
-        bottom: 14,
-        rotate: 5,
-        z: 8,
-    },
-    {
-        key: "notes",
-        imageUrl: `${DEFAULT_IMG}52nGQQ7gLqDiguh8AvcoksZaBGI.png`,
-        cropX: 1056,
-        cropY: 691,
-        cropW: 113,
-        cropH: 88,
-        width: 120,
-        bottom: 48,
-        rotate: -8,
-        z: 4,
-    },
-    {
-        key: "sticky",
-        imageUrl: `${DEFAULT_IMG}Ks4KMbXjOzLJjGMxHdmGi4llY.png`,
-        cropX: 980,
-        cropY: 520,
-        cropW: 90,
-        cropH: 90,
-        width: 88,
-        bottom: 96,
-        rotate: 10,
-        z: 3,
-    },
+/**
+ * Exact homepage desk layer PNGs — same hashes / full-stage placement as DeskWorkspace.
+ */
+const HOME_FOOTER_LAYERS: { key: string; hash: string }[] = [
+    { key: "desk", hash: "apgMzPB0YpfnsVlEtmJK4vj6V7w" },
+    { key: "briefcase-calendar", hash: "NDoJcAe2hm9jNoRn1l3KPiH88kM" },
+    { key: "chutney", hash: "AwkrKCuhUkRurlYPAzFRI4yw" },
+    { key: "sooraj", hash: "O3MmyItiSJFvHk9GjYSG9NdqSc" },
+    { key: "laptop", hash: "ffeeCWEVauyRc2jUztvEkKArptM" },
+    { key: "work-laptop", hash: "0MCjhgOZbTIBiUWnZJdrkiXZSoA" },
+    { key: "open-notebook", hash: "XJP4OGEVjXt8avb0NauKlPXYEY" },
+    { key: "notes", hash: "52nGQQ7gLqDiguh8AvcoksZaBGI" },
+    { key: "to-dos", hash: "qrSvY1tFyoVSVjN0zBNJIezPs" },
+    { key: "sticky", hash: "Ks4KMbXjOzLJjGMxHdmGi4llY" },
+    { key: "sticky-empty-1", hash: "BQDJ4rDXxap6hjzD0KdpsCrF4o" },
+    { key: "sticky-empty-2", hash: "ovf3WMo3EmcNAF49KAlKzd4lbt0" },
+    { key: "phone", hash: "iokbHxpk1MBj2DyMk1qoueeeQM" },
+    { key: "journal", hash: "JPLbpkF1Jd17vRUT1rfmmgPhfQ" },
+    { key: "pen", hash: "HUSQF2KWYyoJf9K6yBPPi8er4zY" },
+    { key: "tablet", hash: "XaBwWgmK8aSgBbpn75GnNY4hRY" },
+    { key: "tea", hash: "fyEQ0Kjs1B3bcThyj0H2oEfaZ8" },
+    { key: "water", hash: "0zrrCMhZXsiu2gFjthkfNhc1pA" },
+    { key: "pencil-holder", hash: "fBJigHoGaLK2A2qSzKnBjGiGf40" },
 ]
 
-function DeskWorkFooter(props: {
+interface DeskWorkFooterProps {
     accent?: string
     cream?: string
     ink?: string
     muted?: string
     headline?: string
     subline?: string
-    showHome?: boolean
+    homeHref?: string
+    instagramUrl?: string
+    linkedinUrl?: string
+    email?: string
+    deskScale?: number
     objectScale?: number
     railHeight?: number
     headlineSize?: number
     bodySize?: number
-    displayFont?: { fontFamily?: string }
+    font?: { fontFamily?: string }
     bodyFont?: { fontFamily?: string }
-    objects?: FooterObject[]
-}) {
+    style?: CSSProperties
+}
+
+/** Home desk footer — desk art on the right, home link + socials on the left. */
+function DeskWorkFooter(props: DeskWorkFooterProps) {
     const {
         accent = "#2C6BE0",
         cream = "#F3EFE6",
         ink = "#111111",
         muted = "#555555",
-        headline = "back to the desk",
-        subline = "More stories, sticky notes, and side quests live on the homepage.",
-        showHome = true,
+        subline = "The rest of the story lives on the homepage.",
+        homeHref = "/",
+        instagramUrl = "https://instagram.com/",
+        linkedinUrl = "https://linkedin.com/",
+        email = "hello@example.com",
+        deskScale,
         objectScale = 1,
-        railHeight = 220,
-        headlineSize = 48,
-        bodySize = 15,
-        objects = DEFAULT_FOOTER_OBJECTS,
+        railHeight = 280,
+        headlineSize = 36,
         style,
     } = props
-    const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
-    const bodyFamily = props.bodyFont?.fontFamily || DEFAULT_SANS
-    const scale = Math.max(0.5, Math.min(1.8, Number(objectScale) || 1))
-    const list = (objects?.length ? objects : DEFAULT_FOOTER_OBJECTS).map((o) => ({
-        ...o,
-        width: Math.round((Number(o.width) || 100) * scale),
-        bottom: Math.round((Number(o.bottom) || 0) * scale),
-    }))
+    const family =
+        props.font?.fontFamily || props.bodyFont?.fontFamily || SANS
+    const scaleMul = Math.max(
+        0.7,
+        Math.min(1.4, Number(deskScale ?? objectScale) || 1),
+    )
+    const stageScale = (1200 / STAGE_W) * scaleMul * 1.05
+    const viewportH = Math.round(
+        Math.max(220, Number(railHeight) || 280) * scaleMul,
+    )
+    const mailHref = email.includes("mailto:")
+        ? email
+        : `mailto:${email}`
 
     return (
         <footer
             style={{
                 position: "relative",
                 width: "100%",
-                marginTop: 72,
+                marginTop: 64,
                 background: cream,
-                borderTop: `1.5px solid ${ink}`,
                 overflow: "hidden",
-                fontFamily: bodyFamily,
+                fontFamily: family,
                 ...style,
             }}
         >
+            <link
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                rel="stylesheet"
+            />
             <div
                 style={{
                     position: "relative",
-                    zIndex: 10,
-                    maxWidth: 1360,
-                    margin: "0 auto",
-                    padding: "40px 40px 12px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-end",
-                    gap: 24,
-                    flexWrap: "wrap",
-                    boxSizing: "border-box",
+                    width: "100%",
+                    height: viewportH,
+                    overflow: "hidden",
+                    borderTop: `1px solid ${ink}`,
                 }}
             >
-                <div style={{ maxWidth: 520 }}>
-                    <div
+                {/* Home desk stage — anchored to the right */}
+                <div
+                    aria-hidden
+                    style={{
+                        position: "absolute",
+                        right: "-4%",
+                        bottom: 0,
+                        width: STAGE_W,
+                        height: STAGE_H,
+                        transform: `scale(${stageScale})`,
+                        transformOrigin: "bottom right",
+                        pointerEvents: "none",
+                    }}
+                >
+                    {HOME_FOOTER_LAYERS.map((layer) => (
+                        <img
+                            key={layer.key}
+                            src={`${IMG}${layer.hash}.png`}
+                            alt=""
+                            draggable={false}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "fill",
+                                display: "block",
+                                userSelect: "none",
+                            }}
+                        />
+                    ))}
+                </div>
+
+                {/* Left copy + quick links */}
+                <div
+                    style={{
+                        position: "relative",
+                        zIndex: 2,
+                        height: "100%",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "center",
+                        gap: 18,
+                        maxWidth: 420,
+                        padding: "32px 40px",
+                        boxSizing: "border-box",
+                    }}
+                >
+                    <a
+                        href={homeHref}
                         style={{
-                            fontFamily: displayFamily,
-                            fontSize: `clamp(${Math.round(headlineSize * 0.7)}px, 5vw, ${headlineSize}px)`,
-                            lineHeight: 1.05,
+                            fontFamily: FOOTER_ANNIE,
+                            fontSize: `clamp(26px, 3.6vw, ${headlineSize}px)`,
+                            fontWeight: 400,
+                            letterSpacing: "0",
+                            lineHeight: 1.15,
                             color: ink,
-                            marginBottom: 10,
-                        }}
-                    >
-                        {headline}
-                    </div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontSize: bodySize,
-                            lineHeight: 1.5,
-                            color: muted,
-                            maxWidth: 380,
+                            textDecoration: "none",
+                            maxWidth: 340,
                         }}
                     >
                         {subline}
-                    </p>
-                </div>
+                    </a>
 
-                <nav
-                    style={{
-                        display: "flex",
-                        gap: 10,
-                        flexWrap: "wrap",
-                        alignItems: "center",
-                        paddingBottom: 6,
-                    }}
-                >
-                    {showHome ? <Chip href="/" label="Home" accent={accent} ink={ink} /> : null}
-                    <Chip href="/work" label="Work" accent={accent} ink={ink} />
-                    <Chip href="/archive" label="Archive" accent={accent} ink={ink} />
-                    <Chip href="/contact" label="Contact" accent={accent} ink={ink} />
-                </nav>
-            </div>
-
-            <div
-                aria-hidden
-                style={{
-                    position: "relative",
-                    height: Math.round(railHeight * Math.max(0.85, scale)),
-                    marginTop: 8,
-                }}
-            >
-                <div
-                    style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 54,
-                        background:
-                            "linear-gradient(180deg, rgba(194,170,130,0.35) 0%, rgba(160,130,90,0.55) 100%)",
-                        borderTop: `1.5px solid ${ink}`,
-                        zIndex: 1,
-                    }}
-                />
-                <div
-                    style={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        height: 18,
-                        background: "rgba(90,70,45,0.35)",
-                        zIndex: 2,
-                    }}
-                />
-
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: "0 2% 0",
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
-                        gap: "clamp(4px, 1.2vw, 18px)",
-                        zIndex: 3,
-                        paddingBottom: 10,
-                    }}
-                >
-                    {list.map((obj) => (
-                        <Crop key={obj.key || obj.imageUrl} obj={obj} />
-                    ))}
+                    <div
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                        }}
+                    >
+                        <IconLink
+                            href={instagramUrl}
+                            label="Instagram"
+                            ink={ink}
+                            accent={accent}
+                        >
+                            <InstagramIcon />
+                        </IconLink>
+                        <IconLink
+                            href={linkedinUrl}
+                            label="LinkedIn"
+                            ink={ink}
+                            accent={accent}
+                        >
+                            <LinkedInIcon />
+                        </IconLink>
+                        <IconLink
+                            href={mailHref}
+                            label="Email"
+                            ink={ink}
+                            accent={accent}
+                        >
+                            <EmailIcon />
+                        </IconLink>
+                    </div>
                 </div>
             </div>
         </footer>
     )
 }
 
-function Chip({
+function IconLink({
     href,
     label,
-    accent,
     ink,
+    accent,
+    children,
 }: {
     href: string
     label: string
-    accent: string
     ink: string
+    accent: string
+    children: ReactNode
 }) {
     return (
         <a
             href={href}
+            aria-label={label}
+            target={href.startsWith("mailto:") ? undefined : "_blank"}
+            rel={href.startsWith("mailto:") ? undefined : "noopener noreferrer"}
             style={{
-                display: "inline-block",
-                textDecoration: "none",
-                color: "#fff",
-                background: ink,
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 0.6,
-                padding: "8px 12px",
-                borderRadius: 4,
+                width: 40,
+                height: 40,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
                 border: `1.5px solid ${ink}`,
+                borderRadius: 8,
+                background: creamSafe(),
+                color: ink,
+                textDecoration: "none",
                 boxShadow: `2px 2px 0 ${accent}`,
+                transition: "transform 160ms ease, box-shadow 160ms ease",
+            }}
+            onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translate(-1px, -1px)"
+                e.currentTarget.style.boxShadow = `3px 3px 0 ${accent}`
+            }}
+            onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "none"
+                e.currentTarget.style.boxShadow = `2px 2px 0 ${accent}`
             }}
         >
-            {label}
+            {children}
         </a>
     )
 }
 
-function Crop({ obj }: { obj: FooterObject }) {
-    const x = Number(obj.cropX) || 0
-    const y = Number(obj.cropY) || 0
-    const w = Number(obj.cropW) || 100
-    const h = Number(obj.cropH) || 100
-    const displayW = Number(obj.width) || 100
-    const displayH = (h / w) * displayW
-    const scale = displayW / w
-    const src = resolveImg(obj.imageUrl)
+function creamSafe() {
+    return "rgba(243,239,230,0.92)"
+}
+
+function InstagramIcon() {
     return (
-        <div
-            style={{
-                position: "relative",
-                width: displayW,
-                height: displayH,
-                marginBottom: Number(obj.bottom) || 0,
-                transform: `rotate(${Number(obj.rotate) || 0}deg)`,
-                zIndex: Number(obj.z) || 1,
-                flex: "0 0 auto",
-                overflow: "hidden",
-                filter: "drop-shadow(0 6px 10px rgba(0,0,0,0.18))",
-                transition: "transform 220ms ease",
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.transform = `rotate(${Number(obj.rotate) || 0}deg) translateY(-8px) scale(1.04)`
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.transform = `rotate(${Number(obj.rotate) || 0}deg)`
-            }}
-        >
-            <div
-                style={{
-                    position: "absolute",
-                    width: STAGE_W * scale,
-                    height: STAGE_H * scale,
-                    left: -x * scale,
-                    top: -y * scale,
-                    backgroundImage: src ? `url(${src})` : undefined,
-                    backgroundColor: src ? undefined : "#ddd",
-                    backgroundSize: "100% 100%",
-                    backgroundRepeat: "no-repeat",
-                    pointerEvents: "none",
-                }}
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="5"
+                stroke="currentColor"
+                strokeWidth="1.8"
             />
-        </div>
+            <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8" />
+            <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" />
+        </svg>
     )
 }
 
-function resolveImg(value: unknown): string {
-    if (!value) return ""
-    if (typeof value === "string") return value
-    if (typeof value === "object" && value !== null) {
-        const v = value as { src?: string; url?: string }
-        return String(v.src || v.url || "")
-    }
-    return ""
+function LinkedInIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect
+                x="3"
+                y="3"
+                width="18"
+                height="18"
+                rx="3"
+                stroke="currentColor"
+                strokeWidth="1.8"
+            />
+            <path
+                d="M8 10.5V16.5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+            />
+            <circle cx="8" cy="7.5" r="1.1" fill="currentColor" />
+            <path
+                d="M11.5 16.5V12.2c0-1.3.9-2.2 2.1-2.2 1.2 0 2.1.9 2.1 2.2v4.3"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    )
+}
+
+function EmailIcon() {
+    return (
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <rect
+                x="3"
+                y="5"
+                width="18"
+                height="14"
+                rx="2.5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+            />
+            <path
+                d="M4.5 7.5L12 12.5L19.5 7.5"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    )
 }
 
 const EMPTY_MEDIA = {
@@ -1556,39 +1507,58 @@ addPropertyControls(WorkCase, {
         title: "Display Font",
         controls: "extended",
         defaultFontType: "sans-serif",
-        defaultValue: { fontSize: 40, variant: "Regular" },
+        defaultValue: { fontSize: "40px", variant: "Regular" },
     },
     font: {
         type: ControlType.Font,
         title: "Body Font",
         controls: "extended",
         defaultFontType: "sans-serif",
-        defaultValue: { fontSize: 15, variant: "Regular", lineHeight: "1.5em" },
+        defaultValue: { fontSize: "15px", variant: "Regular", lineHeight: "1.5em" },
     },
-    footerHeadline: { type: ControlType.String, title: "Footer Headline", defaultValue: "back to the desk" },
-    footerSubline: { type: ControlType.String, title: "Footer Subline", displayTextArea: true, defaultValue: "Case closed for now — wander home for the rest of the desk." },
-    footerObjectScale: { type: ControlType.Number, title: "Footer Illustration Scale", defaultValue: 1, min: 0.5, max: 1.8, step: 0.05 },
-    footerRailHeight: { type: ControlType.Number, title: "Footer Rail Height", defaultValue: 220, min: 140, max: 360 },
-    footerHeadlineSize: { type: ControlType.Number, title: "Footer Headline Size", defaultValue: 48, min: 24, max: 96 },
-    footerObjects: {
-        type: ControlType.Array,
-        title: "Footer Illustrations",
-        control: {
-            type: ControlType.Object,
-            controls: {
-                key: { type: ControlType.String, title: "Name", defaultValue: "object" },
-                imageUrl: { type: ControlType.Image, title: "Image" },
-                cropX: { type: ControlType.Number, title: "Crop X", defaultValue: 0 },
-                cropY: { type: ControlType.Number, title: "Crop Y", defaultValue: 0 },
-                cropW: { type: ControlType.Number, title: "Crop W", defaultValue: 100 },
-                cropH: { type: ControlType.Number, title: "Crop H", defaultValue: 100 },
-                width: { type: ControlType.Number, title: "Display Width", defaultValue: 120 },
-                bottom: { type: ControlType.Number, title: "Lift", defaultValue: 0 },
-                rotate: { type: ControlType.Number, title: "Rotate", defaultValue: 0 },
-                z: { type: ControlType.Number, title: "Z", defaultValue: 1 },
-            },
-        },
-        defaultValue: DEFAULT_FOOTER_OBJECTS,
+    footerSubline: {
+        type: ControlType.String,
+        title: "Footer Home Text",
+        displayTextArea: true,
+        defaultValue: "The rest of the story lives on the homepage.",
+    },
+    footerInstagramUrl: {
+        type: ControlType.String,
+        title: "Footer Instagram",
+        defaultValue: "https://instagram.com/",
+    },
+    footerLinkedinUrl: {
+        type: ControlType.String,
+        title: "Footer LinkedIn",
+        defaultValue: "https://linkedin.com/",
+    },
+    footerEmail: {
+        type: ControlType.String,
+        title: "Footer Email",
+        defaultValue: "hello@example.com",
+    },
+    footerDeskScale: {
+        type: ControlType.Number,
+        title: "Footer Desk Scale",
+        defaultValue: 1,
+        min: 0.7,
+        max: 1.4,
+        step: 0.05,
+    },
+    footerHeight: {
+        type: ControlType.Number,
+        title: "Footer Height",
+        defaultValue: 280,
+        min: 220,
+        max: 420,
+        step: 4,
+    },
+    footerHeadlineSize: {
+        type: ControlType.Number,
+        title: "Footer Link Text Size",
+        defaultValue: 36,
+        min: 22,
+        max: 56,
     },
     gridOpacity: {
         type: ControlType.Number,
