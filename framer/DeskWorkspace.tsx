@@ -376,7 +376,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [flash, setFlash] = useState(false)
     const [revealed, setRevealed] = useState(!animated)
     useMotionValueEvent(p, "change", (v) => {
-        const r = v > 0.8
+        // Reveal desk hotspots earlier so Work/Archive clicks don't miss.
+        const r = v > 0.55
         startTransition(() => setRevealed(r))
     })
     useEffect(() => {
