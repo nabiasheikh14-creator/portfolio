@@ -29,25 +29,17 @@ function PageMascot({ mode }: { mode: string }) {
     const displayH = (h / w) * displayW
     const scale = displayW / w
     return (
-        <motion.div
+        <div
             aria-hidden
-            initial={{ opacity: 0, y: 18, rotate: -4 }}
-            animate={{ opacity: 1, y: [0, -10, 0], rotate: [-3, 2.5, -3] }}
-            transition={{
-                opacity: { duration: 0.45 },
-                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
-                rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" },
-            }}
             style={{
                 position: "fixed",
-                right: 16,
-                bottom: 16,
+                right: 0,
+                bottom: 0,
                 width: displayW,
                 height: displayH,
                 zIndex: 50,
                 pointerEvents: "none",
                 overflow: "hidden",
-                filter: "drop-shadow(0 12px 24px rgba(28,24,20,0.2))",
             }}
         >
             <div
@@ -62,7 +54,7 @@ function PageMascot({ mode }: { mode: string }) {
                     backgroundRepeat: "no-repeat",
                 }}
             />
-        </motion.div>
+        </div>
     )
 }
 

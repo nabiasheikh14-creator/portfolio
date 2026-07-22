@@ -47,25 +47,17 @@ function ArchiveMascot() {
     const displayH = (h / w) * displayW
     const scale = displayW / w
     return (
-        <motion.div
+        <div
             aria-hidden
-            initial={{ opacity: 0, y: 18, rotate: -4 }}
-            animate={{ opacity: 1, y: [0, -10, 0], rotate: [-3, 2.5, -3] }}
-            transition={{
-                opacity: { duration: 0.45 },
-                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
-                rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" },
-            }}
             style={{
                 position: "fixed",
-                right: 16,
-                bottom: 16,
+                right: 0,
+                bottom: 0,
                 width: displayW,
                 height: displayH,
                 zIndex: 1100,
                 pointerEvents: "none",
                 overflow: "hidden",
-                filter: "drop-shadow(0 12px 24px rgba(28,24,20,0.2))",
             }}
         >
             <div
@@ -80,7 +72,7 @@ function ArchiveMascot() {
                     backgroundRepeat: "no-repeat",
                 }}
             />
-        </motion.div>
+        </div>
     )
 }
 
@@ -88,7 +80,7 @@ function ArchiveMascot() {
  * Archive Gallery — fixed full-viewport cream stage (matches home).
  * Columns 1+3 and 2+4 auto-drift opposite ways in an infinite loop.
  * Mouse wheel / trackpad speeds the columns (does not move the page).
- * Sticky archive desk art floats bottom-right. Items from Archive CMS.
+ * Archive desk art stuck flush bottom-right. Items from Archive CMS.
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 900

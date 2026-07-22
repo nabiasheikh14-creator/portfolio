@@ -605,7 +605,7 @@ function Popup({
     )
 }
 
-/** Floating desk crop stuck to the bottom-right of a popup modal */
+/** Desk crop stuck flush to the bottom-right of a popup modal */
 function PopupMascot({ objectKey }: { objectKey: string }) {
     const click = CLICKS.find((c) => c.key === objectKey || (objectKey === "schedule" && c.key === "briefcase-calendar"))
     const layer = LAYERS.find((l) => l.key === (objectKey === "schedule" ? "briefcase-calendar" : objectKey))
@@ -615,24 +615,16 @@ function PopupMascot({ objectKey }: { objectKey: string }) {
     const displayH = (h / w) * displayW
     const scale = displayW / w
     return (
-        <motion.div
+        <div
             aria-hidden
-            initial={{ opacity: 0, y: 10, rotate: -6 }}
-            animate={{ opacity: 1, y: [0, -8, 0], rotate: [-4, 3, -4] }}
-            transition={{
-                opacity: { duration: 0.35 },
-                y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" },
-                rotate: { duration: 4.6, repeat: Infinity, ease: "easeInOut" },
-            }}
             style={{
                 position: "absolute",
-                right: -18,
-                bottom: -22,
+                right: 0,
+                bottom: 0,
                 width: displayW,
                 height: displayH,
                 pointerEvents: "none",
                 overflow: "hidden",
-                filter: "drop-shadow(0 10px 18px rgba(28,24,20,0.22))",
                 zIndex: 1,
             }}
         >
@@ -648,7 +640,7 @@ function PopupMascot({ objectKey }: { objectKey: string }) {
                     backgroundRepeat: "no-repeat",
                 }}
             />
-        </motion.div>
+        </div>
     )
 }
 

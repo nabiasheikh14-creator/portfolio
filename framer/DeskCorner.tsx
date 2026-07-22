@@ -38,14 +38,16 @@ function paintMascot(host: HTMLDivElement, objectKey: string, width?: number) {
     host.setAttribute("aria-hidden", "true")
     Object.assign(host.style, {
         position: "fixed",
-        right: "16px",
-        bottom: "16px",
+        right: "0px",
+        bottom: "0px",
         width: `${displayW}px`,
         height: `${displayH}px`,
         zIndex: "45",
         pointerEvents: "none",
         overflow: "hidden",
-        filter: "drop-shadow(0 12px 24px rgba(28,24,20,0.2))",
+        animation: "none",
+        transform: "none",
+        filter: "none",
     } as Partial<CSSStyleDeclaration>)
 
     const inner = document.createElement("div")
@@ -60,24 +62,10 @@ function paintMascot(host: HTMLDivElement, objectKey: string, width?: number) {
         backgroundRepeat: "no-repeat",
     } as Partial<CSSStyleDeclaration>)
     host.appendChild(inner)
-
-    // Gentle float via CSS keyframes (no Framer style merging)
-    if (!document.getElementById("desk-corner-keyframes")) {
-        const style = document.createElement("style")
-        style.id = "desk-corner-keyframes"
-        style.textContent = `
-@keyframes deskCornerFloat {
-  0% { transform: translateY(0) rotate(-3deg); }
-  50% { transform: translateY(-10px) rotate(2.5deg); }
-  100% { transform: translateY(0) rotate(-3deg); }
-}`
-        document.head.appendChild(style)
-    }
-    host.style.animation = "deskCornerFloat 4.5s ease-in-out infinite"
 }
 
 /**
- * Sticky floating desk object in the bottom-right corner.
+ * Desk object stuck flush to the bottom-right corner (no float animation).
  * Place on destination pages so the clicked desk element travels with you.
  *
  * @framerSupportedLayoutWidth any-prefer-fixed
