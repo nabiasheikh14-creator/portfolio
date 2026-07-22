@@ -153,16 +153,17 @@ interface Click {
 const CLICKS: Click[] = [
     {
         key: "archive",
-        // Tighter board hit-area so it doesn't swallow neighboring hotspots.
-        box: [360, 310, 300, 110],
+        // Shelf archive boxes (label sits above the cardboard stack).
+        box: [310, 285, 380, 155],
         label: "ARCHIVE",
         action: "page",
         href: "/archive",
     },
     {
         key: "laptop",
-        // Keep below Chutney / schedule so popup hovers stay reachable.
-        box: [590, 560, 310, 200],
+        // Full laptop including the on-screen "WORK" word + trackpad label.
+        // Smaller neighbors (Chutney / Schedule) still paint above this hit area.
+        box: [555, 430, 370, 330],
         label: "WORK",
         action: "page",
         href: "/work",
@@ -456,18 +457,23 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         }
     }
 
+    function goToDeskPage(path: string) {
+        const clean = path.startsWith("/") ? path : `/${String(path).replace(/^\.\//, "")}`
+        // Hard navigate with origin — Framer's relative SPA routing can 404
+        // (/work/archive) when these desk links are treated as nested paths.
+        const url = `${window.location.origin}${clean}`
+        setPopup(null)
+        setFlash(true)
+        window.setTimeout(() => {
+            window.location.href = url
+        }, 120)
+    }
+
     function activate(c: Click) {
         playUiClick()
         if (c.action === "sound") return toggleSound()
         if (c.action === "page" && c.href) {
-            const href = c.href.startsWith("/")
-                ? c.href
-                : `/${String(c.href).replace(/^\.\//, "")}`
-            setPopup(null)
-            setFlash(true)
-            window.setTimeout(() => {
-                window.location.assign(href)
-            }, 180)
+            goToDeskPage(c.href)
             return
         }
         // Replace any open modal so popup targets never feel stuck/dead.
@@ -924,23 +930,28 @@ function Hotspot({
         </motion.span>
     )
 
-    // Real links for Work / Archive so homepage desk navigation can't go dead.
+    // Real absolute links for Work / Archive (hard navigation in activate).
     if (c.action === "page" && c.href) {
-        const href = c.href.startsWith("/")
+        const path = c.href.startsWith("/")
             ? c.href
             : `/${String(c.href).replace(/^\.\//, "")}`
+        const abs =
+            typeof window !== "undefined"
+                ? `${window.location.origin}${path}`
+                : path
         return (
             <a
-                href={href}
+                href={abs}
                 aria-label={c.label}
                 data-desk-page={c.key}
+                data-desk-path={path}
                 onMouseEnter={onEnter}
                 onMouseLeave={onLeave}
                 onFocus={onEnter}
                 onBlur={onLeave}
                 onClick={(e) => {
-                    // Keep SPA-friendly assign via activate, but href is the fallback.
                     e.preventDefault()
+                    e.stopPropagation()
                     onClick()
                 }}
                 style={boxStyle}
