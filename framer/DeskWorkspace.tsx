@@ -951,19 +951,61 @@ function ModalShell({
     )
 }
 
-function SectionLabel({ children }: { children: ReactNode }) {
+/** Shared CTA style — white fill, ink border, accent offset shadow (Socials popup) */
+function ShadowButton({
+    href,
+    label,
+    accent,
+    ink = INK,
+    onClick,
+}: {
+    href?: string
+    label: string
+    accent: string
+    ink?: string
+    onClick?: () => void
+}) {
+    const style: CSSProperties = {
+        display: "inline-block",
+        border: `1.5px solid ${ink}`,
+        color: ink,
+        textDecoration: "none",
+        fontWeight: 700,
+        fontSize: 14,
+        letterSpacing: 0.4,
+        padding: "12px 18px",
+        background: "#fff",
+        boxShadow: `3px 3px 0 ${accent}`,
+        cursor: "pointer",
+        fontFamily: "inherit",
+    }
+    if (href) {
+        return (
+            <a href={href} target={href.startsWith("mailto:") ? undefined : "_blank"} rel="noreferrer" style={style}>
+                {label}
+            </a>
+        )
+    }
+    return (
+        <button type="button" onClick={onClick} style={style}>
+            {label}
+        </button>
+    )
+}
+
+function SectionLabel({ children, ink = MUTED }: { children: ReactNode; ink?: string }) {
     return (
         <div
             style={{
-                fontSize: 12,
-                fontWeight: 700,
-                letterSpacing: 1,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.08em",
                 textTransform: "uppercase",
-                color: MUTED,
-                marginBottom: 10,
+                color: ink,
+                marginBottom: 14,
             }}
         >
-            [{children}]
+            {children}
         </div>
     )
 }
@@ -987,11 +1029,12 @@ function ExperiencePopup({
     muted?: string
     onClose: () => void
 }) {
-    const current = jobs.filter((j) => /current/i.test(j.status))
-    const past = jobs.filter((j) => !/current/i.test(j.status))
-    const [selected, setSelected] = useState<ExperienceJob>(
-        current[0] || past[0] || jobs[0],
-    )
+    // Current roles first, then past — one list, no separate Currently heading
+    const ordered = [
+        ...jobs.filter((j) => /current/i.test(j.status)),
+        ...jobs.filter((j) => !/current/i.test(j.status)),
+    ]
+    const [selected, setSelected] = useState<ExperienceJob>(ordered[0] || jobs[0])
 
     const learnings = [
         selected?.learning1,
@@ -1000,89 +1043,149 @@ function ExperiencePopup({
         selected?.learning4,
     ].filter((x) => x && String(x).trim())
 
+    const isCurrent = (j: ExperienceJob) => /current/i.test(j.status)
+
     return (
-        <ModalShell onClose={onClose} family={family} width="min(980px, 95vw)">
+        <ModalShell onClose={onClose} family={family} width="min(900px, 94vw)">
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                    minHeight: 420,
+                    gridTemplateColumns: "minmax(240px, 300px) 1fr",
+                    minHeight: 440,
+                    alignItems: "stretch",
                 }}
             >
                 <aside
                     style={{
-                        borderRight: `1.5px solid ${INK}`,
-                        padding: "48px 22px 28px",
+                        borderRight: `1.5px solid ${ink}`,
+                        padding: "52px 28px 36px",
                         boxSizing: "border-box",
+                        background: "#FAFAF8",
                     }}
                 >
-                    {current.length > 0 && (
-                        <div style={{ marginBottom: 28 }}>
-                            <SectionLabel>Currently</SectionLabel>
-                            {current.map((j) => (
-                                <JobLink
-                                    key={j.slug || j.company}
-                                    job={j}
-                                    active={selected === j}
-                                    accent={accent}
+                    <SectionLabel ink={muted}>Experience</SectionLabel>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                        {ordered.map((j) => {
+                            const active =
+                                selected?.slug === j.slug ||
+                                (selected?.company === j.company && selected?.role === j.role)
+                            return (
+                                <button
+                                    key={j.slug || `${j.company}-${j.role}`}
+                                    type="button"
                                     onClick={() => setSelected(j)}
-                                />
-                            ))}
-                        </div>
-                    )}
+                                    style={{
+                                        display: "block",
+                                        width: "100%",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        fontFamily: family,
+                                        padding: "12px 14px",
+                                        background: "#fff",
+                                        border: active
+                                            ? `1.5px solid ${ink}`
+                                            : `1.5px solid transparent`,
+                                        boxShadow: active ? `3px 3px 0 ${accent}` : "none",
+                                        transition: "box-shadow 160ms ease, border-color 160ms ease",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 8,
+                                            marginBottom: 4,
+                                        }}
+                                    >
+                                        <div
+                                            style={{
+                                                fontSize: 15,
+                                                fontWeight: 600,
+                                                letterSpacing: "-0.02em",
+                                                color: ink,
+                                                lineHeight: 1.25,
+                                            }}
+                                        >
+                                            {j.company}
+                                        </div>
+                                        {isCurrent(j) ? (
+                                            <span
+                                                style={{
+                                                    fontSize: 10,
+                                                    fontWeight: 700,
+                                                    letterSpacing: "0.06em",
+                                                    textTransform: "uppercase",
+                                                    color: accent,
+                                                    border: `1px solid ${accent}`,
+                                                    padding: "2px 6px",
+                                                    lineHeight: 1.2,
+                                                }}
+                                            >
+                                                Now
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                    <div
+                                        style={{
+                                            fontSize: 13,
+                                            color: muted,
+                                            letterSpacing: "-0.01em",
+                                            lineHeight: 1.35,
+                                        }}
+                                    >
+                                        {j.role}
+                                    </div>
+                                </button>
+                            )
+                        })}
+                    </div>
 
                     {clients.length > 0 && (
-                        <div style={{ marginBottom: 28 }}>
-                            <SectionLabel>Past clients</SectionLabel>
-                            <ul
+                        <div style={{ marginTop: 32 }}>
+                            <SectionLabel ink={muted}>Clients</SectionLabel>
+                            <div
                                 style={{
-                                    margin: 0,
-                                    padding: 0,
-                                    listStyle: "none",
                                     display: "flex",
-                                    flexDirection: "column",
-                                    gap: 6,
+                                    flexWrap: "wrap",
+                                    gap: 8,
                                 }}
                             >
                                 {clients.map((c) => (
-                                    <li
+                                    <span
                                         key={c}
                                         style={{
-                                            fontSize: 15,
-                                            color: INK,
+                                            fontSize: 12,
+                                            fontWeight: 500,
                                             letterSpacing: "-0.01em",
+                                            color: muted,
+                                            border: `1px solid rgba(17,17,17,0.18)`,
+                                            padding: "6px 10px",
+                                            background: "#fff",
+                                            lineHeight: 1.2,
                                         }}
                                     >
                                         {c}
-                                    </li>
+                                    </span>
                                 ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {past.length > 0 && (
-                        <div>
-                            <SectionLabel>Experience</SectionLabel>
-                            {past.map((j) => (
-                                <JobLink
-                                    key={j.slug || j.company}
-                                    job={j}
-                                    active={selected === j}
-                                    accent={accent}
-                                    onClick={() => setSelected(j)}
-                                />
-                            ))}
+                            </div>
                         </div>
                     )}
                 </aside>
 
-                <div style={{ padding: "48px 36px 36px", boxSizing: "border-box" }}>
+                <div
+                    style={{
+                        padding: "52px 40px 40px",
+                        boxSizing: "border-box",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
                     <div
                         style={{
                             fontFamily: displayFamily,
-                            fontSize: 34,
-                            lineHeight: 1.1,
-                            marginBottom: 8,
+                            fontSize: "clamp(32px, 4vw, 42px)",
+                            lineHeight: 1.08,
+                            marginBottom: 10,
                             color: ink,
                         }}
                     >
@@ -1090,92 +1193,72 @@ function ExperiencePopup({
                     </div>
                     <div
                         style={{
-                            fontSize: 18,
-                            fontWeight: 600,
-                            letterSpacing: "-0.02em",
-                            marginBottom: 4,
-                        }}
-                    >
-                        {selected?.company}
-                    </div>
-                    <div
-                        style={{
-                            fontSize: 14,
-                            color: MUTED,
+                            display: "flex",
+                            flexWrap: "wrap",
+                            alignItems: "baseline",
+                            gap: "6px 14px",
                             marginBottom: 28,
                         }}
                     >
-                        {selected?.duration}
+                        <span
+                            style={{
+                                fontSize: 16,
+                                fontWeight: 650,
+                                letterSpacing: "-0.02em",
+                                color: ink,
+                            }}
+                        >
+                            {selected?.company}
+                        </span>
+                        {selected?.duration ? (
+                            <span style={{ fontSize: 14, color: muted }}>{selected.duration}</span>
+                        ) : null}
                     </div>
 
-                    <SectionLabel>What I learned</SectionLabel>
-                    <ul
+                    <SectionLabel ink={muted}>What I learned</SectionLabel>
+                    <div
                         style={{
-                            margin: 0,
-                            padding: "0 0 0 18px",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 12,
+                            gap: 14,
                         }}
                     >
                         {learnings.map((line, i) => (
-                            <li
+                            <div
                                 key={i}
                                 style={{
-                                    fontSize: 16,
-                                    lineHeight: 1.55,
-                                    color: MUTED,
+                                    display: "grid",
+                                    gridTemplateColumns: "18px 1fr",
+                                    gap: 10,
+                                    alignItems: "start",
                                 }}
                             >
-                                {line}
-                            </li>
+                                <span
+                                    style={{
+                                        width: 8,
+                                        height: 8,
+                                        marginTop: 7,
+                                        background: accent,
+                                        display: "inline-block",
+                                    }}
+                                />
+                                <p
+                                    style={{
+                                        margin: 0,
+                                        fontSize: 16,
+                                        lineHeight: 1.55,
+                                        color: muted,
+                                        letterSpacing: "-0.01em",
+                                    }}
+                                >
+                                    {line}
+                                </p>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
                 </div>
             </div>
         </ModalShell>
-    )
-}
-
-function JobLink({
-    job,
-    active,
-    accent,
-    onClick,
-}: {
-    job: ExperienceJob
-    active: boolean
-    accent: string
-    onClick: () => void
-}) {
-    return (
-        <button
-            type="button"
-            onClick={onClick}
-            style={{
-                display: "block",
-                width: "100%",
-                textAlign: "left",
-                border: "none",
-                background: active ? "rgba(0,0,0,0.05)" : "transparent",
-                borderLeft: active ? `3px solid ${accent}` : "3px solid transparent",
-                padding: "8px 10px",
-                cursor: "pointer",
-                marginBottom: 4,
-            }}
-        >
-            <div
-                style={{
-                    fontSize: 15,
-                    fontWeight: 600,
-                    color: INK,
-                    letterSpacing: "-0.01em",
-                }}
-            >
-                {job.company}
-            </div>
-            <div style={{ fontSize: 13, color: MUTED }}>{job.role}</div>
-        </button>
     )
 }
 
@@ -1205,11 +1288,11 @@ function SchedulePopup({
             <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
                 <div
                     style={{
-                        fontFamily: ANNIE,
+                        fontFamily: displayFamily,
                         fontSize: 42,
                         lineHeight: 1.1,
                         marginBottom: 14,
-                        color: INK,
+                        color: ink,
                     }}
                 >
                     Got a project?
@@ -1220,28 +1303,13 @@ function SchedulePopup({
                         maxWidth: 380,
                         fontSize: 16,
                         lineHeight: 1.6,
-                        color: MUTED,
+                        color: muted,
                     }}
                 >
                     {message}
                 </p>
-                <a
-                    href={mailto}
-                    style={{
-                        display: "inline-block",
-                        background: accent,
-                        color: "#fff",
-                        textDecoration: "none",
-                        fontWeight: 700,
-                        fontSize: 14,
-                        letterSpacing: 0.4,
-                        padding: "14px 22px",
-                        borderRadius: 4,
-                    }}
-                >
-                    Email me
-                </a>
-                <div style={{ marginTop: 14, fontSize: 13, color: MUTED }}>{email}</div>
+                <ShadowButton href={mailto} label="Email me" accent={accent} ink={ink} />
+                <div style={{ marginTop: 14, fontSize: 13, color: muted }}>{email}</div>
             </div>
         </ModalShell>
     )
@@ -1274,11 +1342,11 @@ function SocialsPopup({
             <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
                 <div
                     style={{
-                        fontFamily: ANNIE,
+                        fontFamily: displayFamily,
                         fontSize: 40,
                         lineHeight: 1.1,
                         marginBottom: 12,
-                        color: INK,
+                        color: ink,
                     }}
                 >
                     Come say hi
@@ -1289,7 +1357,7 @@ function SocialsPopup({
                         maxWidth: 340,
                         fontSize: 16,
                         lineHeight: 1.6,
-                        color: MUTED,
+                        color: muted,
                     }}
                 >
                     {message}
@@ -1302,43 +1370,11 @@ function SocialsPopup({
                         flexWrap: "wrap",
                     }}
                 >
-                    <SocialButton href={instagramUrl} label="Instagram" accent={accent} />
-                    <SocialButton href={linkedinUrl} label="LinkedIn" accent={accent} />
+                    <ShadowButton href={instagramUrl} label="Instagram" accent={accent} ink={ink} />
+                    <ShadowButton href={linkedinUrl} label="LinkedIn" accent={accent} ink={ink} />
                 </div>
             </div>
         </ModalShell>
-    )
-}
-
-function SocialButton({
-    href,
-    label,
-    accent,
-}: {
-    href: string
-    label: string
-    accent: string
-}) {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noreferrer"
-            style={{
-                display: "inline-block",
-                border: `1.5px solid ${INK}`,
-                color: INK,
-                textDecoration: "none",
-                fontWeight: 700,
-                fontSize: 14,
-                letterSpacing: 0.4,
-                padding: "12px 18px",
-                background: "#fff",
-                boxShadow: `3px 3px 0 ${accent}`,
-            }}
-        >
-            {label}
-        </a>
     )
 }
 
@@ -1422,24 +1458,9 @@ function MediaCtaPopup({
                         {text}
                     </p>
                     {link ? (
-                        <a
-                            href={link}
-                            target="_blank"
-                            rel="noreferrer"
-                            style={{
-                                alignSelf: "flex-start",
-                                background: accent,
-                                color: "#fff",
-                                textDecoration: "none",
-                                fontWeight: 700,
-                                fontSize: 14,
-                                letterSpacing: 0.4,
-                                padding: "12px 18px",
-                                borderRadius: 4,
-                            }}
-                        >
-                            {linkLabel}
-                        </a>
+                        <div style={{ alignSelf: "flex-start" }}>
+                            <ShadowButton href={link} label={linkLabel} accent={accent} ink={ink} />
+                        </div>
                     ) : null}
                 </div>
             </div>
