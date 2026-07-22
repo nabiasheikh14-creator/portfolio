@@ -375,13 +375,20 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [popup, setPopup] = useState<Click | null>(null)
     const [flash, setFlash] = useState(false)
     const [revealed, setRevealed] = useState(!animated)
+    // Page routes (Work / Archive) become live as soon as the desk intro starts,
+    // not after the full scroll reveal — otherwise those hotspots feel dead.
+    const [deskReady, setDeskReady] = useState(!animated)
     useMotionValueEvent(p, "change", (v) => {
-        // Reveal desk hotspots earlier so Work/Archive clicks don't miss.
-        const r = v > 0.55
-        startTransition(() => setRevealed(r))
+        startTransition(() => {
+            setDeskReady(v > REVEAL_START)
+            setRevealed(v > 0.55)
+        })
     })
     useEffect(() => {
-        if (!animated) setRevealed(true)
+        if (!animated) {
+            setRevealed(true)
+            setDeskReady(true)
+        }
     }, [animated])
 
     const [soundOn, setSoundOn] = useState(true)
@@ -456,14 +463,20 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         playUiClick()
         if (c.action === "sound") return toggleSound()
         if (c.action === "page" && c.href) {
+            const href = c.href.startsWith("/")
+                ? c.href
+                : `/${String(c.href).replace(/^\.\//, "")}`
             setFlash(true)
             window.setTimeout(() => {
-                window.location.href = c.href as string
-            }, 260)
+                window.location.assign(href)
+            }, 180)
             return
         }
         setPopup(c)
     }
+
+    const pageClicks = CLICKS_ORDERED.filter((c) => c.action === "page")
+    const otherClicks = CLICKS_ORDERED.filter((c) => c.action !== "page")
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -568,6 +581,34 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         )
                     })}
 
+                    {/* Work + Archive: always live on the desk (not gated by reveal). */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            zIndex: 22,
+                            pointerEvents: "auto",
+                        }}
+                    >
+                        {pageClicks.map((c) => (
+                            <Hotspot
+                                key={c.key}
+                                c={c}
+                                accent={accent}
+                                family={family}
+                                labelSize={labelSize}
+                                soundOn={soundOn}
+                                visible={deskReady || revealed || !animated}
+                                onEnter={() => setHovered(c.key)}
+                                onLeave={() =>
+                                    setHovered((h) => (h === c.key ? null : h))
+                                }
+                                onClick={() => activate(c)}
+                            />
+                        ))}
+                    </div>
+
+                    {/* Popups / sound: wait for fuller desk reveal */}
                     <div
                         style={{
                             position: "absolute",
@@ -576,7 +617,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                             pointerEvents: revealed ? "auto" : "none",
                         }}
                     >
-                        {CLICKS_ORDERED.map((c) => (
+                        {otherClicks.map((c) => (
                             <Hotspot
                                 key={c.key}
                                 c={c}
@@ -865,6 +906,79 @@ function Hotspot({
                 ? "WRAPPED UP IN BOOKS"
                 : "SOUND OFF"
             : c.label
+    const boxStyle: CSSProperties = {
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        height: h,
+        border: "none",
+        background: "transparent",
+        cursor: "pointer",
+        padding: 0,
+        outline: "none",
+        display: "block",
+        textDecoration: "none",
+        color: "inherit",
+        zIndex: 1,
+        pointerEvents: "auto",
+    }
+
+    const labelEl = (
+        <motion.span
+            initial={false}
+            animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
+            transition={{ duration: 0.25 }}
+            style={
+                {
+                    position: "absolute",
+                    left: "50%",
+                    [below ? "bottom" : "top"]: -26,
+                    transform: "translateX(-50%)",
+                    background: accent,
+                    color: "#fff",
+                    fontFamily: family,
+                    fontWeight: 700,
+                    fontSize: labelSize || 12,
+                    letterSpacing: 0.6,
+                    padding: "3px 8px",
+                    borderRadius: 4,
+                    whiteSpace: "nowrap",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                    pointerEvents: "none",
+                } as CSSProperties
+            }
+        >
+            {label}
+        </motion.span>
+    )
+
+    // Real links for Work / Archive so homepage desk navigation can't go dead.
+    if (c.action === "page" && c.href) {
+        const href = c.href.startsWith("/")
+            ? c.href
+            : `/${String(c.href).replace(/^\.\//, "")}`
+        return (
+            <a
+                href={href}
+                aria-label={c.label}
+                data-desk-page={c.key}
+                onMouseEnter={onEnter}
+                onMouseLeave={onLeave}
+                onFocus={onEnter}
+                onBlur={onLeave}
+                onClick={(e) => {
+                    // Keep SPA-friendly assign via activate, but href is the fallback.
+                    e.preventDefault()
+                    onClick()
+                }}
+                style={boxStyle}
+            >
+                {labelEl}
+            </a>
+        )
+    }
+
     return (
         <button
             type="button"
@@ -874,45 +988,9 @@ function Hotspot({
             onBlur={onLeave}
             onClick={onClick}
             aria-label={c.label}
-            style={{
-                position: "absolute",
-                left: x,
-                top: y,
-                width: w,
-                height: h,
-                border: "none",
-                background: "transparent",
-                cursor: "pointer",
-                padding: 0,
-                outline: "none",
-            }}
+            style={boxStyle}
         >
-            <motion.span
-                initial={false}
-                animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
-                transition={{ duration: 0.25 }}
-                style={
-                    {
-                        position: "absolute",
-                        left: "50%",
-                        [below ? "bottom" : "top"]: -26,
-                        transform: "translateX(-50%)",
-                        background: accent,
-                        color: "#fff",
-                        fontFamily: family,
-                        fontWeight: 700,
-                        fontSize: 12,
-                        letterSpacing: 0.6,
-                        padding: "3px 8px",
-                        borderRadius: 4,
-                        whiteSpace: "nowrap",
-                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                        pointerEvents: "none",
-                    } as CSSProperties
-                }
-            >
-                {label}
-            </motion.span>
+            {labelEl}
         </button>
     )
 }
