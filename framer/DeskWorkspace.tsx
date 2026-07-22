@@ -1029,12 +1029,25 @@ function ExperiencePopup({
     muted?: string
     onClose: () => void
 }) {
-    // Current roles first, then past — one list, no separate Currently heading
-    const ordered = [
-        ...jobs.filter((j) => /current/i.test(j.status)),
-        ...jobs.filter((j) => !/current/i.test(j.status)),
-    ]
-    const [selected, setSelected] = useState<ExperienceJob>(ordered[0] || jobs[0])
+    const sorted = [...(jobs || [])].sort(
+        (a, b) => Number(a.order ?? 0) - Number(b.order ?? 0),
+    )
+    const current = sorted.filter((j) => /current/i.test(j.status))
+    const past = sorted.filter((j) => /past/i.test(j.status))
+    const education = sorted.filter((j) => /educat|school|grad/i.test(j.status))
+    // Fallback: anything not current/education treated as past
+    const earlier =
+        past.length > 0
+            ? past
+            : sorted.filter(
+                  (j) =>
+                      !/current/i.test(j.status) &&
+                      !/educat|school|grad/i.test(j.status),
+              )
+
+    const [selected, setSelected] = useState<ExperienceJob>(
+        current[0] || earlier[0] || education[0] || sorted[0],
+    )
 
     const learnings = [
         selected?.learning1,
@@ -1043,113 +1056,103 @@ function ExperiencePopup({
         selected?.learning4,
     ].filter((x) => x && String(x).trim())
 
-    const isCurrent = (j: ExperienceJob) => /current/i.test(j.status)
+    const isActive = (j: ExperienceJob) =>
+        selected?.slug === j.slug ||
+        (selected?.company === j.company &&
+            selected?.role === j.role &&
+            selected?.duration === j.duration)
+
+    const detailKicker = /educat|school|grad/i.test(selected?.status || "")
+        ? "Highlights"
+        : "What I learned"
 
     return (
-        <ModalShell onClose={onClose} family={family} width="min(900px, 94vw)">
+        <ModalShell onClose={onClose} family={family} width="min(920px, 95vw)">
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "minmax(240px, 300px) 1fr",
-                    minHeight: 440,
+                    gridTemplateColumns: "minmax(260px, 320px) 1fr",
+                    minHeight: 480,
                     alignItems: "stretch",
                 }}
             >
                 <aside
                     style={{
                         borderRight: `1.5px solid ${ink}`,
-                        padding: "52px 28px 36px",
+                        padding: "52px 24px 36px",
                         boxSizing: "border-box",
                         background: "#FAFAF8",
+                        overflow: "auto",
                     }}
                 >
-                    <SectionLabel ink={muted}>Experience</SectionLabel>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {ordered.map((j) => {
-                            const active =
-                                selected?.slug === j.slug ||
-                                (selected?.company === j.company && selected?.role === j.role)
-                            return (
-                                <button
-                                    key={j.slug || `${j.company}-${j.role}`}
-                                    type="button"
-                                    onClick={() => setSelected(j)}
-                                    style={{
-                                        display: "block",
-                                        width: "100%",
-                                        textAlign: "left",
-                                        cursor: "pointer",
-                                        fontFamily: family,
-                                        padding: "12px 14px",
-                                        background: "#fff",
-                                        border: active
-                                            ? `1.5px solid ${ink}`
-                                            : `1.5px solid transparent`,
-                                        boxShadow: active ? `3px 3px 0 ${accent}` : "none",
-                                        transition: "box-shadow 160ms ease, border-color 160ms ease",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 8,
-                                            marginBottom: 4,
-                                        }}
-                                    >
-                                        <div
-                                            style={{
-                                                fontSize: 15,
-                                                fontWeight: 600,
-                                                letterSpacing: "-0.02em",
-                                                color: ink,
-                                                lineHeight: 1.25,
-                                            }}
-                                        >
-                                            {j.company}
-                                        </div>
-                                        {isCurrent(j) ? (
-                                            <span
-                                                style={{
-                                                    fontSize: 10,
-                                                    fontWeight: 700,
-                                                    letterSpacing: "0.06em",
-                                                    textTransform: "uppercase",
-                                                    color: accent,
-                                                    border: `1px solid ${accent}`,
-                                                    padding: "2px 6px",
-                                                    lineHeight: 1.2,
-                                                }}
-                                            >
-                                                Now
-                                            </span>
-                                        ) : null}
-                                    </div>
-                                    <div
-                                        style={{
-                                            fontSize: 13,
-                                            color: muted,
-                                            letterSpacing: "-0.01em",
-                                            lineHeight: 1.35,
-                                        }}
-                                    >
-                                        {j.role}
-                                    </div>
-                                </button>
-                            )
-                        })}
-                    </div>
-
-                    {clients.length > 0 && (
-                        <div style={{ marginTop: 32 }}>
-                            <SectionLabel ink={muted}>Clients</SectionLabel>
+                    {current.length > 0 && (
+                        <ExpGroup label="Now" muted={muted}>
                             <div
                                 style={{
-                                    display: "flex",
-                                    flexWrap: "wrap",
+                                    display: "grid",
+                                    gridTemplateColumns:
+                                        current.length > 1 ? "1fr 1fr" : "1fr",
                                     gap: 8,
                                 }}
                             >
+                                {current.map((j) => (
+                                    <ExpNavCard
+                                        key={j.slug || `${j.company}-${j.role}`}
+                                        job={j}
+                                        active={isActive(j)}
+                                        accent={accent}
+                                        ink={ink}
+                                        muted={muted}
+                                        family={family}
+                                        compact
+                                        onClick={() => setSelected(j)}
+                                    />
+                                ))}
+                            </div>
+                        </ExpGroup>
+                    )}
+
+                    {earlier.length > 0 && (
+                        <ExpGroup label="Earlier" muted={muted}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {earlier.map((j) => (
+                                    <ExpNavCard
+                                        key={j.slug || `${j.company}-${j.role}`}
+                                        job={j}
+                                        active={isActive(j)}
+                                        accent={accent}
+                                        ink={ink}
+                                        muted={muted}
+                                        family={family}
+                                        onClick={() => setSelected(j)}
+                                    />
+                                ))}
+                            </div>
+                        </ExpGroup>
+                    )}
+
+                    {education.length > 0 && (
+                        <ExpGroup label="School" muted={muted}>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                {education.map((j) => (
+                                    <ExpNavCard
+                                        key={j.slug || `${j.company}-${j.role}`}
+                                        job={j}
+                                        active={isActive(j)}
+                                        accent={accent}
+                                        ink={ink}
+                                        muted={muted}
+                                        family={family}
+                                        onClick={() => setSelected(j)}
+                                    />
+                                ))}
+                            </div>
+                        </ExpGroup>
+                    )}
+
+                    {clients.length > 0 && (
+                        <ExpGroup label="Clients" muted={muted}>
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                                 {clients.map((c) => (
                                     <span
                                         key={c}
@@ -1158,7 +1161,7 @@ function ExperiencePopup({
                                             fontWeight: 500,
                                             letterSpacing: "-0.01em",
                                             color: muted,
-                                            border: `1px solid rgba(17,17,17,0.18)`,
+                                            border: "1px solid rgba(17,17,17,0.16)",
                                             padding: "6px 10px",
                                             background: "#fff",
                                             lineHeight: 1.2,
@@ -1168,7 +1171,7 @@ function ExperiencePopup({
                                     </span>
                                 ))}
                             </div>
-                        </div>
+                        </ExpGroup>
                     )}
                 </aside>
 
@@ -1182,8 +1185,24 @@ function ExperiencePopup({
                 >
                     <div
                         style={{
+                            fontSize: 11,
+                            fontWeight: 700,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: accent,
+                            marginBottom: 10,
+                        }}
+                    >
+                        {/current/i.test(selected?.status || "")
+                            ? "Current role"
+                            : /educat|school|grad/i.test(selected?.status || "")
+                              ? "Education"
+                              : "Past role"}
+                    </div>
+                    <div
+                        style={{
                             fontFamily: displayFamily,
-                            fontSize: "clamp(32px, 4vw, 42px)",
+                            fontSize: "clamp(30px, 3.8vw, 40px)",
                             lineHeight: 1.08,
                             marginBottom: 10,
                             color: ink,
@@ -1198,12 +1217,14 @@ function ExperiencePopup({
                             alignItems: "baseline",
                             gap: "6px 14px",
                             marginBottom: 28,
+                            paddingBottom: 22,
+                            borderBottom: `1px solid rgba(17,17,17,0.12)`,
                         }}
                     >
                         <span
                             style={{
                                 fontSize: 16,
-                                fontWeight: 650,
+                                fontWeight: 600,
                                 letterSpacing: "-0.02em",
                                 color: ink,
                             }}
@@ -1215,14 +1236,8 @@ function ExperiencePopup({
                         ) : null}
                     </div>
 
-                    <SectionLabel ink={muted}>What I learned</SectionLabel>
-                    <div
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 14,
-                        }}
-                    >
+                    <SectionLabel ink={muted}>{detailKicker}</SectionLabel>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
                         {learnings.map((line, i) => (
                             <div
                                 key={i}
@@ -1259,6 +1274,87 @@ function ExperiencePopup({
                 </div>
             </div>
         </ModalShell>
+    )
+}
+
+function ExpGroup({
+    label,
+    muted,
+    children,
+}: {
+    label: string
+    muted: string
+    children: ReactNode
+}) {
+    return (
+        <div style={{ marginBottom: 28 }}>
+            <SectionLabel ink={muted}>{label}</SectionLabel>
+            {children}
+        </div>
+    )
+}
+
+function ExpNavCard({
+    job,
+    active,
+    accent,
+    ink,
+    muted,
+    family,
+    compact,
+    onClick,
+}: {
+    job: ExperienceJob
+    active: boolean
+    accent: string
+    ink: string
+    muted: string
+    family: string
+    compact?: boolean
+    onClick: () => void
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            style={{
+                display: "block",
+                width: "100%",
+                textAlign: "left",
+                cursor: "pointer",
+                fontFamily: family,
+                padding: compact ? "12px 12px" : "12px 14px",
+                background: "#fff",
+                border: active ? `1.5px solid ${ink}` : `1.5px solid rgba(17,17,17,0.08)`,
+                boxShadow: active ? `3px 3px 0 ${accent}` : "none",
+                transition: "box-shadow 160ms ease, border-color 160ms ease",
+                boxSizing: "border-box",
+                minHeight: compact ? 72 : undefined,
+            }}
+        >
+            <div
+                style={{
+                    fontSize: compact ? 13 : 14,
+                    fontWeight: 600,
+                    letterSpacing: "-0.02em",
+                    color: ink,
+                    lineHeight: 1.25,
+                    marginBottom: 4,
+                }}
+            >
+                {job.company}
+            </div>
+            <div
+                style={{
+                    fontSize: compact ? 12 : 13,
+                    color: muted,
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.35,
+                }}
+            >
+                {job.role}
+            </div>
+        </button>
     )
 }
 
@@ -1550,40 +1646,76 @@ const DEFAULT_CLIENTS = ["Lemme", "Adobe", "Wellness Co.", "Atelier"]
 
 const DEFAULT_EXPERIENCE: ExperienceJob[] = [
     {
-        company: "Independent",
-        role: "Freelance Designer",
+        company: "Studio North",
+        role: "Product Designer",
         duration: "2024 — Present",
         status: "Currently",
-        learning1: "How to scope projects so both sides stay sane.",
+        learning1: "Shipping calm product UI under real sprint pressure.",
+        learning2: "Pairing tightly with eng so polish survives handoff.",
+        learning3: "Keeping brand voice intact inside functional flows.",
+        learning4: "Defending focus time when every surface wants a redesign.",
+        order: 1,
+        slug: "role-one",
+    },
+    {
+        company: "Independent",
+        role: "Freelance Designer",
+        duration: "2023 — Present",
+        status: "Currently",
+        learning1: "Scoping projects so both sides stay sane.",
         learning2: "Taste is a deliverable — not just pixels.",
         learning3: "Clear async updates beat long meetings.",
         learning4: "Saying no early protects the work.",
-        order: 1,
-        slug: "freelance",
+        order: 2,
+        slug: "role-two",
     },
     {
         company: "Wellness Studio Co.",
         role: "Product Designer",
-        duration: "2023 — 2024",
+        duration: "2022 — 2023",
         status: "Past",
         learning1: "Calm UI still needs decisive hierarchy.",
         learning2: "Research without synthesis is just notes.",
         learning3: "Design systems only work if squads adopt them.",
         learning4: "Ship the thin wedge first.",
-        order: 2,
-        slug: "studio-residency",
+        order: 3,
+        slug: "past-one",
     },
     {
         company: "Brand Lab",
         role: "Visual Designer",
-        duration: "2022 — 2023",
+        duration: "2021 — 2022",
         status: "Past",
         learning1: "Brand systems need room to bend.",
         learning2: "Photography direction changes everything.",
         learning3: "Type pairing is half the personality.",
         learning4: "Clients feel cared for when you show process.",
-        order: 3,
-        slug: "brand-lab",
+        order: 4,
+        slug: "past-two",
+    },
+    {
+        company: "Campus Creatives",
+        role: "Design Intern",
+        duration: "2020 — 2021",
+        status: "Past",
+        learning1: "Speed without taste is just noise.",
+        learning2: "Feedback is a craft — ask better questions.",
+        learning3: "Small briefs still deserve a point of view.",
+        learning4: "Documenting decisions saves future-you.",
+        order: 5,
+        slug: "past-three",
+    },
+    {
+        company: "Your University",
+        role: "BFA / Design",
+        duration: "Class of 20XX",
+        status: "Education",
+        learning1: "Replace with your concentration, thesis, or honors.",
+        learning2: "Add coursework, labs, or exhibitions that shaped your taste.",
+        learning3: "Note any leadership, clubs, or teaching-assistant work.",
+        learning4: "Keep it short — hiring managers skim education.",
+        order: 6,
+        slug: "graduation",
     },
 ]
 
@@ -1651,8 +1783,8 @@ addPropertyControls(DeskWorkspace, {
                 status: {
                     type: ControlType.Enum,
                     title: "Status",
-                    options: ["Currently", "Past"],
-                    optionTitles: ["Currently", "Past"],
+                    options: ["Currently", "Past", "Education"],
+                    optionTitles: ["Currently", "Past", "Education"],
                     defaultValue: "Past",
                 },
                 learning1: { type: ControlType.String, title: "Learning 1", displayTextArea: true, defaultValue: "" },
