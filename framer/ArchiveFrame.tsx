@@ -104,17 +104,19 @@ export default function ArchiveFrame(props: ArchiveFrameProps) {
                 style={{
                     width: "100%",
                     height: "100%",
-                    padding: 8,
-                    background: "#fbfaf6",
-                    border: "2px solid #111",
+                    padding: 0,
+                    background: "#161616",
+                    border: "1px solid rgba(255,255,255,0.12)",
+                    borderRadius: 6,
                     boxShadow: hover
-                        ? "8px 8px 0 rgba(17,17,17,0.9)"
-                        : "4px 4px 0 rgba(17,17,17,0.55)",
+                        ? "0 12px 28px rgba(0,0,0,0.45)"
+                        : "0 4px 14px rgba(0,0,0,0.25)",
                     cursor: "pointer",
                     position: "relative",
                     transform: hover ? "scale(1.03)" : "scale(1)",
                     transition: "transform 0.12s ease, box-shadow 0.12s ease",
                     display: "block",
+                    overflow: "hidden",
                 }}
             >
                 <div style={{ position: "relative", width: "100%", height: "100%", overflow: "hidden", background: "#ddd" }}>

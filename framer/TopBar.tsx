@@ -1,8 +1,17 @@
+/**
+ * TopBar — DEPRECATED as a code component.
+ *
+ * The live site now uses an editable **design component** named "TopBar"
+ * (Inter, all-caps, letter-spacing -1px, Contact as a text link like Work /
+ * Archive). Kept here only so older instances don't break if referenced.
+ *
+ * Prefer the canvas design component for text / font / spacing edits.
+ */
 import { type CSSProperties } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 const INTER =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Inter", "Inter Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
 interface TopBarProps {
     name: string
@@ -15,9 +24,6 @@ interface TopBarProps {
 }
 
 /**
- * Top Bar — a floating, sticky pill centered at the top of the page: the name
- * (→ home), Work + Archive links, and a Contact button.
- *
  * @framerIntrinsicHeight 72
  * @framerSupportedLayoutWidth any-prefer-fixed
  * @framerSupportedLayoutHeight fixed
@@ -28,96 +34,69 @@ export default function TopBar(props: TopBarProps) {
         workHref = "/work",
         archiveHref = "/archive",
         contactHref = "/contact",
-        accent = "#2C6BE0",
     } = props
     const family = props.font?.fontFamily || INTER
+
+    const link: CSSProperties = {
+        fontFamily: family,
+        fontWeight: 500,
+        fontSize: 13,
+        letterSpacing: "-1px",
+        textTransform: "uppercase",
+        color: "#111",
+        textDecoration: "none",
+        whiteSpace: "nowrap",
+    }
 
     return (
         <div
             style={{
-                position: "sticky",
-                top: 16,
-                zIndex: 1000,
+                position: "relative",
                 width: "100%",
                 display: "flex",
                 justifyContent: "center",
                 pointerEvents: "none",
-                padding: "0 16px",
+                padding: "20px 24px 0",
                 boxSizing: "border-box",
                 fontFamily: family,
                 ...props.style,
             }}
         >
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
             <div
                 style={{
                     pointerEvents: "auto",
                     display: "flex",
                     alignItems: "center",
-                    gap: 20,
+                    gap: 22,
                     maxWidth: "100%",
-                    padding: "9px 10px 9px 22px",
+                    padding: "10px 22px",
                     borderRadius: 999,
-                    background: "rgba(255,255,255,0.86)",
+                    background: "rgba(255,255,255,0.88)",
                     backdropFilter: "blur(10px)",
                     WebkitBackdropFilter: "blur(10px)",
                     border: "1.5px solid #111",
                     boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
                 }}
             >
-                <a
-                    href="/"
-                    style={{
-                        fontFamily: family,
-                        fontSize: 16,
-                        fontWeight: 700,
-                        letterSpacing: "0.02em",
-                        color: "#111",
-                        textDecoration: "none",
-                        whiteSpace: "nowrap",
-                    }}
-                >
+                <a href="/" style={{ ...link, fontWeight: 600, fontSize: 14 }}>
                     {name}
                 </a>
-                <span style={{ width: 1, height: 20, background: "rgba(17,17,17,0.25)", flex: "none" }} />
-                <nav style={{ display: "flex", alignItems: "center", gap: 16 }}>
-                    <a href={workHref} style={linkStyle(family)}>
+                <span style={{ width: 1, height: 16, background: "rgba(17,17,17,0.22)", flex: "none" }} />
+                <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
+                    <a href={workHref} style={link}>
                         Work
                     </a>
-                    <a href={archiveHref} style={linkStyle(family)}>
+                    <a href={archiveHref} style={link}>
                         Archive
                     </a>
-                    <a
-                        href={contactHref}
-                        style={{
-                            fontFamily: family,
-                            fontWeight: 600,
-                            fontSize: 14,
-                            color: "#fff",
-                            background: accent,
-                            textDecoration: "none",
-                            padding: "9px 16px",
-                            borderRadius: 999,
-                            whiteSpace: "nowrap",
-                        }}
-                    >
-                        Contact me
+                    <a href={contactHref} style={link}>
+                        Contact
                     </a>
                 </nav>
             </div>
         </div>
     )
-}
-
-function linkStyle(family: string): CSSProperties {
-    return {
-        fontFamily: family,
-        fontWeight: 400,
-        fontSize: 15,
-        color: "#111",
-        textDecoration: "none",
-        whiteSpace: "nowrap",
-    }
 }
 
 addPropertyControls(TopBar, {
@@ -131,6 +110,6 @@ addPropertyControls(TopBar, {
         title: "Font",
         controls: "extended",
         defaultFontType: "sans-serif",
-        defaultValue: { fontSize: 15, variant: "Regular" },
+        defaultValue: { fontSize: 13, variant: "Medium" },
     },
 })

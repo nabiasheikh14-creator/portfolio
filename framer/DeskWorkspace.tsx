@@ -206,9 +206,10 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
     const hintOpacity = useTransform(p, [0, 0.05], [1, 0])
 
+    // Cover the viewport edge-to-edge (like the bg layer filling the screen),
+    // instead of letterboxing with cream margins.
     const scale = useMemo(() => {
-        const pad = vp.w < 820 ? 8 : 48
-        return Math.max(0.2, Math.min((vp.w - pad) / STAGE_W, (vp.h - pad) / STAGE_H, 1.1))
+        return Math.max(vp.w / STAGE_W, vp.h / STAGE_H)
     }, [vp])
 
     const [hovered, setHovered] = useState<string | null>(null)
