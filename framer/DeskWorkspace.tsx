@@ -316,7 +316,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const p = useSpring(scrollYProgress, { stiffness: 80, damping: 26, mass: 0.6 })
 
     const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
-    const hintOpacity = useTransform(p, [0, 0.05], [1, 0])
 
     const scale = useMemo(() => {
         return Math.max(vp.w / STAGE_W, vp.h / STAGE_H)
@@ -578,36 +577,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 >
                                     {welcomeText}
                                 </motion.h1>
-                            </motion.div>
-                            <motion.div
-                                style={{
-                                    position: "absolute",
-                                    bottom: 34,
-                                    left: 0,
-                                    right: 0,
-                                    textAlign: "center",
-                                    zIndex: 41,
-                                    opacity: hintOpacity,
-                                    color: "#111",
-                                    fontFamily: ANNIE,
-                                    fontSize: 28,
-                                    pointerEvents: "none",
-                                }}
-                            >
-                                <motion.div
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ duration: 1.4, delay: 1.6 }}
-                                >
-                                    scroll to set up the desk
-                                </motion.div>
-                                <motion.div
-                                    animate={{ y: [0, 7, 0] }}
-                                    transition={{ duration: 1.4, repeat: Infinity }}
-                                    style={{ fontSize: 24 }}
-                                >
-                                    ↓
-                                </motion.div>
                             </motion.div>
                         </>
                     )}
