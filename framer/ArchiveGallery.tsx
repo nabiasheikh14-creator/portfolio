@@ -35,11 +35,60 @@ interface ArchiveGalleryProps {
     style?: CSSProperties
 }
 
+const CREAM = "#F3EFE6"
+const STAGE_W = 1440
+const STAGE_H = 900
+const ARCHIVE_HASH = "969XNx9nZpgbsuyO98EvRf52B4w"
+const ARCHIVE_BOX: [number, number, number, number] = [329, 292, 384, 140]
+
+function ArchiveMascot() {
+    const [x, y, w, h] = ARCHIVE_BOX
+    const displayW = 220
+    const displayH = (h / w) * displayW
+    const scale = displayW / w
+    return (
+        <motion.div
+            aria-hidden
+            initial={{ opacity: 0, y: 18, rotate: -4 }}
+            animate={{ opacity: 1, y: [0, -10, 0], rotate: [-3, 2.5, -3] }}
+            transition={{
+                opacity: { duration: 0.45 },
+                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" },
+            }}
+            style={{
+                position: "fixed",
+                right: 16,
+                bottom: 16,
+                width: displayW,
+                height: displayH,
+                zIndex: 1100,
+                pointerEvents: "none",
+                overflow: "hidden",
+                filter: "drop-shadow(0 12px 24px rgba(28,24,20,0.2))",
+            }}
+        >
+            <div
+                style={{
+                    position: "absolute",
+                    width: STAGE_W * scale,
+                    height: STAGE_H * scale,
+                    left: -x * scale,
+                    top: -y * scale,
+                    backgroundImage: `url(https://framerusercontent.com/images/${ARCHIVE_HASH}.png)`,
+                    backgroundSize: "100% 100%",
+                    backgroundRepeat: "no-repeat",
+                }}
+            />
+        </motion.div>
+    )
+}
+
 /**
- * Archive Gallery — fixed full-viewport black stage (page does NOT scroll).
+ * Archive Gallery — fixed full-viewport cream stage (matches home).
  * Columns 1+3 and 2+4 auto-drift opposite ways in an infinite loop.
  * Mouse wheel / trackpad speeds the columns (does not move the page).
- * Items synced from the Archive CMS.
+ * Sticky archive desk art floats bottom-right. Items from Archive CMS.
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 900
@@ -51,7 +100,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         items = DEFAULT_ITEMS,
         accent = "#2C6BE0",
         columns = 4,
-        gridOpacity = 0.1,
+        gridOpacity = 0.06,
     } = props
 
     const isStatic = useIsStaticRenderer()
@@ -106,8 +155,8 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
 
         html.style.overflow = "hidden"
         body.style.overflow = "hidden"
-        html.style.background = "#050505"
-        body.style.background = "#050505"
+        html.style.background = CREAM
+        body.style.background = CREAM
 
         const onWheel = (e: WheelEvent) => {
             e.preventDefault()
@@ -153,7 +202,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 style={{
                     width: "100%",
                     height: "100%",
-                    background: "#0a0a0a",
+                    background: CREAM,
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr 1fr 1fr",
                     gap: 8,
@@ -161,7 +210,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 }}
             >
                 {[0, 1, 2, 3].map((i) => (
-                    <div key={i} style={{ background: "#1a1a1a", borderRadius: 6 }} />
+                    <div key={i} style={{ background: "#e4dfd3", borderRadius: 6 }} />
                 ))}
             </div>
         )
@@ -174,7 +223,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 width: "100%",
                 height: isStatic ? "100%" : "100vh",
                 minHeight: "100vh",
-                background: "#050505",
+                background: CREAM,
                 overflow: "hidden",
                 fontFamily: SANS,
                 ...props.style,
@@ -185,7 +234,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 rel="stylesheet"
             />
 
-            {/* Desk grid at low opacity — inside the black stage only */}
+            {/* Soft desk grid under the cream stage */}
             <div
                 aria-hidden
                 style={{
@@ -196,7 +245,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                     backgroundPosition: "center",
                     opacity: gridOpacity,
                     pointerEvents: "none",
-                    filter: "grayscale(1) brightness(0.35)",
+                    filter: "grayscale(1) brightness(1.05) contrast(0.92)",
                     zIndex: 0,
                 }}
             />
@@ -228,15 +277,18 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
             </div>
 
             {RenderTarget.current() !== RenderTarget.canvas && (
-                <AnimatePresence>
-                    {open && (
-                        <Lightbox
-                            item={open}
-                            accent={accent}
-                            onClose={() => setOpen(null)}
-                        />
-                    )}
-                </AnimatePresence>
+                <>
+                    <ArchiveMascot />
+                    <AnimatePresence>
+                        {open && (
+                            <Lightbox
+                                item={open}
+                                accent={accent}
+                                onClose={() => setOpen(null)}
+                            />
+                        )}
+                    </AnimatePresence>
+                </>
             )}
         </div>
     )
@@ -370,10 +422,11 @@ function Tile({
                 width: "100%",
                 padding: 0,
                 border: "none",
-                background: "#161616",
+                background: "#e8e2d6",
                 cursor: "pointer",
                 overflow: "hidden",
                 borderRadius: 8,
+                boxShadow: "0 2px 10px rgba(28,24,20,0.08)",
                 aspectRatio: tall ? "3 / 4.2" : "4 / 5",
                 flex: "none",
             }}
@@ -452,7 +505,7 @@ function Lightbox({
                 position: "fixed",
                 inset: 0,
                 zIndex: 1000,
-                background: "rgba(0,0,0,0.85)",
+                background: "rgba(30,26,18,0.45)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -466,14 +519,14 @@ function Lightbox({
                 transition={{ type: "spring", stiffness: 280, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    background: "#0f0f0f",
-                    border: "1px solid rgba(255,255,255,0.18)",
+                    background: "#fff",
+                    border: "1.5px solid #111",
                     width: "min(920px, 96vw)",
                     maxHeight: "92vh",
                     overflow: "auto",
                     position: "relative",
                     fontFamily: SANS,
-                    color: "#fff",
+                    color: "#111",
                 }}
             >
                 <button
@@ -507,7 +560,7 @@ function Lightbox({
                         maxHeight: "68vh",
                         objectFit: "contain",
                         display: "block",
-                        background: "#111",
+                        background: CREAM,
                     }}
                 />
                 <div style={{ padding: "22px 24px 28px" }}>
@@ -518,6 +571,7 @@ function Lightbox({
                             fontWeight: 600,
                             letterSpacing: "-1px",
                             textTransform: "uppercase",
+                            color: "#111",
                         }}
                     >
                         {item.title}
@@ -527,7 +581,7 @@ function Lightbox({
                             margin: 0,
                             fontSize: 15,
                             lineHeight: 1.6,
-                            color: "rgba(255,255,255,0.72)",
+                            color: "#333",
                             maxWidth: 560,
                         }}
                     >
@@ -590,7 +644,7 @@ addPropertyControls(ArchiveGallery, {
     gridOpacity: {
         type: ControlType.Number,
         title: "Grid Opacity",
-        defaultValue: 0.1,
+        defaultValue: 0.06,
         min: 0,
         max: 0.4,
         step: 0.01,

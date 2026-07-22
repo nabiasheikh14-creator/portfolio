@@ -7,29 +7,25 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
 
 ### Home — full-bleed desk + floating TopBar
 - **`DeskWorkspace.tsx`** — illustrated desk layers, scroll-reveal. The stage
-  **covers the viewport** (`object-fit: cover` style scaling) so the `bg` grid
-  fills edge-to-edge instead of letterboxing on cream.
-- **TopBar (design component)** — editable canvas component (`TopBar`), not
-  code. Inter, **all caps**, **letter-spacing -1px**. Name + Work / Archive /
-  Contact are the same text-link style (no Contact button). Fixed overlay with
-  ~48px top spacer so the pill floats over the desk. **Light** + **Dark**
-  variants. Text/fonts/spacing are editable on the component (variables +
-  text style presets **TopBar Name** / **TopBar Nav**).
+  **covers the viewport** so the `bg` grid fills edge-to-edge.
+- Desk **popups** show the clicked object floating in the modal’s bottom-right.
+- **TopBar (design component)** — Inter, all caps, letter-spacing -1px. Light + Dark variants.
 
-### Archive — AIC Awards–style gallery
-- **`ArchiveGallery.tsx`** — 4 columns auto-drift slowly in **opposite**
-  directions (1+3 vs 2+4). Page scroll speeds them up. Content is looped so
-  the scroll never ends. Click → lightbox popup. No edge vignette masks.
-- Black page + low-opacity desk grid. Items synced from the **Archive** CMS
-  (`Items` array with image URLs). Add/edit projects in the Archive CMS, then
-  re-sync the gallery Items.
-- TopBar **Dark** variant on this page.
+### Archive — cream stage + sticky archive boxes
+- **`ArchiveGallery.tsx`** — cream `#F3EFE6` (matches home), 4 opposite-drifting columns,
+  wheel boosts speed (page does not scroll). Sticky **archive** desk art bottom-right.
+- TopBar **Light** variant.
+
+### Desk corner mascots
+- **`DeskCorner.tsx`** — sticky floating crop of the desk object you clicked.
+  - `/archive` → archive boxes (built into ArchiveGallery)
+  - `/work` → laptop
+  - `/about` → chutney (via SiteRoutes)
+  - `/contact` → phone (via SiteRoutes)
 
 ### Also
-- **`ArchiveFrame.tsx`** — single CMS-bound frame (still available for
-  Collection Lists).
-- **`TopBar.tsx`** — deprecated code fallback; prefer the design component.
-- Older: `Y2KHome.tsx`, `SiteRoutes.tsx`.
+- **`ArchiveFrame.tsx`**, **`SiteRoutes.tsx`**, deprecated **`TopBar.tsx`** code fallback.
+- Older: `Y2KHome.tsx`.
 
 ## Routes
 
@@ -39,6 +35,8 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
 | `/archive` | Infinite column gallery + popups |
 | `/work` | Projects list |
 | `/work/:slug` | Case study |
+| `/about` | About |
+| `/contact` | Contact |
 
 ## Accent
 `#2C6BE0`

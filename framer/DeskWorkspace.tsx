@@ -432,6 +432,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         href={popup.popup.href}
                         accent={accent}
                         family={family}
+                        objectKey={popup.key === "briefcase-calendar" ? "schedule" : popup.key}
                         onClose={() => setPopup(null)}
                         onVisit={(h) => {
                             setPopup(null)
@@ -575,6 +576,7 @@ function Popup({
     href,
     accent,
     family,
+    objectKey,
     onClose,
     onVisit,
 }: {
@@ -584,19 +586,68 @@ function Popup({
     href?: string
     accent: string
     family: string
+    objectKey: string
     onClose: () => void
     onVisit: (href: string) => void
 }) {
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 80, background: "rgba(30,26,18,0.45)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: family }}>
-                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: family, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer" }}>X CLOSE</button>
+            <motion.div initial={{ scale: 0.92, y: 12 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94 }} transition={{ type: "spring", stiffness: 320, damping: 26 }} onClick={(e) => e.stopPropagation()} style={{ background: "#fff", border: "1.5px solid #111", width: "min(500px, 92vw)", padding: "48px 34px 34px", position: "relative", textAlign: "center", fontFamily: family, overflow: "visible" }}>
+                <button type="button" onClick={onClose} aria-label="Close" style={{ position: "absolute", top: 12, right: 12, fontFamily: family, fontWeight: 700, fontSize: 13, letterSpacing: 1, background: "#111", color: "#fff", border: "none", padding: "6px 10px", cursor: "pointer", zIndex: 2 }}>X CLOSE</button>
                 <h3 style={{ fontFamily: family, fontWeight: 700, fontSize: 30, margin: "0 0 12px", color: "#111", letterSpacing: "-0.01em" }}>{title}</h3>
                 <p style={{ fontSize: 16, lineHeight: 1.55, margin: "0 auto", maxWidth: 360, color: "#333" }}>{blurb}</p>
                 {visit && href && (
                     <button type="button" onClick={() => onVisit(href)} style={{ marginTop: 22, fontFamily: family, fontWeight: 700, fontSize: 14, letterSpacing: 0.5, background: accent, color: "#fff", border: "none", padding: "12px 20px", cursor: "pointer", borderRadius: 4 }}>★ {visit} ★</button>
                 )}
+                <PopupMascot objectKey={objectKey} />
             </motion.div>
+        </motion.div>
+    )
+}
+
+/** Floating desk crop stuck to the bottom-right of a popup modal */
+function PopupMascot({ objectKey }: { objectKey: string }) {
+    const click = CLICKS.find((c) => c.key === objectKey || (objectKey === "schedule" && c.key === "briefcase-calendar"))
+    const layer = LAYERS.find((l) => l.key === (objectKey === "schedule" ? "briefcase-calendar" : objectKey))
+    if (!click || !layer) return null
+    const [x, y, w, h] = click.box
+    const displayW = Math.min(150, Math.max(90, w * 0.55))
+    const displayH = (h / w) * displayW
+    const scale = displayW / w
+    return (
+        <motion.div
+            aria-hidden
+            initial={{ opacity: 0, y: 10, rotate: -6 }}
+            animate={{ opacity: 1, y: [0, -8, 0], rotate: [-4, 3, -4] }}
+            transition={{
+                opacity: { duration: 0.35 },
+                y: { duration: 3.8, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 4.6, repeat: Infinity, ease: "easeInOut" },
+            }}
+            style={{
+                position: "absolute",
+                right: -18,
+                bottom: -22,
+                width: displayW,
+                height: displayH,
+                pointerEvents: "none",
+                overflow: "hidden",
+                filter: "drop-shadow(0 10px 18px rgba(28,24,20,0.22))",
+                zIndex: 1,
+            }}
+        >
+            <div
+                style={{
+                    position: "absolute",
+                    width: STAGE_W * scale,
+                    height: STAGE_H * scale,
+                    left: -x * scale,
+                    top: -y * scale,
+                    backgroundImage: `url(${IMG}${layer.hash}.png)`,
+                    backgroundSize: "100% 100%",
+                    backgroundRepeat: "no-repeat",
+                }}
+            />
         </motion.div>
     )
 }

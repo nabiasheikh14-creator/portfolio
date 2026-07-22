@@ -9,8 +9,62 @@ import { addPropertyControls, ControlType } from "framer"
 const DISPLAY = '"Archivo Black", "Arial Black", sans-serif'
 const MONO = '"Space Mono", ui-monospace, monospace'
 const PIXEL = '"Silkscreen", "Space Mono", monospace'
-const BG = "#F4F2EC"
+const BG = "#F3EFE6"
 const INK = "#0A0A0A"
+
+const STAGE_W = 1440
+const STAGE_H = 900
+const IMG = "https://framerusercontent.com/images/"
+
+const PAGE_MASCOTS: Record<string, { hash: string; box: [number, number, number, number]; width: number }> = {
+    about: { hash: "AwkrKCuhUkRurlYPAzFRI4yw", box: [542, 493, 84, 75], width: 110 },
+    contact: { hash: "iokbHxpk1MBj2DyMk1qoueeeQM", box: [963, 717, 100, 98], width: 120 },
+}
+
+function PageMascot({ mode }: { mode: string }) {
+    const preset = PAGE_MASCOTS[mode]
+    if (!preset) return null
+    const [x, y, w, h] = preset.box
+    const displayW = preset.width
+    const displayH = (h / w) * displayW
+    const scale = displayW / w
+    return (
+        <motion.div
+            aria-hidden
+            initial={{ opacity: 0, y: 18, rotate: -4 }}
+            animate={{ opacity: 1, y: [0, -10, 0], rotate: [-3, 2.5, -3] }}
+            transition={{
+                opacity: { duration: 0.45 },
+                y: { duration: 4.2, repeat: Infinity, ease: "easeInOut" },
+                rotate: { duration: 5.2, repeat: Infinity, ease: "easeInOut" },
+            }}
+            style={{
+                position: "fixed",
+                right: 16,
+                bottom: 16,
+                width: displayW,
+                height: displayH,
+                zIndex: 50,
+                pointerEvents: "none",
+                overflow: "hidden",
+                filter: "drop-shadow(0 12px 24px rgba(28,24,20,0.2))",
+            }}
+        >
+            <div
+                style={{
+                    position: "absolute",
+                    width: STAGE_W * scale,
+                    height: STAGE_H * scale,
+                    left: -x * scale,
+                    top: -y * scale,
+                    backgroundImage: `url(${IMG}${preset.hash}.png)`,
+                    backgroundSize: "100% 100%",
+                    backgroundRepeat: "no-repeat",
+                }}
+            />
+        </motion.div>
+    )
+}
 
 const GRAIN =
     "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.9'/%3E%3C/svg%3E\")"
@@ -145,6 +199,8 @@ export default function SiteRoutes(props: SitePageProps) {
             </div>
 
             <Footer accent={accent} />
+
+            <PageMascot mode={mode} />
 
             <Overlays />
         </div>
