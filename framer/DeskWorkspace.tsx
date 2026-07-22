@@ -237,12 +237,21 @@ interface ExperienceJob {
 interface DeskWorkspaceProps {
     welcomeText: string
     accent: string
+    cream: string
+    ink: string
+    muted: string
+    welcomeSize: number
+    labelSize: number
+    deskScale: number
     font?: { fontFamily?: string }
+    displayFont?: { fontFamily?: string }
     experience: ExperienceJob[]
     clients: string[]
     email: string
     instagramUrl: string
     linkedinUrl: string
+    scheduleMessage: string
+    socialsMessage: string
     chutneyHeading: string
     chutneyText: string
     chutneyImage: string
@@ -271,11 +280,19 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const {
         welcomeText = "hey, welcome to my workspace",
         accent = "#2C6BE0",
+        cream = "#F3EFE6",
+        ink = "#111111",
+        muted = "#444444",
+        welcomeSize = 72,
+        labelSize = 12,
+        deskScale = 1,
         experience = DEFAULT_EXPERIENCE,
         clients = DEFAULT_CLIENTS,
         email = "hello@example.com",
         instagramUrl = "https://instagram.com/",
         linkedinUrl = "https://linkedin.com/",
+        scheduleMessage = "My calendar fills with client work and content days — but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building.",
+        socialsMessage = "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
         chutneyHeading = "Chutney Studios",
         chutneyText = "My after-hours studio — branding and sites for small, good-taste brands.",
         chutneyImage = "",
@@ -288,6 +305,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         aboutImage = "",
     } = props
     const family = props.font?.fontFamily || INTER
+    const displayFamily = props.displayFont?.fontFamily || ANNIE
+    const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
@@ -318,8 +337,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
 
     const scale = useMemo(() => {
-        return Math.max(vp.w / STAGE_W, vp.h / STAGE_H)
-    }, [vp])
+        return Math.max(vp.w / STAGE_W, vp.h / STAGE_H) * deskScaleSafe
+    }, [vp, deskScaleSafe])
 
     const [hovered, setHovered] = useState<string | null>(null)
     const [popup, setPopup] = useState<Click | null>(null)
@@ -442,7 +461,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 width: "100%",
                 height: animated ? `${INTRO_VH}vh` : undefined,
                 minHeight: animated ? undefined : "100vh",
-                background: "#F3EFE6",
+                background: cream,
                 fontFamily: family,
                 ...stripSize(props.style),
             }}
@@ -528,6 +547,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 c={c}
                                 accent={accent}
                                 family={family}
+                                labelSize={labelSize}
                                 soundOn={soundOn}
                                 visible={revealed}
                                 onEnter={() => setHovered(c.key)}
@@ -547,7 +567,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 style={{
                                     position: "absolute",
                                     inset: 0,
-                                    background: "#F3EFE6",
+                                    background: cream,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
@@ -567,9 +587,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                     }}
                                     style={{
                                         margin: 0,
-                                        fontFamily: ANNIE,
-                                        fontSize: "clamp(38px, 7vw, 92px)",
-                                        color: "#111",
+                                        fontFamily: displayFamily,
+                                        fontSize: `clamp(${Math.round(welcomeSize * 0.55)}px, 7vw, ${welcomeSize}px)`,
+                                        color: ink,
                                         textAlign: "center",
                                         fontWeight: 400,
                                         lineHeight: 1.1,
@@ -590,14 +610,22 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         clients={clients}
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        muted={muted}
                         onClose={() => setPopup(null)}
                     />
                 )}
                 {popup?.popupKind === "schedule" && (
                     <SchedulePopup
                         email={email}
+                        message={scheduleMessage}
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        cream={cream}
+                        ink={ink}
+                        muted={muted}
                         onClose={() => setPopup(null)}
                     />
                 )}
@@ -605,8 +633,13 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                     <SocialsPopup
                         instagramUrl={instagramUrl}
                         linkedinUrl={linkedinUrl}
+                        message={socialsMessage}
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        cream={cream}
+                        ink={ink}
+                        muted={muted}
                         onClose={() => setPopup(null)}
                     />
                 )}
@@ -619,6 +652,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         linkLabel={chutneyLinkLabel}
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        muted={muted}
                         onClose={() => setPopup(null)}
                     />
                 )}
@@ -631,6 +667,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         linkLabel="Read on Substack"
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        muted={muted}
                         handwritten
                         onClose={() => setPopup(null)}
                     />
@@ -641,6 +680,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         image={aboutImage}
                         accent={accent}
                         family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        muted={muted}
                         onClose={() => setPopup(null)}
                     />
                 )}
@@ -763,6 +805,7 @@ function Hotspot({
     c,
     accent,
     family,
+    labelSize = 12,
     soundOn,
     visible,
     onEnter,
@@ -772,6 +815,7 @@ function Hotspot({
     c: Click
     accent: string
     family: string
+    labelSize?: number
     soundOn: boolean
     visible: boolean
     onEnter: () => void
@@ -929,12 +973,18 @@ function ExperiencePopup({
     clients,
     accent,
     family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
     onClose,
 }: {
     jobs: ExperienceJob[]
     clients: string[]
     accent: string
     family: string
+    displayFamily?: string
+    ink?: string
+    muted?: string
     onClose: () => void
 }) {
     const current = jobs.filter((j) => /current/i.test(j.status))
@@ -1029,11 +1079,11 @@ function ExperiencePopup({
                 <div style={{ padding: "48px 36px 36px", boxSizing: "border-box" }}>
                     <div
                         style={{
-                            fontFamily: ANNIE,
+                            fontFamily: displayFamily,
                             fontSize: 34,
                             lineHeight: 1.1,
                             marginBottom: 8,
-                            color: INK,
+                            color: ink,
                         }}
                     >
                         {selected?.role}
@@ -1131,13 +1181,22 @@ function JobLink({
 
 function SchedulePopup({
     email,
+    message,
     accent,
     family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
     onClose,
 }: {
     email: string
+    message?: string
     accent: string
     family: string
+    displayFamily?: string
+    cream?: string
+    ink?: string
+    muted?: string
     onClose: () => void
 }) {
     const mailto = `mailto:${email}?subject=${encodeURIComponent("Let's work together")}&body=${encodeURIComponent("Hi Nabia,\n\nI'd love to chat about a project.\n\n")}`
@@ -1164,9 +1223,7 @@ function SchedulePopup({
                         color: MUTED,
                     }}
                 >
-                    My calendar fills with client work and content days — but I always
-                    make room for thoughtful collaborations. Drop me a note and tell me
-                    what you’re building.
+                    {message}
                 </p>
                 <a
                     href={mailto}
@@ -1193,14 +1250,23 @@ function SchedulePopup({
 function SocialsPopup({
     instagramUrl,
     linkedinUrl,
+    message,
     accent,
     family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
     onClose,
 }: {
     instagramUrl: string
     linkedinUrl: string
+    message?: string
     accent: string
     family: string
+    displayFamily?: string
+    cream?: string
+    ink?: string
+    muted?: string
     onClose: () => void
 }) {
     return (
@@ -1226,8 +1292,7 @@ function SocialsPopup({
                         color: MUTED,
                     }}
                 >
-                    Bits of process, finished pieces, and the occasional desk snack —
-                    find me on the apps I actually check.
+                    {message}
                 </p>
                 <div
                     style={{
@@ -1285,6 +1350,9 @@ function MediaCtaPopup({
     linkLabel,
     accent,
     family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
     handwritten,
     onClose,
 }: {
@@ -1295,6 +1363,9 @@ function MediaCtaPopup({
     linkLabel: string
     accent: string
     family: string
+    displayFamily?: string
+    ink?: string
+    muted?: string
     handwritten?: boolean
     onClose: () => void
 }) {
@@ -1329,7 +1400,7 @@ function MediaCtaPopup({
                     <h3
                         style={{
                             margin: "0 0 14px",
-                            fontFamily: handwritten ? ANNIE : family,
+                            fontFamily: handwritten ? displayFamily : family,
                             fontSize: handwritten ? 36 : 28,
                             fontWeight: handwritten ? 400 : 700,
                             letterSpacing: handwritten ? 0 : "-0.02em",
@@ -1342,7 +1413,7 @@ function MediaCtaPopup({
                     <p
                         style={{
                             margin: "0 0 24px",
-                            fontFamily: handwritten ? ANNIE : family,
+                            fontFamily: handwritten ? displayFamily : family,
                             fontSize: handwritten ? 24 : 16,
                             lineHeight: 1.45,
                             color: MUTED,
@@ -1381,12 +1452,18 @@ function AboutPopup({
     image,
     accent,
     family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
     onClose,
 }: {
     message: string
     image: string
     accent: string
     family: string
+    displayFamily?: string
+    ink?: string
+    muted?: string
     onClose: () => void
 }) {
     const img = resolveImage(image)
@@ -1411,11 +1488,11 @@ function AboutPopup({
                 <div style={{ padding: "56px 36px 36px", boxSizing: "border-box" }}>
                     <div
                         style={{
-                            fontFamily: ANNIE,
+                            fontFamily: displayFamily,
                             fontSize: 38,
                             lineHeight: 1.1,
                             marginBottom: 18,
-                            color: INK,
+                            color: ink,
                         }}
                     >
                         Get to know me
@@ -1423,10 +1500,10 @@ function AboutPopup({
                     <p
                         style={{
                             margin: 0,
-                            fontFamily: ANNIE,
+                            fontFamily: displayFamily,
                             fontSize: 26,
                             lineHeight: 1.45,
-                            color: MUTED,
+                            color: muted,
                             whiteSpace: "pre-wrap",
                         }}
                     >
@@ -1495,10 +1572,20 @@ addPropertyControls(DeskWorkspace, {
         title: "Welcome",
         defaultValue: "hey, welcome to my workspace",
     },
+    cream: { type: ControlType.Color, title: "Background", defaultValue: "#F3EFE6" },
+    ink: { type: ControlType.Color, title: "Ink", defaultValue: "#111111" },
+    muted: { type: ControlType.Color, title: "Muted Text", defaultValue: "#444444" },
     accent: {
         type: ControlType.Color,
         title: "Label Color",
         defaultValue: "#2C6BE0",
+    },
+    displayFont: {
+        type: ControlType.Font,
+        title: "Display Font",
+        controls: "extended",
+        defaultFontType: "sans-serif",
+        defaultValue: { fontSize: 72, variant: "Regular" },
     },
     font: {
         type: ControlType.Font,
@@ -1506,6 +1593,30 @@ addPropertyControls(DeskWorkspace, {
         controls: "extended",
         defaultFontType: "sans-serif",
         defaultValue: { fontSize: 15, variant: "Regular", lineHeight: "1.5em" },
+    },
+    welcomeSize: {
+        type: ControlType.Number,
+        title: "Welcome Size",
+        defaultValue: 72,
+        min: 32,
+        max: 120,
+        step: 2,
+    },
+    labelSize: {
+        type: ControlType.Number,
+        title: "Label Size",
+        defaultValue: 12,
+        min: 10,
+        max: 20,
+        step: 1,
+    },
+    deskScale: {
+        type: ControlType.Number,
+        title: "Desk Illustration Scale",
+        defaultValue: 1,
+        min: 0.7,
+        max: 1.4,
+        step: 0.05,
     },
     experience: {
         type: ControlType.Array,
@@ -1543,6 +1654,18 @@ addPropertyControls(DeskWorkspace, {
         type: ControlType.String,
         title: "Email",
         defaultValue: "hello@example.com",
+    },
+    scheduleMessage: {
+        type: ControlType.String,
+        title: "Schedule Message",
+        displayTextArea: true,
+        defaultValue: "My calendar fills with client work and content days — but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building.",
+    },
+    socialsMessage: {
+        type: ControlType.String,
+        title: "Socials Message",
+        displayTextArea: true,
+        defaultValue: "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
     },
     instagramUrl: {
         type: ControlType.String,
