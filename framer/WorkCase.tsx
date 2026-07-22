@@ -36,9 +36,20 @@ interface ProjectRecord {
     accent: string
     slug: string
     heroImage: string
+    contextImage: string
+    problemImage: string
+    researchImage: string
+    sketchImage: string
+    wireframeImage: string
+    flowImage: string
     processImage: string
+    iterationImage: string
     finalImage1: string
     finalImage2: string
+    finalImage3: string
+    finalImage4: string
+    outcomeImage: string
+    prototypeVideo: string
 }
 
 interface WorkCaseProps {
@@ -337,12 +348,43 @@ export default function WorkCase(props: WorkCaseProps) {
                     src={project.heroImage}
                     accent={project.accent}
                     caption="Hero / key screen"
+                    placeholder="Drop hero imagery here"
                     tall
                 />
 
                 {/* ——— DEPTH SECTIONS ——— */}
                 <Section kicker="01" title="Context" body={project.context} />
+                <MediaBlock
+                    src={project.contextImage}
+                    accent={project.accent}
+                    caption="Product / user context"
+                    placeholder="Drop context imagery here"
+                />
+
                 <Section kicker="02" title="The problem" body={project.problem} />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                        gap: 16,
+                        marginBottom: 56,
+                    }}
+                >
+                    <MediaBlock
+                        src={project.problemImage}
+                        accent={project.accent}
+                        caption="Problem in the wild"
+                        placeholder="Drop problem imagery here"
+                        fill
+                    />
+                    <MediaBlock
+                        src={project.researchImage}
+                        accent={project.accent}
+                        caption="Research / insight artifact"
+                        placeholder="Drop research imagery here"
+                        fill
+                    />
+                </div>
 
                 <div style={{ marginBottom: 56 }}>
                     <SectionHeading kicker="03" title="Goals & constraints" />
@@ -363,10 +405,47 @@ export default function WorkCase(props: WorkCaseProps) {
                 </div>
 
                 <Section kicker="04" title="Process" body={project.process} />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                        gap: 16,
+                        marginBottom: 16,
+                    }}
+                >
+                    <MediaBlock
+                        src={project.sketchImage}
+                        accent={project.accent}
+                        caption="Sketches"
+                        placeholder="Drop sketches here"
+                        fill
+                    />
+                    <MediaBlock
+                        src={project.wireframeImage}
+                        accent={project.accent}
+                        caption="Wireframes"
+                        placeholder="Drop wireframes here"
+                        fill
+                    />
+                    <MediaBlock
+                        src={project.flowImage}
+                        accent={project.accent}
+                        caption="Flows / IA"
+                        placeholder="Drop flow diagram here"
+                        fill
+                    />
+                </div>
                 <MediaBlock
                     src={project.processImage}
                     accent={project.accent}
-                    caption="Sketches, flows, wireframes, iterations — the messy middle."
+                    caption="Process overview — the messy middle"
+                    placeholder="Drop process collage here"
+                />
+                <MediaBlock
+                    src={project.iterationImage}
+                    accent={project.accent}
+                    caption="Iteration / before → after"
+                    placeholder="Drop iteration comparison here"
                 />
 
                 {decisions.length > 0 && (
@@ -399,24 +478,60 @@ export default function WorkCase(props: WorkCaseProps) {
                         display: "grid",
                         gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                         gap: 16,
-                        marginBottom: 56,
+                        marginBottom: 16,
                     }}
                 >
                     <MediaBlock
                         src={project.finalImage1}
                         accent={project.accent}
                         caption="Primary screen / flow"
+                        placeholder="Drop final screen 1 here"
                         fill
                     />
                     <MediaBlock
                         src={project.finalImage2}
                         accent={project.accent}
                         caption="Supporting screen / state"
+                        placeholder="Drop final screen 2 here"
                         fill
                     />
                 </div>
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                        gap: 16,
+                        marginBottom: 16,
+                    }}
+                >
+                    <MediaBlock
+                        src={project.finalImage3}
+                        accent={project.accent}
+                        caption="Detail / component"
+                        placeholder="Drop final screen 3 here"
+                        fill
+                    />
+                    <MediaBlock
+                        src={project.finalImage4}
+                        accent={project.accent}
+                        caption="Edge case / empty state"
+                        placeholder="Drop final screen 4 here"
+                        fill
+                    />
+                </div>
+                <VideoBlock
+                    src={project.prototypeVideo}
+                    accent={project.accent}
+                    caption="Prototype walkthrough / motion study"
+                />
 
                 <Section kicker="07" title="Outcome" body={project.outcome} />
+                <MediaBlock
+                    src={project.outcomeImage}
+                    accent={project.accent}
+                    caption="Outcome / shipped result"
+                    placeholder="Drop outcome imagery here"
+                />
                 {project.reflection ? (
                     <Section kicker="08" title="Reflection" body={project.reflection} />
                 ) : null}
@@ -628,15 +743,18 @@ function MediaBlock({
     src,
     accent,
     caption,
+    placeholder = "Drop project imagery here",
     tall,
     fill,
 }: {
     src?: string
     accent: string
     caption?: string
+    placeholder?: string
     tall?: boolean
     fill?: boolean
 }) {
+    const url = resolveMedia(src)
     return (
         <figure
             style={{
@@ -648,9 +766,9 @@ function MediaBlock({
             <div
                 style={{
                     width: "100%",
-                    minHeight: tall ? 420 : fill ? 280 : 320,
+                    minHeight: tall ? 420 : fill ? 240 : 300,
                     border: `1.5px solid ${INK}`,
-                    background: src
+                    background: url
                         ? "#111"
                         : `linear-gradient(145deg, ${accent} 0%, #111 125%)`,
                     position: "relative",
@@ -658,9 +776,9 @@ function MediaBlock({
                     boxSizing: "border-box",
                 }}
             >
-                {src ? (
+                {url ? (
                     <img
-                        src={src}
+                        src={url}
                         alt=""
                         style={{
                             position: "absolute",
@@ -676,9 +794,11 @@ function MediaBlock({
                             position: "absolute",
                             inset: 0,
                             display: "flex",
+                            flexDirection: "column",
                             alignItems: "center",
                             justifyContent: "center",
-                            color: "rgba(255,255,255,0.85)",
+                            gap: 10,
+                            color: "rgba(255,255,255,0.88)",
                             fontSize: 14,
                             fontWeight: 500,
                             letterSpacing: "-0.01em",
@@ -686,7 +806,20 @@ function MediaBlock({
                             textAlign: "center",
                         }}
                     >
-                        Drop project imagery here
+                        <div
+                            style={{
+                                width: 44,
+                                height: 44,
+                                border: "1.5px solid rgba(255,255,255,0.7)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 20,
+                            }}
+                        >
+                            ▦
+                        </div>
+                        {placeholder}
                     </div>
                 )}
             </div>
@@ -705,6 +838,142 @@ function MediaBlock({
             ) : null}
         </figure>
     )
+}
+
+function VideoBlock({
+    src,
+    accent,
+    caption,
+}: {
+    src?: string
+    accent: string
+    caption?: string
+}) {
+    const url = resolveMedia(src)
+    return (
+        <figure style={{ width: "100%", margin: "0 0 56px", padding: 0 }}>
+            <div
+                style={{
+                    width: "100%",
+                    minHeight: 420,
+                    border: `1.5px solid ${INK}`,
+                    background: url
+                        ? "#000"
+                        : `linear-gradient(160deg, ${accent} 0%, #0a0a0a 120%)`,
+                    position: "relative",
+                    overflow: "hidden",
+                    boxSizing: "border-box",
+                }}
+            >
+                {url ? (
+                    <video
+                        src={url}
+                        controls
+                        playsInline
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            background: "#000",
+                        }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 14,
+                            color: "rgba(255,255,255,0.9)",
+                            padding: 28,
+                            textAlign: "center",
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 64,
+                                height: 64,
+                                borderRadius: "50%",
+                                border: "1.5px solid rgba(255,255,255,0.85)",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontSize: 22,
+                                paddingLeft: 4,
+                            }}
+                        >
+                            ▶
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 15,
+                                fontWeight: 600,
+                                letterSpacing: "-0.01em",
+                            }}
+                        >
+                            Drop prototype video here
+                        </div>
+                        <div
+                            style={{
+                                fontSize: 13,
+                                opacity: 0.8,
+                                maxWidth: 320,
+                                lineHeight: 1.4,
+                            }}
+                        >
+                            MP4 / WebM walkthrough of the final flow
+                        </div>
+                    </div>
+                )}
+            </div>
+            {caption ? (
+                <figcaption
+                    style={{
+                        marginTop: 10,
+                        fontSize: 13,
+                        lineHeight: 1.4,
+                        color: LABEL,
+                        letterSpacing: "-0.01em",
+                    }}
+                >
+                    {caption}
+                </figcaption>
+            ) : null}
+        </figure>
+    )
+}
+
+function resolveMedia(value: unknown): string {
+    if (!value) return ""
+    if (typeof value === "string") return value.trim()
+    if (typeof value === "object" && value !== null) {
+        const v = value as { src?: string; url?: string }
+        return String(v.src || v.url || "").trim()
+    }
+    return ""
+}
+
+const EMPTY_MEDIA = {
+    heroImage: "",
+    contextImage: "",
+    problemImage: "",
+    researchImage: "",
+    sketchImage: "",
+    wireframeImage: "",
+    flowImage: "",
+    processImage: "",
+    iterationImage: "",
+    finalImage1: "",
+    finalImage2: "",
+    finalImage3: "",
+    finalImage4: "",
+    outcomeImage: "",
+    prototypeVideo: "",
 }
 
 const DEFAULT_CATALOG: ProjectRecord[] = [
@@ -739,10 +1008,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "I’d bring compliance into the first workshop earlier — we lost a week negotiating copy that could have been co-authored up front.",
         accent: "#7457C9",
         slug: "fintech-app",
-        heroImage: "",
-        processImage: "",
-        finalImage1: "",
-        finalImage2: "",
+        ...EMPTY_MEDIA,
     },
     {
         title: "Health Platform",
@@ -775,10 +1041,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "I’d measure adoption weekly from day one — qualitative buy-in looked fine while two squads quietly kept local components.",
         accent: "#28A06A",
         slug: "health-platform",
-        heroImage: "",
-        processImage: "",
-        finalImage1: "",
-        finalImage2: "",
+        ...EMPTY_MEDIA,
     },
     {
         title: "Chutney Studios",
@@ -811,10 +1074,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "I’d ship a rough site in week two and iterate live — I polished offline longer than I needed to.",
         accent: "#D17BB0",
         slug: "chutney-studios",
-        heroImage: "",
-        processImage: "",
-        finalImage1: "",
-        finalImage2: "",
+        ...EMPTY_MEDIA,
     },
     {
         title: "Travel App",
@@ -847,10 +1107,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "I’d prototype offline states earlier — transit users hit dead zones constantly and we treated online as default too long.",
         accent: "#E0902F",
         slug: "travel-app",
-        heroImage: "",
-        processImage: "",
-        finalImage1: "",
-        finalImage2: "",
+        ...EMPTY_MEDIA,
     },
 ]
 
@@ -874,10 +1131,21 @@ const catalogControls = {
     reflection: { type: ControlType.String, displayTextArea: true, defaultValue: "" },
     accent: { type: ControlType.Color, defaultValue: "#2C6BE0" },
     slug: { type: ControlType.String, defaultValue: "project" },
-    heroImage: { type: ControlType.String, defaultValue: "" },
-    processImage: { type: ControlType.String, defaultValue: "" },
-    finalImage1: { type: ControlType.String, defaultValue: "" },
-    finalImage2: { type: ControlType.String, defaultValue: "" },
+    heroImage: { type: ControlType.String, title: "Hero Image", defaultValue: "" },
+    contextImage: { type: ControlType.String, title: "Context Image", defaultValue: "" },
+    problemImage: { type: ControlType.String, title: "Problem Image", defaultValue: "" },
+    researchImage: { type: ControlType.String, title: "Research Image", defaultValue: "" },
+    sketchImage: { type: ControlType.String, title: "Sketch Image", defaultValue: "" },
+    wireframeImage: { type: ControlType.String, title: "Wireframe Image", defaultValue: "" },
+    flowImage: { type: ControlType.String, title: "Flow Image", defaultValue: "" },
+    processImage: { type: ControlType.String, title: "Process Image", defaultValue: "" },
+    iterationImage: { type: ControlType.String, title: "Iteration Image", defaultValue: "" },
+    finalImage1: { type: ControlType.String, title: "Final Image 1", defaultValue: "" },
+    finalImage2: { type: ControlType.String, title: "Final Image 2", defaultValue: "" },
+    finalImage3: { type: ControlType.String, title: "Final Image 3", defaultValue: "" },
+    finalImage4: { type: ControlType.String, title: "Final Image 4", defaultValue: "" },
+    outcomeImage: { type: ControlType.String, title: "Outcome Image", defaultValue: "" },
+    prototypeVideo: { type: ControlType.String, title: "Prototype Video URL", defaultValue: "" },
 }
 
 addPropertyControls(WorkCase, {
