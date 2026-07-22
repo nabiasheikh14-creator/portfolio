@@ -150,7 +150,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                 rel="stylesheet"
             />
 
-            <DeskBack href="/" label="Back" accent={accent} />
+            <DeskBack href="/" label="Back" ariaLabel="Back to home" accent={accent} />
 
             <div
                 aria-hidden
@@ -270,10 +270,12 @@ export default function WorkIndex(props: WorkIndexProps) {
 function DeskBack({
     href,
     label,
+    ariaLabel,
     accent,
 }: {
     href: string
     label: string
+    ariaLabel?: string
     accent: string
 }) {
     useEffect(() => {
@@ -282,7 +284,7 @@ function DeskBack({
 
         const a = document.createElement("a")
         a.href = href
-        a.setAttribute("aria-label", label)
+        a.setAttribute("aria-label", ariaLabel || label)
         a.dataset.deskBack = "true"
         Object.assign(a.style, {
             position: "fixed",
@@ -326,7 +328,7 @@ function DeskBack({
         return () => {
             a.remove()
         }
-    }, [href, label, accent])
+    }, [href, label, ariaLabel, accent])
 
     return null
 }
@@ -637,7 +639,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                 <div
                     style={{
                         position: "relative",
-                        zIndex: 2,
+                        zIndex: 3,
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
@@ -646,10 +648,13 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                         maxWidth: 420,
                         padding: "32px 40px",
                         boxSizing: "border-box",
+                        pointerEvents: "auto",
                     }}
                 >
                     <a
-                        href={homeHref}
+                        href={homeHref || "/"}
+                        title="Go to homepage"
+                        aria-label="Go to homepage"
                         style={{
                             fontFamily: FOOTER_ANNIE,
                             fontSize: `clamp(26px, 3.6vw, ${headlineSize}px)`,
@@ -657,8 +662,22 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                             letterSpacing: "0",
                             lineHeight: 1.15,
                             color: ink,
-                            textDecoration: "none",
+                            textDecoration: "underline",
+                            textDecorationColor: accent,
+                            textUnderlineOffset: "6px",
+                            textDecorationThickness: "2px",
                             maxWidth: 340,
+                            cursor: "pointer",
+                            position: "relative",
+                            zIndex: 3,
+                            pointerEvents: "auto",
+                            transition: "color 160ms ease",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.color = accent
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = ink
                         }}
                     >
                         {subline}

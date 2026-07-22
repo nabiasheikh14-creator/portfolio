@@ -156,7 +156,7 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                 <div
                     style={{
                         position: "relative",
-                        zIndex: 2,
+                        zIndex: 3,
                         height: "100%",
                         display: "flex",
                         flexDirection: "column",
@@ -165,10 +165,13 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                         maxWidth: 420,
                         padding: "32px 40px",
                         boxSizing: "border-box",
+                        pointerEvents: "auto",
                     }}
                 >
                     <a
-                        href={homeHref}
+                        href={homeHref || "/"}
+                        title="Go to homepage"
+                        aria-label="Go to homepage"
                         style={{
                             fontFamily: ANNIE,
                             fontSize: `clamp(26px, 3.6vw, ${headlineSize}px)`,
@@ -176,8 +179,22 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                             letterSpacing: "0",
                             lineHeight: 1.15,
                             color: ink,
-                            textDecoration: "none",
+                            textDecoration: "underline",
+                            textDecorationColor: accent,
+                            textUnderlineOffset: "6px",
+                            textDecorationThickness: "2px",
                             maxWidth: 340,
+                            cursor: "pointer",
+                            position: "relative",
+                            zIndex: 3,
+                            pointerEvents: "auto",
+                            transition: "color 160ms ease",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.color = accent
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.color = ink
                         }}
                     >
                         {subline}
