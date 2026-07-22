@@ -185,6 +185,8 @@ export default function WorkCase(props: WorkCaseProps) {
                 rel="stylesheet"
             />
 
+            <DeskBack href="/work" label="Back" accent={project.accent || accent} />
+
             <div
                 aria-hidden
                 style={{
@@ -612,6 +614,71 @@ export default function WorkCase(props: WorkCaseProps) {
             />
         </div>
     )
+}
+
+/** Fixed back pill — matches Archive / TopBar chrome. */
+function DeskBack({
+    href,
+    label,
+    accent,
+}: {
+    href: string
+    label: string
+    accent: string
+}) {
+    useEffect(() => {
+        if (typeof document === "undefined") return
+        document.querySelectorAll("[data-desk-back]").forEach((n) => n.remove())
+
+        const a = document.createElement("a")
+        a.href = href
+        a.setAttribute("aria-label", label)
+        a.dataset.deskBack = "true"
+        Object.assign(a.style, {
+            position: "fixed",
+            top: "48px",
+            left: "24px",
+            zIndex: "1200",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "8px",
+            padding: "10px 22px",
+            background: "rgba(255,255,255,0.9)",
+            border: "1.5px solid rgb(17,17,17)",
+            borderRadius: "999px",
+            color: "rgb(17,17,17)",
+            textDecoration: "none",
+            fontFamily: SANS,
+            fontWeight: "500",
+            fontSize: "13px",
+            letterSpacing: "-1px",
+            textTransform: "uppercase",
+            boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
+            cursor: "pointer",
+            pointerEvents: "auto",
+            boxSizing: "border-box",
+            lineHeight: "1",
+        } as Partial<CSSStyleDeclaration>)
+
+        const arrow = document.createElement("span")
+        arrow.textContent = "←"
+        Object.assign(arrow.style, {
+            color: accent,
+            fontSize: "14px",
+            lineHeight: "1",
+            fontWeight: "600",
+        })
+        const text = document.createElement("span")
+        text.textContent = label
+        a.append(arrow, text)
+        document.body.appendChild(a)
+
+        return () => {
+            a.remove()
+        }
+    }, [href, label, accent])
+
+    return null
 }
 
 function oneLiner(p: ProjectRecord) {
