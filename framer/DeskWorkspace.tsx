@@ -271,6 +271,15 @@ interface DeskWorkspaceProps {
 const DEFAULT_RADIO_TRACK =
     "https://archive.org/download/BS2023-07-14.dpa/2023-07-14%20Institute%2C%20Birmingham%2C%20England/2023-07-14_belle_and_sebastian_02.mp3"
 
+function playUiClick() {
+    try {
+        const w = window as Window & { __nabiaPlayClick?: () => void }
+        w.__nabiaPlayClick?.()
+    } catch {
+        /* ignore */
+    }
+}
+
 /**
  * Desk Workspace — illustrated desk homepage.
  * Labels open in-page popups (no sticky/mascot crops inside modals).
@@ -429,6 +438,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     }
 
     function activate(c: Click) {
+        playUiClick()
         if (c.action === "sound") return toggleSound()
         if (c.action === "page" && c.href) {
             setFlash(true)
@@ -995,13 +1005,26 @@ function ShadowButton({
     }
     if (href) {
         return (
-            <a href={href} target={href.startsWith("mailto:") ? undefined : "_blank"} rel="noreferrer" style={style}>
+            <a
+                href={href}
+                target={href.startsWith("mailto:") ? undefined : "_blank"}
+                rel="noreferrer"
+                style={style}
+                onClick={() => playUiClick()}
+            >
                 {label}
             </a>
         )
     }
     return (
-        <button type="button" onClick={onClick} style={style}>
+        <button
+            type="button"
+            onClick={() => {
+                playUiClick()
+                onClick?.()
+            }}
+            style={style}
+        >
             {label}
         </button>
     )
