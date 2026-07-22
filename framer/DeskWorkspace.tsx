@@ -264,6 +264,8 @@ interface DeskWorkspaceProps {
     aboutImage: string
     /** Radio track URL (mp3). Defaults to Belle & Sebastian — Wrapped Up In Books (live). */
     radioTrackUrl?: string
+    /** Optional UI tick sound file (mp3/wav/ogg). Empty = built-in synth tick. */
+    tickSound?: string
     style?: CSSProperties
 }
 
@@ -319,15 +321,27 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         aboutMessage = "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
         aboutImage = "",
         radioTrackUrl = DEFAULT_RADIO_TRACK,
+        tickSound = "",
     } = props
     const family = props.font?.fontFamily || INTER
     const displayFamily = props.displayFont?.fontFamily || ANNIE
     const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
     const trackUrl = resolveRadioUrl(radioTrackUrl) || DEFAULT_RADIO_TRACK
+    const tickUrl = resolveRadioUrl(tickSound)
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
     const [vp, setVp] = useState({ w: STAGE_W, h: STAGE_H })
+
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        const w = window as Window & {
+            __nabiaSetTickSoundUrl?: (url: string) => void
+            __nabiaTickSoundUrl?: string
+        }
+        if (w.__nabiaSetTickSoundUrl) w.__nabiaSetTickSoundUrl(tickUrl)
+        else w.__nabiaTickSoundUrl = tickUrl
+    }, [tickUrl, isStatic])
 
     useEffect(() => {
         if (typeof window === "undefined") return
@@ -1932,5 +1946,10 @@ addPropertyControls(DeskWorkspace, {
         type: ControlType.String,
         title: "Radio Track URL",
         defaultValue: DEFAULT_RADIO_TRACK,
+    },
+    tickSound: {
+        type: ControlType.File,
+        title: "Tick Sound",
+        allowedFileTypes: ["mp3", "wav", "ogg", "m4a"],
     },
 })

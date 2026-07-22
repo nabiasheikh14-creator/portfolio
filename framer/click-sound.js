@@ -12,6 +12,16 @@
     var ctx = null
     var last = 0
     var unlocked = false
+    var fileAudio = null
+
+    function getTickUrl() {
+        if (window.__nabiaTickSoundUrl) return String(window.__nabiaTickSoundUrl)
+        try {
+            return sessionStorage.getItem("__nabiaTickSoundUrl") || ""
+        } catch (_) {
+            return ""
+        }
+    }
 
     function getCtx() {
         if (ctx) return ctx
@@ -30,23 +40,37 @@
         unlocked = true
     }
 
-    function playClick() {
+    function playFileTick(url) {
+        try {
+            if (!fileAudio || fileAudio.getAttribute("data-src") !== url) {
+                fileAudio = new Audio(url)
+                fileAudio.setAttribute("data-src", url)
+                fileAudio.preload = "auto"
+            }
+            fileAudio.volume = 0.7
+            fileAudio.currentTime = 0
+            var p = fileAudio.play()
+            if (p && p.catch) p.catch(function () {})
+            return true
+        } catch (_) {
+            return false
+        }
+    }
+
+    function playSynthTick() {
         var c = getCtx()
         if (!c) return
         if (c.state === "suspended") {
             c.resume()
                 .then(function () {
-                    playClick()
+                    playSynthTick()
                 })
                 .catch(function () {})
             return
         }
-        var now = performance.now()
-        if (now - last < 40) return
-        last = now
         var t = c.currentTime
 
-        // Soft but audible UI tick
+        // Soft but audible UI tick (default when no file is set)
         var bufferSize = Math.floor(c.sampleRate * 0.03)
         var buffer = c.createBuffer(1, bufferSize, c.sampleRate)
         var data = buffer.getChannelData(0)
@@ -82,8 +106,26 @@
         osc.stop(t + 0.07)
     }
 
+    function playClick() {
+        var now = performance.now()
+        if (now - last < 40) return
+        last = now
+        var url = getTickUrl()
+        if (url && playFileTick(url)) return
+        playSynthTick()
+    }
+
     // Expose for React code components (desk hotspots, etc.)
     window.__nabiaPlayClick = playClick
+    window.__nabiaSetTickSoundUrl = function (url) {
+        var next = url ? String(url) : ""
+        window.__nabiaTickSoundUrl = next
+        try {
+            if (next) sessionStorage.setItem("__nabiaTickSoundUrl", next)
+            else sessionStorage.removeItem("__nabiaTickSoundUrl")
+        } catch (_) {}
+        fileAudio = null
+    }
 
     function isInteractive(el) {
         if (!el || el.nodeType !== 1) return false
