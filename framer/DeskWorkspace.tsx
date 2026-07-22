@@ -27,6 +27,9 @@ import {
 const STAGE_W = 1440
 const STAGE_H = 900
 const INTRO_VH = 480
+/** Phone / small-tablet: shorter scroll intro so the desk arrives sooner. */
+const INTRO_VH_PHONE = 220
+const PHONE_MQ = "(max-width: 809.98px)"
 const IMG = "https://framerusercontent.com/images/"
 
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
@@ -150,7 +153,7 @@ interface Click {
     popupKind?: PopupKind
 }
 
-const CLICKS: Click[] = [
+const CLICK_DEFS: Click[] = [
     {
         key: "archive",
         // Shelf archive boxes (label sits above the cardboard stack).
@@ -221,10 +224,28 @@ const CLICKS: Click[] = [
         popupKind: "schedule",
     },
 ]
-// Largest first so smaller hotspots paint/hit-test on top.
-const CLICKS_ORDERED = [...CLICKS].sort(
-    (a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3],
-)
+
+/** Framer Link controls may return a string or `{ href }`. */
+function resolveLink(value: unknown, fallback = ""): string {
+    if (value == null || value === "") return fallback
+    if (typeof value === "string") {
+        const s = value.trim()
+        return s || fallback
+    }
+    if (typeof value === "object" && value && "href" in (value as object)) {
+        const h = String((value as { href?: unknown }).href || "").trim()
+        return h || fallback
+    }
+    return fallback
+}
+
+function buildClicks(workLink: string, archiveLink: string): Click[] {
+    return CLICK_DEFS.map((c) => {
+        if (c.key === "laptop") return { ...c, href: workLink }
+        if (c.key === "archive") return { ...c, href: archiveLink }
+        return c
+    })
+}
 
 interface ExperienceJob {
     company: string
@@ -255,6 +276,10 @@ interface DeskWorkspaceProps {
     email: string
     instagramUrl: string
     linkedinUrl: string
+    /** Editable page link for the WORK laptop hotspot. */
+    workLink: string
+    /** Editable page link for the ARCHIVE shelf hotspot. */
+    archiveLink: string
     scheduleMessage: string
     socialsMessage: string
     chutneyHeading: string
@@ -313,6 +338,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         email = "hello@example.com",
         instagramUrl = "https://instagram.com/",
         linkedinUrl = "https://linkedin.com/",
+        workLink = "/work",
+        archiveLink = "/archive",
         scheduleMessage = "My calendar fills with client work and content days — but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building.",
         socialsMessage = "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
         chutneyHeading = "Chutney Studios",
@@ -333,9 +360,28 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
     const trackUrl = resolveRadioUrl(radioTrackUrl) || DEFAULT_RADIO_TRACK
     const tickUrl = resolveRadioUrl(tickSound)
+    const workHref = resolveLink(workLink, "/work")
+    const archiveHref = resolveLink(archiveLink, "/archive")
+    const igHref = resolveLink(instagramUrl, "https://instagram.com/")
+    const liHref = resolveLink(linkedinUrl, "https://linkedin.com/")
+    const chutneyHref = resolveLink(chutneyLink, "")
+    const substackHref = resolveLink(substackUrl, "https://substack.com/")
+
+    const clicks = useMemo(
+        () => buildClicks(workHref, archiveHref),
+        [workHref, archiveHref],
+    )
+    const clicksOrdered = useMemo(
+        () =>
+            [...clicks].sort(
+                (a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3],
+            ),
+        [clicks],
+    )
 
     const isStatic = useIsStaticRenderer()
     const [reduced, setReduced] = useState(false)
+    const [isPhone, setIsPhone] = useState(false)
     const [vp, setVp] = useState({ w: STAGE_W, h: STAGE_H })
 
     useEffect(() => {
@@ -351,17 +397,24 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     useEffect(() => {
         if (typeof window === "undefined") return
         const rm = window.matchMedia("(prefers-reduced-motion: reduce)")
+        const phone = window.matchMedia(PHONE_MQ)
         const f = () =>
             startTransition(() => {
                 setReduced(rm.matches)
+                setIsPhone(phone.matches)
                 setVp({ w: window.innerWidth, h: window.innerHeight })
             })
         f()
         window.addEventListener("resize", f)
-        return () => window.removeEventListener("resize", f)
+        phone.addEventListener?.("change", f)
+        return () => {
+            window.removeEventListener("resize", f)
+            phone.removeEventListener?.("change", f)
+        }
     }, [])
 
     const animated = !isStatic && !reduced
+    const introVh = isPhone ? INTRO_VH_PHONE : INTRO_VH
 
     const rootRef = useRef<HTMLDivElement>(null)
     const { scrollYProgress } = useScroll({
@@ -372,9 +425,14 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     const welcomeOpacity = useTransform(p, [0, 0.08], [1, 0])
 
+    // Desktop keeps cover (fills the viewport). Phone uses contain so the full
+    // desk + hotspot labels stay readable without changing desktop crop.
     const scale = useMemo(() => {
-        return Math.max(vp.w / STAGE_W, vp.h / STAGE_H) * deskScaleSafe
-    }, [vp, deskScaleSafe])
+        const sx = vp.w / STAGE_W
+        const sy = vp.h / STAGE_H
+        const fit = isPhone ? Math.min(sx, sy) : Math.max(sx, sy)
+        return fit * deskScaleSafe
+    }, [vp, deskScaleSafe, isPhone])
 
     const [hovered, setHovered] = useState<string | null>(null)
     const [popup, setPopup] = useState<Click | null>(null)
@@ -480,7 +538,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     const jiggleFor = (key: string): boolean => {
         if (!hovered) return false
-        const c = CLICKS.find((x) => x.key === hovered)
+        const c = clicks.find((x) => x.key === hovered)
         if (!c) return false
         return c.key === key || (c.jiggle?.includes(key) ?? false)
     }
@@ -497,7 +555,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             style={{
                 position: "relative",
                 width: "100%",
-                height: animated ? `${INTRO_VH}vh` : undefined,
+                height: animated ? `${introVh}vh` : undefined,
                 minHeight: animated ? undefined : "100vh",
                 background: cream,
                 fontFamily: family,
@@ -566,7 +624,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 threshold={t}
                                 show={!animated}
                                 active={jiggleFor(l.key)}
-                                origin={originFor(l.key)}
+                                origin={originFor(l.key, clicks)}
                             />
                         )
                     })}
@@ -582,7 +640,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                             pointerEvents: "auto",
                         }}
                     >
-                        {CLICKS_ORDERED.map((c) => (
+                        {clicksOrdered.map((c) => (
                             <Hotspot
                                 key={c.key}
                                 c={c}
@@ -629,11 +687,18 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                     style={{
                                         margin: 0,
                                         fontFamily: displayFamily,
-                                        fontSize: `clamp(${Math.round(welcomeSize * 0.55)}px, 7vw, ${welcomeSize}px)`,
-                                        color: ink,
+                                        fontSize: isPhone
+                                            ? `clamp(34px, 9vw, 52px)`
+                                            : `clamp(${Math.round(welcomeSize * 0.55)}px, 7vw, ${welcomeSize}px)`,
+                                        // Always hard ink — some cursive webfonts paint nearly invisible
+                                        // when color is inherited through motion layers.
+                                        color: "#111111",
+                                        WebkitTextFillColor: "#111111",
                                         textAlign: "center",
                                         fontWeight: 400,
                                         lineHeight: 1.1,
+                                        maxWidth: isPhone ? "16ch" : undefined,
+                                        padding: isPhone ? "0 12px" : undefined,
                                     }}
                                 >
                                     {welcomeText}
@@ -672,8 +737,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 )}
                 {popup?.popupKind === "socials" && (
                     <SocialsPopup
-                        instagramUrl={instagramUrl}
-                        linkedinUrl={linkedinUrl}
+                        instagramUrl={igHref}
+                        linkedinUrl={liHref}
                         message={socialsMessage}
                         accent={accent}
                         family={family}
@@ -689,7 +754,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         heading={chutneyHeading}
                         text={chutneyText}
                         image={chutneyImage}
-                        link={chutneyLink}
+                        link={chutneyHref}
                         linkLabel={chutneyLinkLabel}
                         accent={accent}
                         family={family}
@@ -704,7 +769,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         heading="Substack"
                         text={substackText}
                         image={substackImage}
-                        link={substackUrl}
+                        link={substackHref}
                         linkLabel="Read on Substack"
                         accent={accent}
                         family={family}
@@ -818,8 +883,8 @@ function RevealLayer({
     )
 }
 
-function originFor(key: string): string {
-    const c = CLICKS.find((x) => x.key === key || x.jiggle?.includes(key))
+function originFor(key: string, clicks: Click[] = CLICK_DEFS): string {
+    const c = clicks.find((x) => x.key === key || x.jiggle?.includes(key))
     if (!c) return "center"
     const [x, y, w, h] = c.box
     return `${((x + w / 2) / STAGE_W) * 100}% ${((y + h / 2) / STAGE_H) * 100}%`
@@ -1899,9 +1964,19 @@ addPropertyControls(DeskWorkspace, {
         control: { type: ControlType.String },
         defaultValue: DEFAULT_CLIENTS,
     },
+    workLink: {
+        type: ControlType.Link,
+        title: "Link — Work Hotspot",
+        defaultValue: "/work",
+    },
+    archiveLink: {
+        type: ControlType.Link,
+        title: "Link — Archive Hotspot",
+        defaultValue: "/archive",
+    },
     email: {
         type: ControlType.String,
-        title: "Email",
+        title: "Link — Email Address",
         defaultValue: "hello@example.com",
     },
     scheduleMessage: {
@@ -1917,13 +1992,13 @@ addPropertyControls(DeskWorkspace, {
         defaultValue: "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
     },
     instagramUrl: {
-        type: ControlType.String,
-        title: "Instagram URL",
+        type: ControlType.Link,
+        title: "Link — Instagram",
         defaultValue: "https://instagram.com/",
     },
     linkedinUrl: {
-        type: ControlType.String,
-        title: "LinkedIn URL",
+        type: ControlType.Link,
+        title: "Link — LinkedIn",
         defaultValue: "https://linkedin.com/",
     },
     chutneyHeading: {
@@ -1944,11 +2019,12 @@ addPropertyControls(DeskWorkspace, {
     },
     chutneyLink: {
         type: ControlType.Link,
-        title: "Chutney Link",
+        title: "Link — Chutney Button",
+        defaultValue: "https://",
     },
     chutneyLinkLabel: {
         type: ControlType.String,
-        title: "Chutney Button",
+        title: "Chutney Button Label",
         defaultValue: "Visit studio",
     },
     substackText: {
@@ -1964,7 +2040,8 @@ addPropertyControls(DeskWorkspace, {
     },
     substackUrl: {
         type: ControlType.Link,
-        title: "Substack Link",
+        title: "Link — Substack Button",
+        defaultValue: "https://substack.com/",
     },
     aboutMessage: {
         type: ControlType.String,

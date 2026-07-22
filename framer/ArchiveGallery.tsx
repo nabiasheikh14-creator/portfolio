@@ -32,13 +32,30 @@ interface ArchiveGalleryProps {
     accent: string
     columns: number
     gridOpacity: number
+    /** Editable Back pill destination. */
+    backLink: string
     style?: CSSProperties
 }
 
+function resolveLink(value: unknown, fallback = ""): string {
+    if (value == null || value === "") return fallback
+    if (typeof value === "string") {
+        const s = value.trim()
+        return s || fallback
+    }
+    if (typeof value === "object" && value && "href" in (value as object)) {
+        const h = String((value as { href?: unknown }).href || "").trim()
+        return h || fallback
+    }
+    return fallback
+}
+
 const CREAM = "#F3EFE6"
+const PHONE_MQ = "(max-width: 809.98px)"
+const TABLET_MQ = "(min-width: 810px) and (max-width: 1199.98px)"
 
 /** Back control — vertically aligned with the TopBar pill (pill sits at top: 48px). */
-function ArchiveBack({ accent }: { accent: string }) {
+function ArchiveBack({ accent, href = "/" }: { accent: string; href?: string }) {
     useEffect(() => {
         if (typeof document === "undefined") return
 
@@ -46,36 +63,40 @@ function ArchiveBack({ accent }: { accent: string }) {
         document.querySelectorAll("[data-archive-mascot]").forEach((n) => n.remove())
 
         const a = document.createElement("a")
-        a.href = "/"
+        a.href = href || "/"
         a.setAttribute("aria-label", "Back to desk")
         a.dataset.archiveBack = "true"
-        Object.assign(a.style, {
-            position: "fixed",
-            // Match TopBar: ~48px top spacer, then the pill
-            top: "48px",
-            left: "24px",
-            zIndex: "1200",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            // Match TopBar pill chrome
-            padding: "10px 22px",
-            background: "rgba(255,255,255,0.9)",
-            border: "1.5px solid rgb(17,17,17)",
-            borderRadius: "999px",
-            color: "rgb(17,17,17)",
-            textDecoration: "none",
-            fontFamily: SANS,
-            fontWeight: "500",
-            fontSize: "13px",
-            letterSpacing: "-1px",
-            textTransform: "uppercase",
-            boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
-            cursor: "pointer",
-            pointerEvents: "auto",
-            boxSizing: "border-box",
-            lineHeight: "1",
-        } as Partial<CSSStyleDeclaration>)
+        const applyChrome = () => {
+            const phone = window.matchMedia(PHONE_MQ).matches
+            Object.assign(a.style, {
+                position: "fixed",
+                // Match TopBar on desktop; drop under the bar on phone.
+                top: phone ? "88px" : "48px",
+                left: phone ? "12px" : "24px",
+                zIndex: "1200",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: phone ? "8px 14px" : "10px 22px",
+                background: "rgba(255,255,255,0.9)",
+                border: "1.5px solid rgb(17,17,17)",
+                borderRadius: "999px",
+                color: "rgb(17,17,17)",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontWeight: "500",
+                fontSize: "13px",
+                letterSpacing: "-1px",
+                textTransform: "uppercase",
+                boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+                lineHeight: "1",
+            } as Partial<CSSStyleDeclaration>)
+        }
+        applyChrome()
+        window.addEventListener("resize", applyChrome)
 
         const arrow = document.createElement("span")
         arrow.textContent = "←"
@@ -91,9 +112,10 @@ function ArchiveBack({ accent }: { accent: string }) {
         document.body.appendChild(a)
 
         return () => {
+            window.removeEventListener("resize", applyChrome)
             a.remove()
         }
-    }, [accent])
+    }, [accent, href])
 
     return null
 }
@@ -115,11 +137,31 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         accent = "#2C6BE0",
         columns = 4,
         gridOpacity = 0.06,
+        backLink = "/",
     } = props
 
     const isStatic = useIsStaticRenderer()
     const [open, setOpen] = useState<GalleryItem | null>(null)
-    const colCount = Math.max(2, Math.min(5, Math.round(columns)))
+    const [viewportCols, setViewportCols] = useState<number | null>(null)
+    const backHref = resolveLink(backLink, "/")
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const sync = () => {
+            if (window.matchMedia(PHONE_MQ).matches) setViewportCols(2)
+            else if (window.matchMedia(TABLET_MQ).matches) setViewportCols(3)
+            else setViewportCols(null)
+        }
+        sync()
+        window.addEventListener("resize", sync)
+        return () => window.removeEventListener("resize", sync)
+    }, [])
+
+    // Desktop keeps the author/control column count. Phone/tablet override only.
+    const colCount = Math.max(
+        2,
+        Math.min(5, Math.round(viewportCols ?? columns)),
+    )
 
     // Shared speed multiplier for all columns (wheel boosts this)
     const speedRef = useRef(1)
@@ -269,8 +311,8 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                     position: "relative",
                     zIndex: 1,
                     display: "flex",
-                    gap: 14,
-                    padding: "0 14px",
+                    gap: viewportCols === 2 ? 10 : 14,
+                    padding: viewportCols === 2 ? "0 8px" : "0 14px",
                     boxSizing: "border-box",
                     height: "100%",
                     width: "100%",
@@ -292,7 +334,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
 
             {RenderTarget.current() !== RenderTarget.canvas && (
                 <>
-                    <ArchiveBack accent={accent} />
+                    <ArchiveBack accent={accent} href={backHref} />
                     <AnimatePresence>
                         {open && (
                             <Lightbox
@@ -646,6 +688,11 @@ addPropertyControls(ArchiveGallery, {
         defaultValue: DEFAULT_ITEMS,
     },
     accent: { type: ControlType.Color, title: "Accent", defaultValue: "#2C6BE0" },
+    backLink: {
+        type: ControlType.Link,
+        title: "Link — Back Button",
+        defaultValue: "/",
+    },
     columns: {
         type: ControlType.Number,
         title: "Columns",

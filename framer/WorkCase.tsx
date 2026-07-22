@@ -1,4 +1,4 @@
-import { useEffect, type CSSProperties, type ReactNode } from "react"
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 import {
     addPropertyControls,
     ControlType,
@@ -15,6 +15,20 @@ const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
 const LABEL = "#888888"
+const PHONE_MQ = "(max-width: 809.98px)"
+
+function resolveLink(value: unknown, fallback = ""): string {
+    if (value == null || value === "") return fallback
+    if (typeof value === "string") {
+        const s = value.trim()
+        return s || fallback
+    }
+    if (typeof value === "object" && value && "href" in (value as object)) {
+        const h = String((value as { href?: unknown }).href || "").trim()
+        return h || fallback
+    }
+    return fallback
+}
 
 interface ProjectRecord {
     title: string
@@ -62,7 +76,12 @@ interface WorkCaseProps {
     accent: string
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
+    /** Editable Back pill destination. */
+    backLink: string
+    /** Base path for related project cards — e.g. `/work`. */
+    projectBasePath: string
     footerSubline: string
+    footerHomeLink: string
     footerDeskScale: number
     footerHeight: number
     footerHeadlineSize: number
@@ -98,7 +117,10 @@ export default function WorkCase(props: WorkCaseProps) {
         ink = INK,
         muted = MUTED,
         accent = "#2C6BE0",
+        backLink = "/work",
+        projectBasePath = "/work",
         footerSubline = "The rest of the story lives on the homepage.",
+        footerHomeLink = "/",
         footerDeskScale = 1,
         footerHeight = 280,
         footerHeadlineSize = 36,
@@ -110,6 +132,25 @@ export default function WorkCase(props: WorkCaseProps) {
     const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
     const isStatic = useIsStaticRenderer()
     const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.12))
+    const [isPhone, setIsPhone] = useState(false)
+    const backHref = resolveLink(backLink, "/work")
+    const homeHref = resolveLink(footerHomeLink, "/")
+    const basePath = resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
+    const igHref = resolveLink(footerInstagramUrl, "https://instagram.com/")
+    const liHref = resolveLink(footerLinkedinUrl, "https://linkedin.com/")
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const mq = window.matchMedia(PHONE_MQ)
+        const sync = () => setIsPhone(mq.matches)
+        sync()
+        mq.addEventListener?.("change", sync)
+        window.addEventListener("resize", sync)
+        return () => {
+            mq.removeEventListener?.("change", sync)
+            window.removeEventListener("resize", sync)
+        }
+    }, [])
 
     const slug = !isStatic ? slugFromPath() : ""
     const project =
@@ -185,7 +226,7 @@ export default function WorkCase(props: WorkCaseProps) {
                 rel="stylesheet"
             />
 
-            <DeskBack href="/work" label="Back" ariaLabel="Back to work" accent={accent} />
+            <DeskBack href={backHref} label="Back" ariaLabel="Back to work" accent={accent} />
 
             <div
                 aria-hidden
@@ -208,7 +249,7 @@ export default function WorkCase(props: WorkCaseProps) {
                     zIndex: 1,
                     maxWidth: 1360,
                     margin: "0 auto",
-                    padding: "120px 40px 80px",
+                    padding: isPhone ? "148px 18px 56px" : "120px 40px 80px",
                     boxSizing: "border-box",
                 }}
             >
@@ -236,7 +277,7 @@ export default function WorkCase(props: WorkCaseProps) {
                             {project.title}
                         </h1>
                         <a
-                            href="/work"
+                            href={backHref}
                             aria-label="Back to work"
                             style={{
                                 display: "inline-flex",
@@ -559,7 +600,7 @@ export default function WorkCase(props: WorkCaseProps) {
                             {related.map((r) => (
                                 <a
                                     key={r.slug}
-                                    href={`/work/${r.slug}`}
+                                    href={`${basePath}/${r.slug}`}
                                     style={{
                                         display: "block",
                                         minHeight: 220,
@@ -604,11 +645,12 @@ export default function WorkCase(props: WorkCaseProps) {
                 ink={ink}
                 muted={muted}
                 subline={footerSubline}
+                homeHref={homeHref}
                 deskScale={footerDeskScale}
                 railHeight={footerHeight}
                 headlineSize={footerHeadlineSize}
-                instagramUrl={footerInstagramUrl}
-                linkedinUrl={footerLinkedinUrl}
+                instagramUrl={igHref}
+                linkedinUrl={liHref}
                 email={footerEmail}
                 font={props.font}
             />
@@ -636,31 +678,36 @@ function DeskBack({
         a.href = href
         a.setAttribute("aria-label", ariaLabel || label)
         a.dataset.deskBack = "true"
-        Object.assign(a.style, {
-            position: "fixed",
-            top: "48px",
-            left: "24px",
-            zIndex: "1200",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 22px",
-            background: "rgba(255,255,255,0.9)",
-            border: "1.5px solid rgb(17,17,17)",
-            borderRadius: "999px",
-            color: "rgb(17,17,17)",
-            textDecoration: "none",
-            fontFamily: SANS,
-            fontWeight: "500",
-            fontSize: "13px",
-            letterSpacing: "-1px",
-            textTransform: "uppercase",
-            boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
-            cursor: "pointer",
-            pointerEvents: "auto",
-            boxSizing: "border-box",
-            lineHeight: "1",
-        } as Partial<CSSStyleDeclaration>)
+        const applyChrome = () => {
+            const phone = window.matchMedia(PHONE_MQ).matches
+            Object.assign(a.style, {
+                position: "fixed",
+                top: phone ? "88px" : "48px",
+                left: phone ? "12px" : "24px",
+                zIndex: "1200",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: phone ? "8px 14px" : "10px 22px",
+                background: "rgba(255,255,255,0.9)",
+                border: "1.5px solid rgb(17,17,17)",
+                borderRadius: "999px",
+                color: "rgb(17,17,17)",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontWeight: "500",
+                fontSize: "13px",
+                letterSpacing: "-1px",
+                textTransform: "uppercase",
+                boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+                lineHeight: "1",
+            } as Partial<CSSStyleDeclaration>)
+        }
+        applyChrome()
+        window.addEventListener("resize", applyChrome)
 
         const arrow = document.createElement("span")
         arrow.textContent = "←"
@@ -676,6 +723,7 @@ function DeskBack({
         document.body.appendChild(a)
 
         return () => {
+            window.removeEventListener("resize", applyChrome)
             a.remove()
         }
     }, [href, label, ariaLabel, accent])
@@ -1604,25 +1652,40 @@ addPropertyControls(WorkCase, {
         defaultFontType: "sans-serif",
         defaultValue: { fontSize: "15px", variant: "Regular", lineHeight: "1.5em" },
     },
+    backLink: {
+        type: ControlType.Link,
+        title: "Link — Back Button",
+        defaultValue: "/work",
+    },
+    projectBasePath: {
+        type: ControlType.Link,
+        title: "Link — Related Project Base",
+        defaultValue: "/work",
+    },
     footerSubline: {
         type: ControlType.String,
         title: "Footer Home Text",
         displayTextArea: true,
         defaultValue: "The rest of the story lives on the homepage.",
     },
+    footerHomeLink: {
+        type: ControlType.Link,
+        title: "Link — Footer Home Text",
+        defaultValue: "/",
+    },
     footerInstagramUrl: {
-        type: ControlType.String,
-        title: "Footer Instagram",
+        type: ControlType.Link,
+        title: "Link — Footer Instagram",
         defaultValue: "https://instagram.com/",
     },
     footerLinkedinUrl: {
-        type: ControlType.String,
-        title: "Footer LinkedIn",
+        type: ControlType.Link,
+        title: "Link — Footer LinkedIn",
         defaultValue: "https://linkedin.com/",
     },
     footerEmail: {
         type: ControlType.String,
-        title: "Footer Email",
+        title: "Link — Footer Email",
         defaultValue: "hello@example.com",
     },
     footerDeskScale: {

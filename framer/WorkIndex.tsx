@@ -21,6 +21,7 @@ const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
 const GAP = 20
+const PHONE_MQ = "(max-width: 809.98px)"
 
 interface WorkItem {
     title: string
@@ -29,6 +30,8 @@ interface WorkItem {
     year: string
     accent: string
     coverUrl?: string
+    /** Optional full link override for this card (set in properties). */
+    href?: string
 }
 
 interface WorkIndexProps {
@@ -42,7 +45,12 @@ interface WorkIndexProps {
     titleSize: number
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
+    /** Editable Back pill destination. */
+    backLink: string
+    /** Prefix used when a project card has no custom Link — e.g. `/work`. */
+    projectBasePath: string
     footerSubline: string
+    footerHomeLink: string
     footerDeskScale: number
     footerHeight: number
     footerHeadlineSize: number
@@ -50,6 +58,19 @@ interface WorkIndexProps {
     footerLinkedinUrl: string
     footerEmail: string
     style?: CSSProperties
+}
+
+function resolveLink(value: unknown, fallback = ""): string {
+    if (value == null || value === "") return fallback
+    if (typeof value === "string") {
+        const s = value.trim()
+        return s || fallback
+    }
+    if (typeof value === "object" && value && "href" in (value as object)) {
+        const h = String((value as { href?: unknown }).href || "").trim()
+        return h || fallback
+    }
+    return fallback
 }
 
 /**
@@ -72,7 +93,10 @@ export default function WorkIndex(props: WorkIndexProps) {
         muted = MUTED,
         gridOpacity = 0.12,
         titleSize = 96,
+        backLink = "/",
+        projectBasePath = "/work",
         footerSubline = "The rest of the story lives on the homepage.",
+        footerHomeLink = "/",
         footerDeskScale = 1,
         footerHeight = 280,
         footerHeadlineSize = 36,
@@ -84,20 +108,48 @@ export default function WorkIndex(props: WorkIndexProps) {
     const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
     const isStatic = useIsStaticRenderer()
     const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.12))
+    const [isPhone, setIsPhone] = useState(false)
+    const backHref = resolveLink(backLink, "/")
+    const homeHref = resolveLink(footerHomeLink, "/")
+    const basePath = resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
+    const igHref = resolveLink(footerInstagramUrl, "https://instagram.com/")
+    const liHref = resolveLink(footerLinkedinUrl, "https://linkedin.com/")
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const mq = window.matchMedia(PHONE_MQ)
+        const sync = () => setIsPhone(mq.matches)
+        sync()
+        mq.addEventListener?.("change", sync)
+        window.addEventListener("resize", sync)
+        return () => {
+            mq.removeEventListener?.("change", sync)
+            window.removeEventListener("resize", sync)
+        }
+    }, [])
 
     const list = useMemo(() => {
         const normalized = (items || [])
-            .map((it: any) => ({
-                title: String(it?.title || "Untitled"),
-                subtitle: String(it?.subtitle || ""),
-                slug: String(it?.slug || "").replace(/^\//, "") || "project",
-                year: String(it?.year || ""),
-                accent: String(it?.accent || accent),
-                coverUrl: it?.coverUrl ? String(it.coverUrl) : "",
-            }))
+            .map((it: any) => {
+                const slug =
+                    String(it?.slug || "").replace(/^\//, "") || "project"
+                const custom = resolveLink(it?.href || it?.link, "")
+                return {
+                    title: String(it?.title || "Untitled"),
+                    subtitle: String(it?.subtitle || ""),
+                    slug,
+                    year: String(it?.year || ""),
+                    accent: String(it?.accent || accent),
+                    coverUrl: it?.coverUrl ? String(it.coverUrl) : "",
+                    href: custom || `${basePath}/${slug}`,
+                }
+            })
             .filter((it) => it.title)
-        return normalized.length ? normalized : DEFAULT_ITEMS
-    }, [items, accent])
+        return normalized.length ? normalized : DEFAULT_ITEMS.map((it) => ({
+            ...it,
+            href: `${basePath}/${it.slug}`,
+        }))
+    }, [items, accent, basePath])
 
     // Heat pattern: full, pair, full, pair…
     const rows = useMemo(() => chunkHeatRows(list), [list])
@@ -150,7 +202,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                 rel="stylesheet"
             />
 
-            <DeskBack href="/" label="Back" ariaLabel="Back to home" accent={accent} />
+            <DeskBack href={backHref} label="Back" ariaLabel="Back to home" accent={accent} />
 
             <div
                 aria-hidden
@@ -173,7 +225,9 @@ export default function WorkIndex(props: WorkIndexProps) {
                     zIndex: 1,
                     maxWidth: 1360,
                     margin: "0 auto",
-                    padding: "120px 40px 80px",
+                    // Phone padding only — desktop values stay exactly as before.
+                    // Extra top room on phone so Back pill + TopBar don't sit on the title.
+                    padding: isPhone ? "148px 18px 56px" : "120px 40px 80px",
                     boxSizing: "border-box",
                 }}
             >
@@ -183,9 +237,10 @@ export default function WorkIndex(props: WorkIndexProps) {
                         display: "flex",
                         justifyContent: "space-between",
                         alignItems: "flex-start",
-                        gap: 40,
+                        gap: isPhone ? 16 : 40,
                         marginBottom: 28,
                         flexWrap: "wrap",
+                        flexDirection: isPhone ? "column" : "row",
                     }}
                 >
                     <h1
@@ -205,24 +260,28 @@ export default function WorkIndex(props: WorkIndexProps) {
                     <p
                         style={{
                             margin: 0,
-                            maxWidth: 290,
-                            fontSize: 16,
+                            maxWidth: isPhone ? "100%" : 290,
+                            fontSize: isPhone ? 15 : 16,
                             lineHeight: 1.2,
                             fontWeight: 400,
                             color: muted,
-                            textAlign: "right",
-                            paddingTop: 14,
+                            textAlign: isPhone ? "left" : "right",
+                            paddingTop: isPhone ? 0 : 14,
                         }}
                     >
                         {intro}
                     </p>
                 </div>
 
-                {/* Heat project stack */}
+                {/* Heat project stack — JS breakpoint (Framer strips @media in <style>) */}
                 <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
                     {rows.map((row, i) =>
                         row.kind === "full" ? (
                             <ProjectCard key={row.items[0].slug} item={row.items[0]} size="full" />
+                        ) : isPhone ? (
+                            row.items.map((item) => (
+                                <ProjectCard key={item.slug} item={item} size="full" />
+                            ))
                         ) : (
                             <div
                                 key={`pair-${i}`}
@@ -231,7 +290,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                                     gridTemplateColumns: "1fr 1fr",
                                     gap: GAP,
                                 }}
-                                className="work-pair"
                             >
                                 {row.items.map((item) => (
                                     <ProjectCard key={item.slug} item={item} size="half" />
@@ -240,12 +298,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                         ),
                     )}
                 </div>
-
-                <style>{`
-                    @media (max-width: 800px) {
-                        .work-pair { grid-template-columns: 1fr !important; }
-                    }
-                `}</style>
             </div>
 
             <DeskWorkFooter
@@ -254,11 +306,12 @@ export default function WorkIndex(props: WorkIndexProps) {
                 ink={ink}
                 muted={muted}
                 subline={footerSubline}
+                homeHref={homeHref}
                 deskScale={footerDeskScale}
                 railHeight={footerHeight}
                 headlineSize={footerHeadlineSize}
-                instagramUrl={footerInstagramUrl}
-                linkedinUrl={footerLinkedinUrl}
+                instagramUrl={igHref}
+                linkedinUrl={liHref}
                 email={footerEmail}
                 font={props.font}
             />
@@ -286,31 +339,37 @@ function DeskBack({
         a.href = href
         a.setAttribute("aria-label", ariaLabel || label)
         a.dataset.deskBack = "true"
-        Object.assign(a.style, {
-            position: "fixed",
-            top: "48px",
-            left: "24px",
-            zIndex: "1200",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "8px",
-            padding: "10px 22px",
-            background: "rgba(255,255,255,0.9)",
-            border: "1.5px solid rgb(17,17,17)",
-            borderRadius: "999px",
-            color: "rgb(17,17,17)",
-            textDecoration: "none",
-            fontFamily: SANS,
-            fontWeight: "500",
-            fontSize: "13px",
-            letterSpacing: "-1px",
-            textTransform: "uppercase",
-            boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
-            cursor: "pointer",
-            pointerEvents: "auto",
-            boxSizing: "border-box",
-            lineHeight: "1",
-        } as Partial<CSSStyleDeclaration>)
+        const applyChrome = () => {
+            const phone = window.matchMedia(PHONE_MQ).matches
+            Object.assign(a.style, {
+                position: "fixed",
+                // Sit under the TopBar on phone so the pills never collide.
+                top: phone ? "88px" : "48px",
+                left: phone ? "12px" : "24px",
+                zIndex: "1200",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: phone ? "8px 14px" : "10px 22px",
+                background: "rgba(255,255,255,0.9)",
+                border: "1.5px solid rgb(17,17,17)",
+                borderRadius: "999px",
+                color: "rgb(17,17,17)",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontWeight: "500",
+                fontSize: "13px",
+                letterSpacing: "-1px",
+                textTransform: "uppercase",
+                boxShadow: "0px 8px 24px rgba(0,0,0,0.14)",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+                lineHeight: "1",
+            } as Partial<CSSStyleDeclaration>)
+        }
+        applyChrome()
+        window.addEventListener("resize", applyChrome)
 
         const arrow = document.createElement("span")
         arrow.textContent = "←"
@@ -326,6 +385,7 @@ function DeskBack({
         document.body.appendChild(a)
 
         return () => {
+            window.removeEventListener("resize", applyChrome)
             a.remove()
         }
     }, [href, label, ariaLabel, accent])
@@ -364,7 +424,7 @@ function ProjectCard({
     const tall = size === "full"
     return (
         <a
-            href={`/work/${item.slug}`}
+            href={item.href || `/work/${item.slug}`}
             aria-label={`${item.title} — ${item.subtitle}`}
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
@@ -859,6 +919,10 @@ addPropertyControls(WorkIndex, {
                 title: { type: ControlType.String, title: "Title", defaultValue: "Project" },
                 subtitle: { type: ControlType.String, title: "Subtitle", defaultValue: "Type" },
                 slug: { type: ControlType.String, title: "Slug", defaultValue: "project" },
+                href: {
+                    type: ControlType.Link,
+                    title: "Link — Card (optional)",
+                },
                 year: { type: ControlType.String, title: "Year", defaultValue: "2025" },
                 accent: { type: ControlType.Color, title: "Accent", defaultValue: "#2C6BE0" },
                 coverUrl: { type: ControlType.String, title: "Cover URL", defaultValue: "" },
@@ -867,6 +931,16 @@ addPropertyControls(WorkIndex, {
         defaultValue: DEFAULT_ITEMS,
     },
     accent: { type: ControlType.Color, title: "UI Accent", defaultValue: "#2C6BE0" },
+    backLink: {
+        type: ControlType.Link,
+        title: "Link — Back Button",
+        defaultValue: "/",
+    },
+    projectBasePath: {
+        type: ControlType.Link,
+        title: "Link — Project Base Path",
+        defaultValue: "/work",
+    },
 
     cream: { type: ControlType.Color, title: "Background", defaultValue: "#F3EFE6" },
     ink: { type: ControlType.Color, title: "Ink", defaultValue: "#111111" },
@@ -899,19 +973,24 @@ addPropertyControls(WorkIndex, {
         displayTextArea: true,
         defaultValue: "The rest of the story lives on the homepage.",
     },
+    footerHomeLink: {
+        type: ControlType.Link,
+        title: "Link — Footer Home Text",
+        defaultValue: "/",
+    },
     footerInstagramUrl: {
-        type: ControlType.String,
-        title: "Footer Instagram",
+        type: ControlType.Link,
+        title: "Link — Footer Instagram",
         defaultValue: "https://instagram.com/",
     },
     footerLinkedinUrl: {
-        type: ControlType.String,
-        title: "Footer LinkedIn",
+        type: ControlType.Link,
+        title: "Link — Footer LinkedIn",
         defaultValue: "https://linkedin.com/",
     },
     footerEmail: {
         type: ControlType.String,
-        title: "Footer Email",
+        title: "Link — Footer Email",
         defaultValue: "hello@example.com",
     },
     footerDeskScale: {

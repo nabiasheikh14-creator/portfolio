@@ -15,6 +15,7 @@ const INTER =
 
 interface TopBarProps {
     name: string
+    homeHref: string
     workHref: string
     archiveHref: string
     contactHref: string
@@ -31,6 +32,7 @@ interface TopBarProps {
 export default function TopBar(props: TopBarProps) {
     const {
         name = "NABIA SHAIKH NADEEM",
+        homeHref = "/",
         workHref = "/work",
         archiveHref = "/archive",
         contactHref = 'mailto:hello@example.com?subject=Let%27s%20work%20together&body=Hi%20Nabia%2C%0A%0AI%27d%20love%20to%20chat%20about%20a%20project.%0A%0A',
@@ -79,15 +81,15 @@ export default function TopBar(props: TopBarProps) {
                     boxShadow: "0 8px 24px rgba(0,0,0,0.14)",
                 }}
             >
-                <a href="/" style={{ ...link, fontWeight: 600, fontSize: 14 }}>
+                <a href={homeHref || "/"} style={{ ...link, fontWeight: 600, fontSize: 14 }}>
                     {name}
                 </a>
                 <span style={{ width: 1, height: 16, background: "rgba(17,17,17,0.22)", flex: "none" }} />
                 <nav style={{ display: "flex", alignItems: "center", gap: 18 }}>
-                    <a href={workHref} style={link}>
+                    <a href={workHref || "/work"} style={link}>
                         Work
                     </a>
-                    <a href={archiveHref} style={link}>
+                    <a href={archiveHref || "/archive"} style={link}>
                         Archive
                     </a>
                     <a href={contactHref} style={link}>
@@ -101,9 +103,15 @@ export default function TopBar(props: TopBarProps) {
 
 addPropertyControls(TopBar, {
     name: { type: ControlType.String, title: "Name", defaultValue: "NABIA SHAIKH NADEEM" },
-    workHref: { type: ControlType.Link, title: "Work Link" },
-    archiveHref: { type: ControlType.Link, title: "Archive Link" },
-    contactHref: { type: ControlType.Link, title: "Contact Link" },
+    homeHref: { type: ControlType.Link, title: "Link — Home / Name", defaultValue: "/" },
+    workHref: { type: ControlType.Link, title: "Link — Work", defaultValue: "/work" },
+    archiveHref: { type: ControlType.Link, title: "Link — Archive", defaultValue: "/archive" },
+    contactHref: {
+        type: ControlType.Link,
+        title: "Link — Contact",
+        defaultValue:
+            "mailto:hello@example.com?subject=Let%27s%20work%20together&body=Hi%20Nabia%2C%0A%0AI%27d%20love%20to%20chat%20about%20a%20project.%0A%0A",
+    },
     accent: { type: ControlType.Color, title: "Accent", defaultValue: "#2C6BE0" },
     font: {
         type: ControlType.Font,
