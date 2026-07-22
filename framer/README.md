@@ -17,11 +17,13 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
   text style presets **TopBar Name** / **TopBar Nav**).
 
 ### Archive — AIC Awards–style gallery
-- **`ArchiveGallery.tsx`** — multi-column infinite marquee (columns scroll at
-  different speeds), click → lightbox popup. Black page, desk **grid PNG at
-  low opacity** behind. Items seeded from the **Archive** CMS collection.
-- Edit titles/images via the component **Items** array (or re-sync from CMS).
-- Archive page uses the TopBar **Dark** variant (white type on dark pill).
+- **`ArchiveGallery.tsx`** — 4 columns auto-drift slowly in **opposite**
+  directions (1+3 vs 2+4). Page scroll speeds them up. Content is looped so
+  the scroll never ends. Click → lightbox popup. No edge vignette masks.
+- Black page + low-opacity desk grid. Items synced from the **Archive** CMS
+  (`Items` array with image URLs). Add/edit projects in the Archive CMS, then
+  re-sync the gallery Items.
+- TopBar **Dark** variant on this page.
 
 ### Also
 - **`ArchiveFrame.tsx`** — single CMS-bound frame (still available for
