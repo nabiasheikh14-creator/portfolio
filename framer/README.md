@@ -6,35 +6,31 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
 ## What’s live now
 
 ### Home — full-bleed desk + floating TopBar
-- **`DeskWorkspace.tsx`** — illustrated desk layers, scroll-reveal. The stage
-  **covers the viewport** so the `bg` grid fills edge-to-edge.
-- Desk **popups** show the clicked object floating in the modal’s bottom-right.
-- **TopBar (design component)** — Inter, all caps, letter-spacing -1px. Light + Dark variants.
+- **`DeskWorkspace.tsx`** — illustrated desk layers, scroll-reveal.
+- Desk **popups** show the clicked object on the modal.
+- **TopBar (design component)** — Inter, all caps, letter-spacing -1px.
 
-### Archive — cream stage + sticky archive boxes
-- **`ArchiveGallery.tsx`** — cream `#F3EFE6` (matches home), 4 opposite-drifting columns,
-  wheel boosts speed (page does not scroll). Sticky **archive** desk art bottom-right.
-- TopBar **Light** variant.
+### Work — Heat Bureau–style index + case studies
+- **`WorkIndex.tsx`** — large lowercase “work” title, right intro, immersive
+  project cards (featured + grid). White stage + home desk grid at 50%.
+- Case studies keep CMS-bound content with a clearer type scale + hero band.
+- Sticky **laptop** flush bottom-right on `/work` and `/work/:slug`.
 
-### Desk corner mascots
-- **`DeskCorner.tsx`** — sticky floating crop of the desk object you clicked.
-  - `/archive` → archive boxes (built into ArchiveGallery)
-  - `/work` → laptop
-  - `/about` → chutney (via SiteRoutes)
-  - `/contact` → phone (via SiteRoutes)
+### Archive — cream stage
+- **`ArchiveGallery.tsx`** — cream `#F3EFE6`, opposite column drift.
+- **← Back** pill aligned with TopBar.
 
-### Also
-- **`ArchiveFrame.tsx`**, **`SiteRoutes.tsx`**, deprecated **`TopBar.tsx`** code fallback.
-- Older: `Y2KHome.tsx`.
+### Desk corner
+- **`DeskCorner.tsx`** — sticky flush desk crops (laptop on Work, etc.).
 
 ## Routes
 
 | Route | What |
 |---|---|
 | `/` | Welcome → scroll-reveal desk |
-| `/archive` | Infinite column gallery + popups |
-| `/work` | Projects list |
+| `/work` | Project index |
 | `/work/:slug` | Case study |
+| `/archive` | Infinite column gallery |
 | `/about` | About |
 | `/contact` | Contact |
 
