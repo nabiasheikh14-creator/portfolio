@@ -335,49 +335,55 @@ function layoutSlots(
         ]
     }
 
-    const padX = Math.max(36, W * 0.045)
-    const padY = Math.max(72, H * 0.09)
+    const padX = Math.max(40, W * 0.04)
+    const padTop = Math.max(78, H * 0.095)
+    const padBot = Math.max(40, H * 0.055)
     const usableW = W - padX * 2
-    const usableH = H - padY - Math.max(36, H * 0.06)
+    const usableH = H - padTop - padBot
+    const gap = Math.max(18, W * 0.016)
 
-    // Asymmetric but balanced: large left hero, tall right, wide lower-right, small accent
-    const largeW = usableW * 0.44
-    const largeH = usableH * 0.58
-    const tallW = usableW * 0.34
-    const tallH = usableH * 0.46
-    const wideW = usableW * 0.4
-    const wideH = usableH * 0.3
-    const smallW = usableW * 0.24
-    const smallH = usableH * 0.3
+    // Magazine-like balance: large left, tall upper-right, wide lower-right, small lower-left accent
+    const largeW = usableW * 0.48
+    const largeH = usableH * 0.62
+    const tallW = usableW - largeW - gap
+    const tallH = usableH * 0.48
+    const wideW = tallW
+    const wideH = usableH - tallH - gap
+    const smallW = largeW * 0.42
+    const smallH = usableH - largeH - gap
 
     return [
         {
+            // Large hero — upper/mid left
             x: padX,
-            y: padY + usableH * 0.02,
+            y: padTop,
             w: largeW,
             h: largeH,
-            rot: -2.8,
+            rot: -2.4,
         },
         {
-            x: W - padX - tallW,
-            y: padY,
+            // Tall — upper right
+            x: padX + largeW + gap,
+            y: padTop,
             w: tallW,
             h: tallH,
-            rot: 3.6,
+            rot: 3.2,
         },
         {
-            x: padX + largeW - smallW * 0.22,
-            y: padY + usableH - smallH - usableH * 0.02,
+            // Small accent — under the left edge of the hero
+            x: padX + largeW * 0.06,
+            y: padTop + largeH + gap,
             w: smallW,
-            h: smallH,
-            rot: 5.2,
+            h: Math.max(120, smallH),
+            rot: 4.5,
         },
         {
-            x: W - padX - wideW,
-            y: padY + tallH + usableH * 0.05,
+            // Wide — lower right, stacked under tall
+            x: padX + largeW + gap,
+            y: padTop + tallH + gap,
             w: wideW,
-            h: wideH,
-            rot: -1.8,
+            h: Math.max(140, wideH),
+            rot: -1.6,
         },
     ]
 }
