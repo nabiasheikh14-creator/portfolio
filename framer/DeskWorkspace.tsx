@@ -140,6 +140,12 @@ type PopupKind =
     | "chutney"
     | "substack"
     | "about"
+    | "techstack"
+
+interface TechTool {
+    name: string
+    logoUrl?: string
+}
 
 type Action = "popup" | "page" | "sound"
 interface Click {
@@ -223,6 +229,16 @@ const CLICK_DEFS: Click[] = [
         action: "popup",
         popupKind: "schedule",
     },
+    {
+        key: "sticky",
+        // White sticky note on the desk (sticky.png content ~837–913 × 368–509).
+        box: [820, 355, 110, 165],
+        label: "TECH STACK",
+        action: "popup",
+        popupKind: "techstack",
+        jiggle: ["sticky"],
+        labelPos: "above",
+    },
 ]
 
 /** Framer Link controls may return a string or `{ href }`. */
@@ -292,6 +308,8 @@ interface DeskWorkspaceProps {
     substackUrl: string
     aboutMessage: string
     aboutImage: string
+    techStackMessage: string
+    techStackTools: TechTool[]
     /** Radio track URL (mp3). Defaults to Belle & Sebastian — Wrapped Up In Books (live). */
     radioTrackUrl?: string
     /** Optional UI tick sound file (mp3/wav/ogg). Empty = built-in synth tick. */
@@ -352,6 +370,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         substackUrl = "https://substack.com/",
         aboutMessage = "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
         aboutImage = "",
+        techStackMessage = DEFAULT_TECH_STACK_MESSAGE,
+        techStackTools = DEFAULT_TECH_STACK_TOOLS,
         radioTrackUrl = DEFAULT_RADIO_TRACK,
         tickSound = "",
     } = props
@@ -784,6 +804,18 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                     <AboutPopup
                         message={aboutMessage}
                         image={aboutImage}
+                        accent={accent}
+                        family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        muted={muted}
+                        onClose={() => setPopup(null)}
+                    />
+                )}
+                {popup?.popupKind === "techstack" && (
+                    <TechStackPopup
+                        message={techStackMessage}
+                        tools={techStackTools}
                         accent={accent}
                         family={family}
                         displayFamily={displayFamily}
@@ -1783,6 +1815,166 @@ function AboutPopup({
     )
 }
 
+function TechStackPopup({
+    message,
+    tools,
+    accent,
+    family,
+    displayFamily = ANNIE,
+    ink = INK,
+    muted = MUTED,
+    onClose,
+}: {
+    message: string
+    tools: TechTool[]
+    accent: string
+    family: string
+    displayFamily?: string
+    ink?: string
+    muted?: string
+    onClose: () => void
+}) {
+    const list = (tools || [])
+        .map((t) => ({
+            name: String(t?.name || "").trim(),
+            logoUrl: resolveImage(t?.logoUrl),
+        }))
+        .filter((t) => t.name)
+    const items = list.length ? list : DEFAULT_TECH_STACK_TOOLS
+
+    return (
+        <ModalShell onClose={onClose} family={family} width="min(720px, 94vw)">
+            <div style={{ padding: "52px 36px 36px", boxSizing: "border-box" }}>
+                <div
+                    style={{
+                        fontFamily: displayFamily,
+                        fontSize: 40,
+                        lineHeight: 1.1,
+                        marginBottom: 12,
+                        color: ink,
+                    }}
+                >
+                    Tech stack
+                </div>
+                <p
+                    style={{
+                        margin: "0 0 28px",
+                        maxWidth: 520,
+                        fontSize: 16,
+                        lineHeight: 1.55,
+                        color: muted,
+                    }}
+                >
+                    {message || DEFAULT_TECH_STACK_MESSAGE}
+                </p>
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(auto-fill, minmax(148px, 1fr))",
+                        gap: 12,
+                    }}
+                >
+                    {items.map((tool) => (
+                        <TechToolChip
+                            key={tool.name}
+                            name={tool.name}
+                            logoUrl={tool.logoUrl}
+                            accent={accent}
+                            ink={ink}
+                        />
+                    ))}
+                </div>
+            </div>
+        </ModalShell>
+    )
+}
+
+function TechToolChip({
+    name,
+    logoUrl,
+    accent,
+    ink,
+}: {
+    name: string
+    logoUrl?: string
+    accent: string
+    ink: string
+}) {
+    const [logoFailed, setLogoFailed] = useState(false)
+    const showLogo = Boolean(logoUrl) && !logoFailed
+
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                padding: "12px 14px",
+                border: `1.5px solid ${ink}`,
+                background: "#fff",
+                boxShadow: `3px 3px 0 ${accent}`,
+                boxSizing: "border-box",
+                minHeight: 56,
+            }}
+        >
+            {showLogo ? (
+                <img
+                    src={logoUrl}
+                    alt=""
+                    width={28}
+                    height={28}
+                    draggable={false}
+                    onError={() => setLogoFailed(true)}
+                    style={{
+                        width: 28,
+                        height: 28,
+                        objectFit: "contain",
+                        flex: "none",
+                        display: "block",
+                    }}
+                />
+            ) : (
+                <span
+                    aria-hidden
+                    style={{
+                        width: 28,
+                        height: 28,
+                        flex: "none",
+                        borderRadius: 8,
+                        background: accent,
+                        color: "#fff",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        letterSpacing: "-0.04em",
+                    }}
+                >
+                    {toolInitials(name)}
+                </span>
+            )}
+            <span
+                style={{
+                    fontSize: 14,
+                    fontWeight: 600,
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1.2,
+                    color: ink,
+                }}
+            >
+                {name}
+            </span>
+        </div>
+    )
+}
+
+function toolInitials(name: string): string {
+    const parts = name.replace(/3[dD]/, "").trim().split(/\s+/).filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
+    return name.slice(0, 2).toUpperCase()
+}
+
 function resolveImage(value: unknown): string {
     if (!value) return ""
     if (typeof value === "string") return value
@@ -1804,6 +1996,24 @@ function resolveRadioUrl(value: unknown): string {
 }
 
 const DEFAULT_CLIENTS = ["Lemme", "Adobe", "Wellness Co.", "Atelier"]
+
+const DEFAULT_TECH_STACK_MESSAGE =
+    "These are the softwares I reach for to design, prototype, and publish — from first frames in Figma to live sites, illustration, motion, and a little AI help along the way."
+
+const DEFAULT_TECH_STACK_TOOLS: TechTool[] = [
+    { name: "Figma" },
+    { name: "Framer" },
+    { name: "Claude" },
+    { name: "Cursor" },
+    { name: "Replit" },
+    { name: "Lovable" },
+    { name: "Adobe Illustrator" },
+    { name: "Adobe Photoshop" },
+    { name: "Procreate" },
+    { name: "Canva" },
+    { name: "TouchDesigner" },
+    { name: "Unity 3D" },
+]
 
 const DEFAULT_EXPERIENCE: ExperienceJob[] = [
     {
@@ -2053,6 +2263,31 @@ addPropertyControls(DeskWorkspace, {
     aboutImage: {
         type: ControlType.Image,
         title: "About Image",
+    },
+    techStackMessage: {
+        type: ControlType.String,
+        title: "Tech Stack Message",
+        displayTextArea: true,
+        defaultValue: DEFAULT_TECH_STACK_MESSAGE,
+    },
+    techStackTools: {
+        type: ControlType.Array,
+        title: "Tech Stack Tools",
+        control: {
+            type: ControlType.Object,
+            controls: {
+                name: {
+                    type: ControlType.String,
+                    title: "Name",
+                    defaultValue: "Tool",
+                },
+                logoUrl: {
+                    type: ControlType.Image,
+                    title: "Logo (optional)",
+                },
+            },
+        },
+        defaultValue: DEFAULT_TECH_STACK_TOOLS,
     },
     radioTrackUrl: {
         type: ControlType.String,
