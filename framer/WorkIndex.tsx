@@ -613,7 +613,42 @@ const FOOTER_HOTSPOTS: {
     },
 ].sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
 
-function FooterDeskHotspots({ accent }: { accent: string }) {
+/** Extra layers that should jiggle with a hotspot (matches DeskWorkspace). */
+const FOOTER_JIGGLE: Record<string, string[]> = {
+    laptop: ["laptop", "work-laptop"],
+    "briefcase-calendar": ["briefcase-calendar"],
+    sticky: ["sticky"],
+    journal: ["journal"],
+    notes: ["notes"],
+    phone: ["phone"],
+    chutney: ["chutney"],
+}
+
+const FOOTER_JIGGLE_CSS = `
+@keyframes nabia-footer-jiggle {
+  0%, 100% { transform: rotate(0deg) scale(1); }
+  20% { transform: rotate(-3deg) scale(1.03); }
+  40% { transform: rotate(3deg) scale(1.03); }
+  60% { transform: rotate(-2deg) scale(1.03); }
+  80% { transform: rotate(1deg) scale(1.03); }
+}
+.nabia-footer-jiggle {
+  animation: nabia-footer-jiggle 0.55s ease-in-out infinite;
+}
+`
+
+function footerOriginFor(key: string): string {
+    const h = FOOTER_HOTSPOTS.find((x) => x.key === key)
+    if (!h) return "center center"
+    const [x, y, w, ht] = h.box
+    return `${((x + w / 2) / STAGE_W) * 100}% ${((y + ht / 2) / STAGE_H) * 100}%`
+}
+
+function FooterDeskHotspots({
+    onHover,
+}: {
+    onHover: (key: string | null) => void
+}) {
     return (
         <>
             {FOOTER_HOTSPOTS.map((h) => {
@@ -635,14 +670,13 @@ function FooterDeskHotspots({ accent }: { accent: string }) {
                             cursor: "pointer",
                             // Invisible hit target — desk art shows through
                             background: "transparent",
+                            outline: "none",
+                            textDecoration: "none",
                         }}
-                        onMouseEnter={(e) => {
-                            e.currentTarget.style.outline = `2px solid ${accent}`
-                            e.currentTarget.style.outlineOffset = "2px"
-                        }}
-                        onMouseLeave={(e) => {
-                            e.currentTarget.style.outline = "none"
-                        }}
+                        onMouseEnter={() => onHover(h.key)}
+                        onMouseLeave={() => onHover(null)}
+                        onFocus={() => onHover(h.key)}
+                        onBlur={() => onHover(null)}
                     />
                 )
             })}
@@ -729,6 +763,10 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
     const mailHref = email.includes("mailto:")
         ? email
         : `mailto:${email}`
+    const [hovered, setHovered] = useState<string | null>(null)
+    const jiggleKeys = hovered
+        ? FOOTER_JIGGLE[hovered] || [hovered]
+        : []
 
     return (
         <footer
@@ -742,6 +780,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                 ...style,
             }}
         >
+            <style>{FOOTER_JIGGLE_CSS}</style>
             <link
                 href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
                 rel="stylesheet"
@@ -769,25 +808,32 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                         zIndex: 1,
                     }}
                 >
-                    {HOME_FOOTER_LAYERS.map((layer) => (
-                        <img
-                            key={layer.key}
-                            src={`${IMG}${layer.hash}.png`}
-                            alt=""
-                            draggable={false}
-                            style={{
-                                position: "absolute",
-                                inset: 0,
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "fill",
-                                display: "block",
-                                userSelect: "none",
-                                pointerEvents: "none",
-                            }}
-                        />
-                    ))}
-                    <FooterDeskHotspots accent={accent} />
+                    {HOME_FOOTER_LAYERS.map((layer) => {
+                        const active = jiggleKeys.includes(layer.key)
+                        return (
+                            <img
+                                key={layer.key}
+                                src={`${IMG}${layer.hash}.png`}
+                                alt=""
+                                draggable={false}
+                                className={active ? "nabia-footer-jiggle" : undefined}
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "fill",
+                                    display: "block",
+                                    userSelect: "none",
+                                    pointerEvents: "none",
+                                    transformOrigin: hovered
+                                        ? footerOriginFor(hovered)
+                                        : "center center",
+                                }}
+                            />
+                        )
+                    })}
+                    <FooterDeskHotspots onHover={setHovered} />
                 </div>
 
                 {/* Left copy + quick links */}

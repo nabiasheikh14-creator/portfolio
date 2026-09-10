@@ -1,9 +1,7 @@
 /**
- * Sitewide UI click sound — installed via Framer custom code (bodyStart).
- * Louder soft tick on pointerdown / Enter / Space for interactive UI.
- *
- * Re-install with framer.setCustomCode({ location: "bodyStart", html: ... })
- * if the site custom code is cleared.
+ * Sitewide UI click sound — bodyStart custom code.
+ * Always uses a short Web Audio synth tick so every page sounds the same
+ * and navigation never cuts off a longer sample mid-play.
  */
 (function () {
     if (window.__nabiaClickSound) return
@@ -11,17 +9,6 @@
 
     var ctx = null
     var last = 0
-    var unlocked = false
-    var fileAudio = null
-
-    function getTickUrl() {
-        if (window.__nabiaTickSoundUrl) return String(window.__nabiaTickSoundUrl)
-        try {
-            return sessionStorage.getItem("__nabiaTickSoundUrl") || ""
-        } catch (_) {
-            return ""
-        }
-    }
 
     function getCtx() {
         if (ctx) return ctx
@@ -34,44 +21,18 @@
     function unlock() {
         var c = getCtx()
         if (!c) return
-        if (c.state === "suspended") {
-            c.resume().catch(function () {})
-        }
-        unlocked = true
-    }
-
-    function playFileTick(url) {
-        try {
-            if (!fileAudio || fileAudio.getAttribute("data-src") !== url) {
-                fileAudio = new Audio(url)
-                fileAudio.setAttribute("data-src", url)
-                fileAudio.preload = "auto"
-            }
-            fileAudio.volume = 0.7
-            fileAudio.currentTime = 0
-            var p = fileAudio.play()
-            if (p && p.catch) p.catch(function () {})
-            return true
-        } catch (_) {
-            return false
-        }
+        if (c.state === "suspended") c.resume().catch(function () {})
     }
 
     function playSynthTick() {
         var c = getCtx()
         if (!c) return
         if (c.state === "suspended") {
-            c.resume()
-                .then(function () {
-                    playSynthTick()
-                })
-                .catch(function () {})
+            c.resume().then(function () { playSynthTick() }).catch(function () {})
             return
         }
         var t = c.currentTime
-
-        // Soft but audible UI tick (default when no file is set)
-        var bufferSize = Math.floor(c.sampleRate * 0.03)
+        var bufferSize = Math.floor(c.sampleRate * 0.028)
         var buffer = c.createBuffer(1, bufferSize, c.sampleRate)
         var data = buffer.getChannelData(0)
         for (var i = 0; i < bufferSize; i++) {
@@ -86,46 +47,42 @@
         nFilter.Q.value = 0.9
         var nGain = c.createGain()
         nGain.gain.setValueAtTime(0.22, t)
-        nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.04)
+        nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.035)
         noise.connect(nFilter)
         nFilter.connect(nGain)
         nGain.connect(c.destination)
         noise.start(t)
-        noise.stop(t + 0.04)
+        noise.stop(t + 0.035)
 
         var osc = c.createOscillator()
         var oGain = c.createGain()
         osc.type = "triangle"
         osc.frequency.setValueAtTime(1600, t)
-        osc.frequency.exponentialRampToValueAtTime(480, t + 0.06)
+        osc.frequency.exponentialRampToValueAtTime(520, t + 0.05)
         oGain.gain.setValueAtTime(0.18, t)
-        oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.07)
+        oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.055)
         osc.connect(oGain)
         oGain.connect(c.destination)
         osc.start(t)
-        osc.stop(t + 0.07)
+        osc.stop(t + 0.055)
     }
 
     function playClick() {
         var now = performance.now()
         if (now - last < 40) return
         last = now
-        var url = getTickUrl()
-        if (url && playFileTick(url)) return
+        unlock()
         playSynthTick()
     }
 
-    // Expose for React code components (desk hotspots, etc.)
     window.__nabiaPlayClick = playClick
-    window.__nabiaSetTickSoundUrl = function (url) {
-        var next = url ? String(url) : ""
-        window.__nabiaTickSoundUrl = next
-        try {
-            if (next) sessionStorage.setItem("__nabiaTickSoundUrl", next)
-            else sessionStorage.removeItem("__nabiaTickSoundUrl")
-        } catch (_) {}
-        fileAudio = null
+    // Kept for DeskWorkspace compatibility; sitewide clicks always use synth.
+    window.__nabiaSetTickSoundUrl = function () {
+        window.__nabiaTickSoundUrl = ""
+        try { sessionStorage.removeItem("__nabiaTickSoundUrl") } catch (_) {}
     }
+    try { sessionStorage.removeItem("__nabiaTickSoundUrl") } catch (_) {}
+    window.__nabiaTickSoundUrl = ""
 
     function isInteractive(el) {
         if (!el || el.nodeType !== 1) return false
@@ -133,36 +90,15 @@
         for (var i = 0; i < 10 && node; i++) {
             if (node === document.body || node === document.documentElement) break
             var tag = (node.tagName || "").toLowerCase()
-            if (
-                tag === "a" ||
-                tag === "button" ||
-                tag === "summary" ||
-                tag === "input" ||
-                tag === "select" ||
-                tag === "textarea" ||
-                tag === "label"
-            ) {
-                return true
-            }
+            if (tag === "a" || tag === "button" || tag === "summary" || tag === "input" || tag === "select" || tag === "textarea" || tag === "label") return true
             var role = node.getAttribute && node.getAttribute("role")
-            if (
-                role === "button" ||
-                role === "link" ||
-                role === "tab" ||
-                role === "menuitem" ||
-                role === "option"
-            ) {
-                return true
-            }
+            if (role === "button" || role === "link" || role === "tab" || role === "menuitem" || role === "option") return true
             if (node.hasAttribute) {
                 if (node.hasAttribute("data-highlight")) return true
                 if (node.getAttribute("tabindex") === "0") return true
             }
             try {
-                var pe = window.getComputedStyle
-                    ? window.getComputedStyle(node).cursor
-                    : ""
-                if (pe === "pointer") return true
+                if (window.getComputedStyle && window.getComputedStyle(node).cursor === "pointer") return true
             } catch (_) {}
             node = node.parentElement
         }
@@ -173,23 +109,15 @@
         if (e.button != null && e.button !== 0) return
         unlock()
         if (!isInteractive(e.target)) return
-        try {
-            playClick()
-        } catch (_) {}
+        try { playClick() } catch (_) {}
     }
 
     document.addEventListener("pointerdown", onPointerDown, true)
     document.addEventListener("pointerdown", unlock, { once: true, capture: true })
-    document.addEventListener(
-        "keydown",
-        function (e) {
-            if (e.key !== "Enter" && e.key !== " ") return
-            unlock()
-            if (!isInteractive(e.target)) return
-            try {
-                playClick()
-            } catch (_) {}
-        },
-        true,
-    )
-})()
+    document.addEventListener("keydown", function (e) {
+        if (e.key !== "Enter" && e.key !== " ") return
+        unlock()
+        if (!isInteractive(e.target)) return
+        try { playClick() } catch (_) {}
+    }, true)
+})();
