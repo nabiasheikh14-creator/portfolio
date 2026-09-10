@@ -319,7 +319,7 @@ interface DeskWorkspaceProps {
 
 /** Live recording of “Wrapped Up In Books” — Belle & Sebastian (Archive.org LMA). */
 const DEFAULT_RADIO_TRACK =
-    "https://archive.org/download/BS2023-07-14.dpa/2023-07-14%20Institute%2C%20Birmingham%2C%20England/2023-07-14_belle_and_sebastian_02.mp3"
+    "https://archive.org/download/BS2023-07-14.dpa/Belle_and_Sebastian_2023-07-14t02.mp3"
 
 function playUiClick() {
     try {
@@ -466,34 +466,42 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         if (!animated) setDeskReady(true)
     }, [animated])
 
-    const [soundOn, setSoundOn] = useState(true)
+    const [soundOn, setSoundOn] = useState(false)
     const [playing, setPlaying] = useState(false)
     const audioRef = useRef<HTMLAudioElement | null>(null)
 
     const ensureRadio = () => {
         if (typeof window === "undefined") return null
         if (audioRef.current) return audioRef.current
-        const audio = new Audio(trackUrl)
+        const audio = new Audio()
         audio.loop = true
         audio.preload = "auto"
         audio.volume = 0.55
+        audio.crossOrigin = "anonymous"
         audioRef.current = audio
+        audio.addEventListener("playing", () => setPlaying(true))
+        audio.addEventListener("pause", () => setPlaying(false))
+        audio.addEventListener("ended", () => setPlaying(false))
         return audio
     }
 
     const startRadio = async () => {
         const audio = ensureRadio()
-        if (!audio) return
+        if (!audio) return false
         try {
-            const abs = new URL(trackUrl, window.location.href).href
-            if (audio.src !== abs) {
+            // Browsers normalize audio.src to an absolute URL — compare by filename.
+            const file = trackUrl.split("/").pop() || ""
+            if (!audio.src || (file && !decodeURIComponent(audio.src).includes(file))) {
                 audio.src = trackUrl
                 audio.load()
             }
             await audio.play()
+            setSoundOn(true)
             setPlaying(true)
+            return true
         } catch {
             setPlaying(false)
+            return false
         }
     }
 
@@ -513,23 +521,21 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         }
     }, [])
 
+    // If the track URL control changes, swap the source without forcing play.
     useEffect(() => {
-        if (isStatic) return
-        const onGesture = () => {
-            if (soundOn) void startRadio()
-            window.removeEventListener("pointerdown", onGesture)
-        }
-        window.addEventListener("pointerdown", onGesture)
-        return () => window.removeEventListener("pointerdown", onGesture)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isStatic, soundOn, trackUrl])
+        const audio = audioRef.current
+        if (!audio || !trackUrl) return
+        const wasPlaying = !audio.paused
+        audio.src = trackUrl
+        audio.load()
+        if (wasPlaying) void audio.play().then(() => setPlaying(true)).catch(() => setPlaying(false))
+    }, [trackUrl])
 
     function toggleSound() {
-        if (soundOn) {
+        if (playing || soundOn) {
             setSoundOn(false)
             stopRadio()
         } else {
-            setSoundOn(true)
             void startRadio()
         }
     }
@@ -667,7 +673,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 accent={accent}
                                 family={family}
                                 labelSize={labelSize}
-                                soundOn={soundOn}
+                                soundOn={playing || soundOn}
                                 visible={deskReady || !animated}
                                 onEnter={() => setHovered(c.key)}
                                 onLeave={() =>
@@ -948,7 +954,7 @@ function Hotspot({
     const label =
         c.action === "sound"
             ? soundOn
-                ? "WRAPPED UP IN BOOKS"
+                ? "SOUND ON"
                 : "SOUND OFF"
             : c.label
     const boxStyle: CSSProperties = {
