@@ -8,6 +8,99 @@ const INTER =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 
+
+const DEFAULT_FOOTER_SUBLINE = "let's go back to the workspace"
+
+/**
+ * Interactive zones on the footer desk crop — same stage coords as DeskWorkspace.
+ * Popup items deep-link home with ?open= so the desk opens that popup.
+ */
+const FOOTER_HOTSPOTS: {
+    key: string
+    box: [number, number, number, number]
+    label: string
+    href: string
+}[] = [
+    {
+        key: "laptop",
+        box: [555, 430, 370, 330],
+        label: "Work",
+        href: "/work",
+    },
+    {
+        key: "journal",
+        box: [241, 717, 167, 126],
+        label: "Get to know me",
+        href: "/?open=about",
+    },
+    {
+        key: "sticky",
+        box: [820, 355, 110, 165],
+        label: "Tech stack",
+        href: "/?open=techstack",
+    },
+    {
+        key: "notes",
+        box: [1056, 691, 113, 88],
+        label: "Substack",
+        href: "/?open=substack",
+    },
+    {
+        key: "phone",
+        box: [963, 717, 100, 98],
+        label: "Socials",
+        href: "/?open=socials",
+    },
+    {
+        key: "chutney",
+        box: [542, 493, 84, 75],
+        label: "Chutney Studios",
+        href: "/?open=chutney",
+    },
+    {
+        key: "briefcase-calendar",
+        box: [388, 485, 76, 68],
+        label: "Schedule",
+        href: "/?open=schedule",
+    },
+].sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
+
+function FooterDeskHotspots({ accent }: { accent: string }) {
+    return (
+        <>
+            {FOOTER_HOTSPOTS.map((h) => {
+                const [x, y, w, hgt] = h.box
+                return (
+                    <a
+                        key={h.key}
+                        href={h.href}
+                        aria-label={h.label}
+                        title={h.label}
+                        style={{
+                            position: "absolute",
+                            left: x,
+                            top: y,
+                            width: w,
+                            height: hgt,
+                            zIndex: 2,
+                            display: "block",
+                            cursor: "pointer",
+                            background: "transparent",
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.outline = `2px solid ${accent}`
+                            e.currentTarget.style.outlineOffset = "2px"
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.outline = "none"
+                        }}
+                    />
+                )
+            })}
+        </>
+    )
+}
+
 /**
  * Exact homepage desk layer PNGs — same hashes / full-stage placement as DeskWorkspace.
  */
@@ -69,7 +162,7 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
         cream = "#F3EFE6",
         ink = "#111111",
         muted = "#555555",
-        subline = "The rest of the story lives on the homepage.",
+        subline = DEFAULT_FOOTER_SUBLINE,
         homeHref = "/",
         instagramUrl = "https://instagram.com/",
         linkedinUrl = "https://linkedin.com/",
@@ -121,7 +214,6 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
             >
                 {/* Home desk stage — anchored to the right */}
                 <div
-                    aria-hidden
                     style={{
                         position: "absolute",
                         right: "-4%",
@@ -130,7 +222,8 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                         height: STAGE_H,
                         transform: `scale(${stageScale})`,
                         transformOrigin: "bottom right",
-                        pointerEvents: "none",
+                        pointerEvents: "auto",
+                        zIndex: 1,
                     }}
                 >
                     {HOME_FOOTER_LAYERS.map((layer) => (
@@ -147,9 +240,11 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                                 objectFit: "fill",
                                 display: "block",
                                 userSelect: "none",
+                                pointerEvents: "none",
                             }}
                         />
                     ))}
+                    <FooterDeskHotspots accent={accent} />
                 </div>
 
                 {/* Left copy + quick links */}
@@ -170,8 +265,8 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
                 >
                     <a
                         href={homeHref || "/"}
-                        title="Go to homepage"
-                        aria-label="Go to homepage"
+                        title="Go back to the workspace"
+                        aria-label="Go back to the workspace"
                         style={{
                             fontFamily: ANNIE,
                             fontSize: `clamp(26px, 3.6vw, ${headlineSize}px)`,
@@ -365,7 +460,7 @@ addPropertyControls(DeskWorkFooter, {
         type: ControlType.String,
         title: "Home Link Text",
         displayTextArea: true,
-        defaultValue: "The rest of the story lives on the homepage.",
+        defaultValue: DEFAULT_FOOTER_SUBLINE,
     },
     homeHref: {
         type: ControlType.String,

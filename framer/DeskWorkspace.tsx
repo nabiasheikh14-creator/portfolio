@@ -426,8 +426,23 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [isPhone, setIsPhone] = useState(false)
     const [vp, setVp] = useState({ w: STAGE_W, h: STAGE_H })
     // First homepage visit in this tab gets the scroll reveal; return trips
-    // land on the fully set-up desk (no re-scroll).
-    const [skipIntro] = useState(() => !isStatic && hasSeenDeskIntro())
+    // (and footer deep-links with ?open=) land on the fully set-up desk.
+    const [skipIntro] = useState(() => {
+        if (isStatic) return false
+        if (hasSeenDeskIntro()) return true
+        if (typeof window !== "undefined") {
+            try {
+                const open = new URLSearchParams(window.location.search).get("open")
+                if (open) {
+                    markDeskIntroSeen()
+                    return true
+                }
+            } catch {
+                /* ignore */
+            }
+        }
+        return false
+    })
 
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
@@ -500,6 +515,25 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     useEffect(() => {
         if (!animated) setDeskReady(true)
     }, [animated])
+
+    // Deep links from footer desk hotspots: /?open=techstack|about|socials|…
+    useEffect(() => {
+        if (isStatic || typeof window === "undefined") return
+        const params = new URLSearchParams(window.location.search)
+        const open = (params.get("open") || "").trim().toLowerCase()
+        if (!open) return
+        markDeskIntroSeen()
+        const match =
+            clicks.find((c) => c.popupKind === open) ||
+            clicks.find((c) => c.key === open)
+        if (match?.action === "popup") {
+            startTransition(() => setPopup(match))
+        }
+        params.delete("open")
+        const q = params.toString()
+        const next = `${window.location.pathname}${q ? `?${q}` : ""}${window.location.hash}`
+        window.history.replaceState({}, "", next)
+    }, [isStatic, clicks])
 
     const [soundOn, setSoundOn] = useState(false)
     const [playing, setPlaying] = useState(false)
