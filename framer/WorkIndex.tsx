@@ -832,7 +832,7 @@ const DEFAULT_ITEMS: WorkItem[] = [
         year: "2025",
         accent: "#7457C9",
         videoUrl:
-            "https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4",
+            "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
     },
     {
         title: "Health Platform",
@@ -841,7 +841,7 @@ const DEFAULT_ITEMS: WorkItem[] = [
         year: "2024",
         accent: "#28A06A",
         videoUrl:
-            "https://videos.pexels.com/video-files/3571264/3571264-sd_640_360_30fps.mp4",
+            "https://framerusercontent.com/assets/BNCHHO0RxeNVJXt0bV6lIpxZeo.mp4",
     },
     {
         title: "Chutney Studios",
@@ -850,7 +850,7 @@ const DEFAULT_ITEMS: WorkItem[] = [
         year: "2025",
         accent: "#D17BB0",
         videoUrl:
-            "https://videos.pexels.com/video-files/3045163/3045163-sd_640_360_25fps.mp4",
+            "https://framerusercontent.com/assets/1l5FmP2EGRoLJ5xUbGoAAne5sg.mp4",
     },
     {
         title: "Travel App",
@@ -859,7 +859,7 @@ const DEFAULT_ITEMS: WorkItem[] = [
         year: "2023",
         accent: "#E0902F",
         videoUrl:
-            "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
+            "https://framerusercontent.com/assets/08VoVyi5fkN62AMjxKHCOQ84iI.mp4",
     },
 ]
 
