@@ -252,6 +252,7 @@ const CLICK_DEFS: Click[] = [
         label: "SCHEDULE",
         action: "popup",
         popupKind: "schedule",
+        jiggle: ["briefcase-calendar", "calendar"],
     },
     {
         key: "sticky",
