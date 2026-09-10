@@ -607,7 +607,7 @@ const FOOTER_HOTSPOTS: {
     },
     {
         key: "briefcase-calendar",
-        box: [388, 485, 76, 68],
+        box: [355, 435, 170, 170],
         label: "Schedule",
         href: "/?open=schedule",
     },

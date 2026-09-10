@@ -248,11 +248,14 @@ const CLICK_DEFS: Click[] = [
     },
     {
         key: "briefcase-calendar",
-        box: [388, 485, 76, 68],
+        // Match the full calendar art (~359–523 × 438–602).
+        box: [355, 435, 170, 170],
         label: "SCHEDULE",
         action: "popup",
         popupKind: "schedule",
         jiggle: ["briefcase-calendar", "calendar"],
+        labelPos: "above",
+        labelGap: 8,
     },
     {
         key: "sticky",
