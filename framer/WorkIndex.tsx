@@ -1,6 +1,7 @@
 import {
     useEffect,
     useMemo,
+    useRef,
     useState,
     type CSSProperties,
     type ReactNode,
@@ -20,8 +21,8 @@ const GRID_BG =
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
-const GAP = 20
 const PHONE_MQ = "(max-width: 809.98px)"
+const BOX_RADIUS = 28
 
 interface WorkItem {
     title: string
@@ -30,6 +31,7 @@ interface WorkItem {
     year: string
     accent: string
     coverUrl?: string
+    videoUrl?: string
     /** Optional full link override for this card (set in properties). */
     href?: string
 }
@@ -74,24 +76,22 @@ function resolveLink(value: unknown, fallback = ""): string {
 }
 
 /**
- * Work Index — Heat Bureau /projects structure:
- * large title + right intro, then full-width project → pair → full-width…
- * Cream stage + quiet desk grid. Whole card is the hit target (no Open button).
+ * Work Index — four lightweight video frames tumble in with soft gravity,
+ * bounce off each other, then float. Hover reveals the name; click opens the case.
  *
  * @framerIntrinsicWidth 1200
- * @framerIntrinsicHeight 1800
+ * @framerIntrinsicHeight 900
  * @framerSupportedLayoutWidth any-prefer-fixed
  * @framerSupportedLayoutHeight any
  */
 export default function WorkIndex(props: WorkIndexProps) {
     const {
-        intro = DEFAULT_INTRO,
         items = DEFAULT_ITEMS,
         accent = "#2C6BE0",
         cream = CREAM,
         ink = INK,
         muted = MUTED,
-        gridOpacity = 0.12,
+        gridOpacity = 0.1,
         titleSize = 96,
         backLink = "/",
         projectBasePath = "/work",
@@ -107,11 +107,12 @@ export default function WorkIndex(props: WorkIndexProps) {
     const family = props.font?.fontFamily || SANS
     const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
     const isStatic = useIsStaticRenderer()
-    const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.12))
+    const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.1))
     const [isPhone, setIsPhone] = useState(false)
     const backHref = resolveLink(backLink, "/")
     const homeHref = resolveLink(footerHomeLink, "/")
-    const basePath = resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
+    const basePath =
+        resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
     const igHref = resolveLink(footerInstagramUrl, "https://instagram.com/")
     const liHref = resolveLink(footerLinkedinUrl, "https://linkedin.com/")
 
@@ -130,10 +131,12 @@ export default function WorkIndex(props: WorkIndexProps) {
 
     const list = useMemo(() => {
         const normalized = (items || [])
-            .map((it: any) => {
+            .map((it: any, index: number) => {
                 const slug =
                     String(it?.slug || "").replace(/^\//, "") || "project"
                 const custom = resolveLink(it?.href || it?.link, "")
+                const fallbackVideo =
+                    DEFAULT_ITEMS[index % DEFAULT_ITEMS.length]?.videoUrl || ""
                 return {
                     title: String(it?.title || "Untitled"),
                     subtitle: String(it?.subtitle || ""),
@@ -141,18 +144,21 @@ export default function WorkIndex(props: WorkIndexProps) {
                     year: String(it?.year || ""),
                     accent: String(it?.accent || accent),
                     coverUrl: it?.coverUrl ? String(it.coverUrl) : "",
+                    videoUrl: it?.videoUrl
+                        ? String(it.videoUrl)
+                        : fallbackVideo,
                     href: custom || `${basePath}/${slug}`,
-                }
+                } satisfies WorkItem
             })
             .filter((it) => it.title)
-        return normalized.length ? normalized : DEFAULT_ITEMS.map((it) => ({
-            ...it,
-            href: `${basePath}/${it.slug}`,
-        }))
+        const base = normalized.length
+            ? normalized
+            : DEFAULT_ITEMS.map((it) => ({
+                  ...it,
+                  href: `${basePath}/${it.slug}`,
+              }))
+        return base.slice(0, 4)
     }, [items, accent, basePath])
-
-    // Heat pattern: full, pair, full, pair…
-    const rows = useMemo(() => chunkHeatRows(list), [list])
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -202,7 +208,12 @@ export default function WorkIndex(props: WorkIndexProps) {
                 rel="stylesheet"
             />
 
-            <DeskBack href={backHref} label="Back" ariaLabel="Back to home" accent={accent} />
+            <DeskBack
+                href={backHref}
+                label="Back"
+                ariaLabel="Back to home"
+                accent={accent}
+            />
 
             <div
                 aria-hidden
@@ -219,86 +230,46 @@ export default function WorkIndex(props: WorkIndexProps) {
                 }}
             />
 
-            <div
+            <section
                 style={{
                     position: "relative",
                     zIndex: 1,
-                    maxWidth: 1360,
-                    margin: "0 auto",
-                    // Phone padding only — desktop values stay exactly as before.
-                    // Extra top room on phone so Back pill + TopBar don't sit on the title.
-                    padding: isPhone ? "148px 18px 56px" : "120px 40px 80px",
+                    width: "100%",
+                    minHeight: isPhone ? "100svh" : "100vh",
+                    height: isPhone ? "100svh" : "100vh",
                     boxSizing: "border-box",
                 }}
             >
-                {/* Heat header: title left / intro right */}
-                <div
+                <h1
+                    aria-hidden
                     style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: isPhone ? 16 : 40,
-                        marginBottom: 28,
-                        flexWrap: "wrap",
-                        flexDirection: isPhone ? "column" : "row",
+                        position: "absolute",
+                        left: isPhone ? 18 : 40,
+                        bottom: isPhone ? 18 : 28,
+                        margin: 0,
+                        fontFamily: displayFamily,
+                        fontSize: `clamp(${Math.round(titleSize * 0.42)}px, 7vw, ${titleSize}px)`,
+                        fontWeight: 400,
+                        letterSpacing: "-0.03em",
+                        lineHeight: 0.9,
+                        textTransform: "lowercase",
+                        color: ink,
+                        opacity: 0.12,
+                        pointerEvents: "none",
+                        zIndex: 0,
+                        userSelect: "none",
                     }}
                 >
-                    <h1
-                        style={{
-                            margin: 0,
-                            fontSize: `clamp(${Math.round(titleSize * 0.55)}px, 8vw, ${titleSize}px)`,
-                            fontWeight: 600,
-                            letterSpacing: "-0.04em",
-                            lineHeight: 0.9,
-                            textTransform: "lowercase",
-                            color: ink,
-                            fontFamily: displayFamily,
-                        }}
-                    >
-                        work
-                    </h1>
-                    <p
-                        style={{
-                            margin: 0,
-                            maxWidth: isPhone ? "100%" : 290,
-                            fontSize: isPhone ? 15 : 16,
-                            lineHeight: 1.2,
-                            fontWeight: 400,
-                            color: muted,
-                            textAlign: isPhone ? "left" : "right",
-                            paddingTop: isPhone ? 0 : 14,
-                        }}
-                    >
-                        {intro}
-                    </p>
-                </div>
+                    work
+                </h1>
 
-                {/* Heat project stack — JS breakpoint (Framer strips @media in <style>) */}
-                <div style={{ display: "flex", flexDirection: "column", gap: GAP }}>
-                    {rows.map((row, i) =>
-                        row.kind === "full" ? (
-                            <ProjectCard key={row.items[0].slug} item={row.items[0]} size="full" />
-                        ) : isPhone ? (
-                            row.items.map((item) => (
-                                <ProjectCard key={item.slug} item={item} size="full" />
-                            ))
-                        ) : (
-                            <div
-                                key={`pair-${i}`}
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 1fr",
-                                    gap: GAP,
-                                }}
-                            >
-                                {row.items.map((item) => (
-                                    <ProjectCard key={item.slug} item={item} size="half" />
-                                ))}
-                            </div>
-                        ),
-                    )}
-                </div>
-            </div>
+                <FallingProjectStage
+                    items={list}
+                    displayFamily={displayFamily}
+                    isPhone={isPhone}
+                    isStatic={isStatic}
+                />
+            </section>
 
             <DeskWorkFooter
                 accent={accent}
@@ -316,6 +287,464 @@ export default function WorkIndex(props: WorkIndexProps) {
                 font={props.font}
             />
         </div>
+    )
+}
+
+type SimBody = {
+    key: string
+    item: WorkItem
+    x: number
+    y: number
+    w: number
+    h: number
+    vx: number
+    vy: number
+    rot: number
+    vr: number
+    phase: number
+    baseX: number
+    baseY: number
+    baseRot: number
+}
+
+function FallingProjectStage({
+    items,
+    displayFamily,
+    isPhone,
+    isStatic,
+}: {
+    items: WorkItem[]
+    displayFamily: string
+    isPhone: boolean
+    isStatic: boolean
+}) {
+    const stageRef = useRef<HTMLDivElement>(null)
+    const bodiesRef = useRef<SimBody[]>([])
+    const rafRef = useRef(0)
+    const startedRef = useRef(false)
+    const settledRef = useRef(false)
+    const floatTRef = useRef(0)
+    const reduceMotionRef = useRef(false)
+    const [, setTick] = useState(0)
+    const [hovered, setHovered] = useState<string | null>(null)
+    const [ready, setReady] = useState(false)
+
+    const bump = () => setTick((n) => (n + 1) % 1_000_000)
+
+    const measureAndSpawn = () => {
+        const el = stageRef.current
+        if (!el) return
+        const rect = el.getBoundingClientRect()
+        const W = Math.max(320, rect.width)
+        const H = Math.max(480, rect.height)
+        const pad = isPhone ? 14 : 28
+        const floor = H - pad
+        const boxW = isPhone
+            ? Math.min(168, (W - pad * 3) / 2)
+            : Math.min(340, Math.max(240, W * 0.24))
+        const boxH = boxW * (isPhone ? 1.15 : 0.72)
+
+        const slots = isPhone
+            ? [
+                  { x: pad, y: floor - boxH * 2.15 },
+                  { x: W - pad - boxW, y: floor - boxH * 2.05 },
+                  { x: pad + 8, y: floor - boxH - 8 },
+                  { x: W - pad - boxW - 6, y: floor - boxH },
+              ]
+            : [
+                  { x: W * 0.08, y: floor - boxH - H * 0.08 },
+                  { x: W * 0.38, y: floor - boxH - H * 0.22 },
+                  { x: W * 0.18, y: floor - boxH - H * 0.02 },
+                  { x: W * 0.55, y: floor - boxH - H * 0.12 },
+              ]
+
+        const preferStatic = isStatic || reduceMotionRef.current
+        bodiesRef.current = items.map((item, i) => {
+            const slot = slots[i] || slots[0]
+            const rot = preferStatic ? [-5, 4, 6, -3][i] || 0 : (Math.random() - 0.5) * 28
+            const x = preferStatic
+                ? slot.x
+                : pad + Math.random() * Math.max(8, W - boxW - pad * 2)
+            const y = preferStatic
+                ? slot.y
+                : -boxH - 40 - i * (boxH * 0.55 + 36)
+            return {
+                key: item.slug || `p-${i}`,
+                item,
+                w: boxW,
+                h: boxH,
+                x,
+                y,
+                vx: preferStatic ? 0 : (Math.random() - 0.5) * 120,
+                vy: preferStatic ? 0 : Math.random() * 40,
+                rot,
+                vr: preferStatic ? 0 : (Math.random() - 0.5) * 80,
+                phase: i * 1.3,
+                baseX: x,
+                baseY: y,
+                baseRot: rot,
+            }
+        })
+        settledRef.current = preferStatic
+        startedRef.current = true
+        setReady(true)
+        bump()
+    }
+
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        reduceMotionRef.current = window.matchMedia(
+            "(prefers-reduced-motion: reduce)",
+        ).matches
+        measureAndSpawn()
+
+        const el = stageRef.current
+        if (!el) return
+        const ro = new ResizeObserver(() => {
+            // Keep sizes fresh but don't re-drop mid-flight unless empty
+            if (!bodiesRef.current.length) measureAndSpawn()
+        })
+        ro.observe(el)
+        return () => ro.disconnect()
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [items, isPhone, isStatic])
+
+    useEffect(() => {
+        if (!ready || isStatic || reduceMotionRef.current) return
+
+        let last = performance.now()
+        const GRAVITY = 1650
+        const BOUNCE = 0.42
+        const FRICTION = 0.78
+        const AIR = 0.994
+        const SPIN_DAMP = 0.985
+        const REST_V = 28
+
+        const step = (now: number) => {
+            const dt = Math.min(0.032, (now - last) / 1000)
+            last = now
+            const el = stageRef.current
+            if (!el) {
+                rafRef.current = requestAnimationFrame(step)
+                return
+            }
+            const W = el.clientWidth
+            const H = el.clientHeight
+            const pad = isPhone ? 12 : 22
+            const bodies = bodiesRef.current
+
+            if (!settledRef.current) {
+                let allResting = true
+                for (const b of bodies) {
+                    b.vy += GRAVITY * dt
+                    b.vx *= AIR
+                    b.vy *= AIR
+                    b.vr *= SPIN_DAMP
+                    b.x += b.vx * dt
+                    b.y += b.vy * dt
+                    b.rot += b.vr * dt
+
+                    if (b.x < pad) {
+                        b.x = pad
+                        b.vx = Math.abs(b.vx) * BOUNCE
+                        b.vr *= -0.6
+                    } else if (b.x + b.w > W - pad) {
+                        b.x = W - pad - b.w
+                        b.vx = -Math.abs(b.vx) * BOUNCE
+                        b.vr *= -0.6
+                    }
+
+                    const floor = H - pad
+                    if (b.y + b.h > floor) {
+                        b.y = floor - b.h
+                        if (Math.abs(b.vy) > REST_V) {
+                            b.vy = -Math.abs(b.vy) * BOUNCE
+                            b.vx *= FRICTION
+                            b.vr *= -0.55
+                            allResting = false
+                        } else {
+                            b.vy = 0
+                            b.vx *= 0.9
+                            b.vr *= 0.9
+                        }
+                    } else {
+                        allResting = false
+                    }
+
+                    if (Math.hypot(b.vx, b.vy) > REST_V || b.y + b.h < floor - 2) {
+                        allResting = false
+                    }
+                }
+
+                // Soft circle-ish AABB collisions — light boxes bounce off each other
+                for (let i = 0; i < bodies.length; i++) {
+                    for (let j = i + 1; j < bodies.length; j++) {
+                        const a = bodies[i]
+                        const b = bodies[j]
+                        const ax = a.x + a.w / 2
+                        const ay = a.y + a.h / 2
+                        const bx = b.x + b.w / 2
+                        const by = b.y + b.h / 2
+                        const dx = bx - ax
+                        const dy = by - ay
+                        const gapX = (a.w + b.w) * 0.5 - 8
+                        const gapY = (a.h + b.h) * 0.5 - 8
+                        if (Math.abs(dx) < gapX && Math.abs(dy) < gapY) {
+                            const overlapX = gapX - Math.abs(dx)
+                            const overlapY = gapY - Math.abs(dy)
+                            if (overlapX < overlapY) {
+                                const push = (overlapX / 2) * (dx < 0 ? -1 : 1)
+                                a.x -= push
+                                b.x += push
+                                const avx = a.vx
+                                a.vx = b.vx * BOUNCE
+                                b.vx = avx * BOUNCE
+                                a.vr += (Math.random() - 0.5) * 20
+                                b.vr += (Math.random() - 0.5) * 20
+                            } else {
+                                const push = (overlapY / 2) * (dy < 0 ? -1 : 1)
+                                a.y -= push
+                                b.y += push
+                                const avy = a.vy
+                                a.vy = b.vy * BOUNCE
+                                b.vy = avy * BOUNCE
+                            }
+                            allResting = false
+                        }
+                    }
+                }
+
+                if (allResting) {
+                    for (const b of bodies) {
+                        b.baseX = b.x
+                        b.baseY = b.y
+                        b.baseRot = b.rot
+                        b.vx = 0
+                        b.vy = 0
+                        b.vr = 0
+                    }
+                    settledRef.current = true
+                    floatTRef.current = 0
+                }
+            } else {
+                // Lightweight idle float once gravity settles
+                floatTRef.current += dt
+                const t = floatTRef.current
+                for (const b of bodies) {
+                    b.x = b.baseX + Math.cos(t * 0.85 + b.phase) * 2.6
+                    b.y = b.baseY + Math.sin(t * 1.15 + b.phase) * 3.4
+                    b.rot = b.baseRot + Math.sin(t * 0.95 + b.phase * 0.7) * 1.5
+                }
+            }
+
+            bump()
+            rafRef.current = requestAnimationFrame(step)
+        }
+
+        rafRef.current = requestAnimationFrame(step)
+        return () => cancelAnimationFrame(rafRef.current)
+    }, [ready, isStatic, isPhone])
+
+    const bodies = bodiesRef.current
+
+    return (
+        <div
+            ref={stageRef}
+            style={{
+                position: "absolute",
+                inset: 0,
+                overflow: "hidden",
+                zIndex: 1,
+            }}
+        >
+            {bodies.map((b) => (
+                <ProjectFrame
+                    key={b.key}
+                    item={b.item}
+                    x={b.x}
+                    y={b.y}
+                    w={b.w}
+                    h={b.h}
+                    rot={b.rot}
+                    displayFamily={displayFamily}
+                    hovered={hovered === b.key}
+                    onHover={(on) => setHovered(on ? b.key : null)}
+                />
+            ))}
+        </div>
+    )
+}
+
+function ProjectFrame({
+    item,
+    x,
+    y,
+    w,
+    h,
+    rot,
+    displayFamily,
+    hovered,
+    onHover,
+}: {
+    item: WorkItem
+    x: number
+    y: number
+    w: number
+    h: number
+    rot: number
+    displayFamily: string
+    hovered: boolean
+    onHover: (on: boolean) => void
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    useEffect(() => {
+        const v = videoRef.current
+        if (!v) return
+        v.muted = true
+        const play = v.play()
+        if (play && typeof play.catch === "function") play.catch(() => {})
+    }, [item.videoUrl])
+
+    return (
+        <a
+            href={item.href || `/work/${item.slug}`}
+            aria-label={`${item.title}${item.subtitle ? ` — ${item.subtitle}` : ""}`}
+            onMouseEnter={() => onHover(true)}
+            onMouseLeave={() => onHover(false)}
+            onFocus={() => onHover(true)}
+            onBlur={() => onHover(false)}
+            style={{
+                position: "absolute",
+                left: x,
+                top: y,
+                width: w,
+                height: h,
+                transform: `rotate(${rot}deg)`,
+                transformOrigin: "center center",
+                borderRadius: BOX_RADIUS,
+                overflow: "hidden",
+                textDecoration: "none",
+                color: "#fff",
+                background: item.accent || "#222",
+                boxShadow: hovered
+                    ? "0 18px 40px rgba(17,17,17,0.18), 0 4px 12px rgba(17,17,17,0.08)"
+                    : "0 14px 34px rgba(17,17,17,0.12), 0 2px 8px rgba(17,17,17,0.06)",
+                cursor: "pointer",
+                display: "block",
+                willChange: "transform, left, top",
+                outline: "none",
+                transition: "box-shadow 220ms ease",
+            }}
+        >
+            {item.videoUrl ? (
+                <video
+                    ref={videoRef}
+                    src={item.videoUrl}
+                    poster={item.coverUrl || undefined}
+                    muted
+                    loop
+                    playsInline
+                    autoPlay
+                    preload="metadata"
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                    }}
+                />
+            ) : item.coverUrl ? (
+                <img
+                    src={item.coverUrl}
+                    alt=""
+                    draggable={false}
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                    }}
+                />
+            ) : (
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        background: `linear-gradient(145deg, ${item.accent} 0%, #1a1a1a 125%)`,
+                    }}
+                />
+            )}
+
+            <div
+                aria-hidden
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    background:
+                        "linear-gradient(180deg, rgba(17,17,17,0.05) 0%, rgba(17,17,17,0.45) 100%)",
+                    opacity: hovered ? 1 : 0.35,
+                    transition: "opacity 220ms ease",
+                    pointerEvents: "none",
+                }}
+            />
+
+            <div
+                style={{
+                    position: "absolute",
+                    left: 18,
+                    right: 18,
+                    bottom: 18,
+                    opacity: hovered ? 1 : 0,
+                    transform: hovered ? "translateY(0)" : "translateY(10px)",
+                    transition: "opacity 220ms ease, transform 220ms ease",
+                    pointerEvents: "none",
+                }}
+            >
+                <div
+                    style={{
+                        fontFamily: displayFamily,
+                        fontSize: Math.max(22, Math.min(34, w * 0.11)),
+                        fontWeight: 400,
+                        letterSpacing: "-0.02em",
+                        lineHeight: 1.05,
+                        color: "#fff",
+                        textShadow: "0 1px 12px rgba(0,0,0,0.35)",
+                    }}
+                >
+                    {item.title}
+                </div>
+                {item.subtitle ? (
+                    <div
+                        style={{
+                            marginTop: 4,
+                            fontFamily: SANS,
+                            fontSize: 13,
+                            fontWeight: 500,
+                            letterSpacing: "-0.01em",
+                            color: "rgba(255,255,255,0.88)",
+                        }}
+                    >
+                        {item.subtitle}
+                    </div>
+                ) : null}
+            </div>
+
+            {/* Quiet edge so light boxes read as paper-thin frames */}
+            <div
+                aria-hidden
+                style={{
+                    position: "absolute",
+                    inset: 0,
+                    borderRadius: BOX_RADIUS,
+                    boxShadow: `inset 0 0 0 1.5px rgba(255,255,255,0.22)`,
+                    pointerEvents: "none",
+                }}
+            />
+        </a>
     )
 }
 
@@ -343,7 +772,6 @@ function DeskBack({
             const phone = window.matchMedia(PHONE_MQ).matches
             Object.assign(a.style, {
                 position: "fixed",
-                // Sit under the TopBar on phone so the pills never collide.
                 top: phone ? "88px" : "48px",
                 left: phone ? "12px" : "24px",
                 zIndex: "1200",
@@ -393,133 +821,6 @@ function DeskBack({
     return null
 }
 
-function chunkHeatRows(
-    list: WorkItem[],
-): Array<{ kind: "full" | "pair"; items: WorkItem[] }> {
-    const rows: Array<{ kind: "full" | "pair"; items: WorkItem[] }> = []
-    let i = 0
-    let fullNext = true
-    while (i < list.length) {
-        if (fullNext || list.length - i === 1) {
-            rows.push({ kind: "full", items: [list[i]] })
-            i += 1
-            fullNext = false
-        } else {
-            rows.push({ kind: "pair", items: list.slice(i, i + 2) })
-            i += 2
-            fullNext = true
-        }
-    }
-    return rows
-}
-
-function ProjectCard({
-    item,
-    size,
-}: {
-    item: WorkItem
-    size: "full" | "half"
-}) {
-    const [hover, setHover] = useState(false)
-    const tall = size === "full"
-    return (
-        <a
-            href={item.href || `/work/${item.slug}`}
-            aria-label={`${item.title} — ${item.subtitle}`}
-            onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
-            style={{
-                position: "relative",
-                display: "block",
-                width: "100%",
-                // Heat proportions: full ~16/9.5 tall, half closer to square-ish landscape
-                aspectRatio: tall ? "16 / 9.5" : "660 / 418",
-                minHeight: tall ? 480 : 300,
-                textDecoration: "none",
-                color: "#fff",
-                overflow: "hidden",
-                background: item.accent,
-                cursor: "pointer",
-            }}
-        >
-            {item.coverUrl ? (
-                <img
-                    src={item.coverUrl}
-                    alt=""
-                    draggable={false}
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        transform: hover ? "scale(1.04)" : "scale(1)",
-                        transition: "transform 0.85s cubic-bezier(0.15, 0.75, 0.5, 1)",
-                    }}
-                />
-            ) : (
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background: `linear-gradient(145deg, ${item.accent} 0%, #1a1a1a 125%)`,
-                        transform: hover ? "scale(1.03)" : "scale(1)",
-                        transition: "transform 0.85s cubic-bezier(0.15, 0.75, 0.5, 1)",
-                    }}
-                />
-            )}
-
-            <div
-                style={{
-                    position: "absolute",
-                    inset: 0,
-                    background: hover ? "rgba(0,0,0,0.22)" : "rgba(0,0,0,0.08)",
-                    transition: "background 0.3s ease",
-                }}
-            />
-
-            {/* Heat-style caption: title + type on the media */}
-            <div
-                style={{
-                    position: "absolute",
-                    left: 22,
-                    right: 22,
-                    bottom: 22,
-                    display: "flex",
-                    alignItems: "baseline",
-                    justifyContent: "space-between",
-                    gap: 16,
-                    flexWrap: "wrap",
-                }}
-            >
-                <h3
-                    style={{
-                        margin: 0,
-                        fontSize: tall ? 26 : 22,
-                        fontWeight: 600,
-                        letterSpacing: "-0.02em",
-                        lineHeight: 1.1,
-                        color: "#fff",
-                    }}
-                >
-                    {item.title}
-                </h3>
-                <span
-                    style={{
-                        fontSize: 14,
-                        fontWeight: 500,
-                        letterSpacing: "-0.01em",
-                        color: "rgba(255,255,255,0.92)",
-                    }}
-                >
-                    {item.subtitle}
-                </span>
-            </div>
-        </a>
-    )
-}
-
 const DEFAULT_INTRO =
     "Selected projects & full case studies — product, brand, and the work in between."
 
@@ -530,6 +831,8 @@ const DEFAULT_ITEMS: WorkItem[] = [
         slug: "fintech-app",
         year: "2025",
         accent: "#7457C9",
+        videoUrl:
+            "https://videos.pexels.com/video-files/3129671/3129671-sd_640_360_30fps.mp4",
     },
     {
         title: "Health Platform",
@@ -537,6 +840,8 @@ const DEFAULT_ITEMS: WorkItem[] = [
         slug: "health-platform",
         year: "2024",
         accent: "#28A06A",
+        videoUrl:
+            "https://videos.pexels.com/video-files/3571264/3571264-sd_640_360_30fps.mp4",
     },
     {
         title: "Chutney Studios",
@@ -544,6 +849,8 @@ const DEFAULT_ITEMS: WorkItem[] = [
         slug: "chutney-studios",
         year: "2025",
         accent: "#D17BB0",
+        videoUrl:
+            "https://videos.pexels.com/video-files/3045163/3045163-sd_640_360_25fps.mp4",
     },
     {
         title: "Travel App",
@@ -551,6 +858,8 @@ const DEFAULT_ITEMS: WorkItem[] = [
         slug: "travel-app",
         year: "2023",
         accent: "#E0902F",
+        videoUrl:
+            "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4",
     },
 ]
 
@@ -611,7 +920,9 @@ const FOOTER_HOTSPOTS: {
         label: "Schedule",
         href: "/?open=schedule",
     },
-].sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
+]
+
+FOOTER_HOTSPOTS.sort((a, b) => b.box[2] * b.box[3] - a.box[2] * a.box[3])
 
 /** Extra layers that should jiggle with a hotspot (matches DeskWorkspace). */
 const FOOTER_JIGGLE: Record<string, string[]> = {
@@ -668,7 +979,6 @@ function FooterDeskHotspots({
                             zIndex: 2,
                             display: "block",
                             cursor: "pointer",
-                            // Invisible hit target — desk art shows through
                             background: "transparent",
                             outline: "none",
                             textDecoration: "none",
@@ -794,7 +1104,6 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                     borderTop: `1px solid ${ink}`,
                 }}
             >
-                {/* Home desk stage — anchored to the right; hotspots are clickable */}
                 <div
                     style={{
                         position: "absolute",
@@ -836,7 +1145,6 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                     <FooterDeskHotspots onHover={setHovered} />
                 </div>
 
-                {/* Left copy + quick links */}
                 <div
                     style={{
                         position: "relative",
@@ -1054,19 +1362,49 @@ addPropertyControls(WorkIndex, {
     items: {
         type: ControlType.Array,
         title: "Projects",
+        maxCount: 4,
         control: {
             type: ControlType.Object,
             controls: {
-                title: { type: ControlType.String, title: "Title", defaultValue: "Project" },
-                subtitle: { type: ControlType.String, title: "Subtitle", defaultValue: "Type" },
-                slug: { type: ControlType.String, title: "Slug", defaultValue: "project" },
+                title: {
+                    type: ControlType.String,
+                    title: "Title",
+                    defaultValue: "Project",
+                },
+                subtitle: {
+                    type: ControlType.String,
+                    title: "Subtitle",
+                    defaultValue: "Type",
+                },
+                slug: {
+                    type: ControlType.String,
+                    title: "Slug",
+                    defaultValue: "project",
+                },
                 href: {
                     type: ControlType.Link,
                     title: "Link — Card (optional)",
                 },
-                year: { type: ControlType.String, title: "Year", defaultValue: "2025" },
-                accent: { type: ControlType.Color, title: "Accent", defaultValue: "#2C6BE0" },
-                coverUrl: { type: ControlType.String, title: "Cover URL", defaultValue: "" },
+                year: {
+                    type: ControlType.String,
+                    title: "Year",
+                    defaultValue: "2025",
+                },
+                accent: {
+                    type: ControlType.Color,
+                    title: "Accent",
+                    defaultValue: "#2C6BE0",
+                },
+                videoUrl: {
+                    type: ControlType.String,
+                    title: "Video URL",
+                    defaultValue: "",
+                },
+                coverUrl: {
+                    type: ControlType.String,
+                    title: "Poster / Cover URL",
+                    defaultValue: "",
+                },
             },
         },
         defaultValue: DEFAULT_ITEMS,
@@ -1091,14 +1429,22 @@ addPropertyControls(WorkIndex, {
         title: "Display Font",
         controls: "extended",
         defaultFontType: "sans-serif",
-        defaultValue: { fontFamily: "Annie Use Your Telescope", fontSize: "48px", variant: "Regular" },
+        defaultValue: {
+            fontFamily: "Annie Use Your Telescope",
+            fontSize: "48px",
+            variant: "Regular",
+        },
     },
     font: {
         type: ControlType.Font,
         title: "Body Font",
         controls: "extended",
         defaultFontType: "sans-serif",
-        defaultValue: { fontSize: "15px", variant: "Regular", lineHeight: "1.5em" },
+        defaultValue: {
+            fontSize: "15px",
+            variant: "Regular",
+            lineHeight: "1.5em",
+        },
     },
     titleSize: {
         type: ControlType.Number,
@@ -1161,7 +1507,7 @@ addPropertyControls(WorkIndex, {
     gridOpacity: {
         type: ControlType.Number,
         title: "Grid Opacity",
-        defaultValue: 0.12,
+        defaultValue: 0.1,
         min: 0,
         max: 0.4,
         step: 0.01,
