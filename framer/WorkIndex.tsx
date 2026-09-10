@@ -335,55 +335,51 @@ function layoutSlots(
         ]
     }
 
-    const padX = Math.max(40, W * 0.04)
-    const padTop = Math.max(78, H * 0.095)
-    const padBot = Math.max(40, H * 0.055)
+    const padX = Math.max(44, W * 0.042)
+    const padTop = Math.max(96, H * 0.11)
+    const padBot = Math.max(44, H * 0.06)
     const usableW = W - padX * 2
     const usableH = H - padTop - padBot
-    const gap = Math.max(18, W * 0.016)
+    const gap = Math.max(20, W * 0.018)
 
-    // Magazine-like balance: large left, tall upper-right, wide lower-right, small lower-left accent
-    const largeW = usableW * 0.48
-    const largeH = usableH * 0.62
+    // Magazine-like balance: large left, tall upper-right, wide lower-right, mid accent lower-left
+    const largeW = usableW * 0.47
+    const largeH = usableH * 0.6
     const tallW = usableW - largeW - gap
-    const tallH = usableH * 0.48
+    const tallH = usableH * 0.46
     const wideW = tallW
     const wideH = usableH - tallH - gap
-    const smallW = largeW * 0.42
+    const smallW = largeW * 0.52
     const smallH = usableH - largeH - gap
 
     return [
         {
-            // Large hero — upper/mid left
             x: padX,
             y: padTop,
             w: largeW,
             h: largeH,
-            rot: -2.4,
+            rot: -1.8,
         },
         {
-            // Tall — upper right
             x: padX + largeW + gap,
             y: padTop,
             w: tallW,
             h: tallH,
-            rot: 3.2,
+            rot: 2.2,
         },
         {
-            // Small accent — under the left edge of the hero
-            x: padX + largeW * 0.06,
+            x: padX + largeW * 0.04,
             y: padTop + largeH + gap,
             w: smallW,
-            h: Math.max(120, smallH),
-            rot: 4.5,
+            h: Math.max(150, smallH),
+            rot: 2.8,
         },
         {
-            // Wide — lower right, stacked under tall
             x: padX + largeW + gap,
             y: padTop + tallH + gap,
             w: wideW,
-            h: Math.max(140, wideH),
-            rot: -1.6,
+            h: Math.max(160, wideH),
+            rot: -1.2,
         },
     ]
 }
