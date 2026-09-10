@@ -30,7 +30,29 @@ const INTRO_VH = 480
 /** Phone / small-tablet: shorter scroll intro so the desk arrives sooner. */
 const INTRO_VH_PHONE = 220
 const PHONE_MQ = "(max-width: 809.98px)"
+/** Session flag — scroll intro only on the first homepage visit in this tab. */
+const INTRO_SEEN_KEY = "__nabiaDeskIntroSeen"
 const IMG = "https://framerusercontent.com/images/"
+
+function hasSeenDeskIntro(): boolean {
+    if (typeof window === "undefined") return false
+    try {
+        if (sessionStorage.getItem(INTRO_SEEN_KEY) === "1") return true
+        return Boolean((window as Window & { __nabiaDeskIntroSeen?: boolean }).__nabiaDeskIntroSeen)
+    } catch {
+        return Boolean((window as Window & { __nabiaDeskIntroSeen?: boolean }).__nabiaDeskIntroSeen)
+    }
+}
+
+function markDeskIntroSeen() {
+    if (typeof window === "undefined") return
+    try {
+        sessionStorage.setItem(INTRO_SEEN_KEY, "1")
+    } catch {
+        /* private mode, etc. */
+    }
+    ;(window as Window & { __nabiaDeskIntroSeen?: boolean }).__nabiaDeskIntroSeen = true
+}
 
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const INTER =
@@ -403,6 +425,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [reduced, setReduced] = useState(false)
     const [isPhone, setIsPhone] = useState(false)
     const [vp, setVp] = useState({ w: STAGE_W, h: STAGE_H })
+    // First homepage visit in this tab gets the scroll reveal; return trips
+    // land on the fully set-up desk (no re-scroll).
+    const [skipIntro] = useState(() => !isStatic && hasSeenDeskIntro())
 
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
@@ -433,7 +458,15 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         }
     }, [])
 
-    const animated = !isStatic && !reduced
+    // Leaving the homepage marks the intro as done for this tab session.
+    useEffect(() => {
+        if (isStatic || skipIntro) return
+        return () => {
+            markDeskIntroSeen()
+        }
+    }, [isStatic, skipIntro])
+
+    const animated = !isStatic && !reduced && !skipIntro
     const introVh = isPhone ? INTRO_VH_PHONE : INTRO_VH
 
     const rootRef = useRef<HTMLDivElement>(null)
@@ -461,6 +494,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const [deskReady, setDeskReady] = useState(!animated)
     useMotionValueEvent(p, "change", (v) => {
         startTransition(() => setDeskReady(v > REVEAL_START))
+        // Once the desk has mostly assembled, future visits can skip the scroll.
+        if (v > 0.85) markDeskIntroSeen()
     })
     useEffect(() => {
         if (!animated) setDeskReady(true)
