@@ -178,6 +178,8 @@ interface Click {
     href?: string
     jiggle?: string[]
     labelPos?: "above" | "below"
+    /** Distance of the hover label from the hotspot edge (px). Default 26. */
+    labelGap?: number
     popupKind?: PopupKind
 }
 
@@ -253,13 +255,14 @@ const CLICK_DEFS: Click[] = [
     },
     {
         key: "sticky",
-        // White sticky note on the desk (sticky.png content ~837–913 × 368–509).
-        box: [820, 355, 110, 165],
+        // Tight to the white sticky note (~837–913 × 368–509).
+        box: [834, 368, 86, 142],
         label: "TECH STACK",
         action: "popup",
         popupKind: "techstack",
         jiggle: ["sticky"],
         labelPos: "above",
+        labelGap: 8,
     },
 ]
 
@@ -1020,6 +1023,7 @@ function Hotspot({
 }) {
     const [x, y, w, h] = c.box
     const below = c.labelPos === "below"
+    const labelGap = c.labelGap ?? 26
     const label =
         c.action === "sound"
             ? soundOn
@@ -1053,7 +1057,7 @@ function Hotspot({
                 {
                     position: "absolute",
                     left: "50%",
-                    [below ? "bottom" : "top"]: -26,
+                    [below ? "bottom" : "top"]: -labelGap,
                     transform: "translateX(-50%)",
                     background: accent,
                     color: "#fff",
