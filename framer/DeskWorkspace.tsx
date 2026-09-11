@@ -32,7 +32,10 @@ const INTRO_VH_PHONE = 220
 const PHONE_MQ = "(max-width: 809.98px)"
 /** Session flag — scroll intro only on the first homepage visit in this tab. */
 const INTRO_SEEN_KEY = "__nabiaDeskIntroSeen"
+/** Set before navigating home → /work so WorkIndex can settle the zoom. */
+const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
 const IMG = "https://framerusercontent.com/images/"
+const GRID_BG = `${IMG}uTiMeYZo7Cgq17Mt2w60JYMnptc.png`
 
 function hasSeenDeskIntro(): boolean {
     if (typeof window === "undefined") return false
@@ -747,6 +750,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 key={c.key}
                                 c={c}
                                 accent={accent}
+                                cream={cream}
                                 family={family}
                                 labelSize={labelSize}
                                 soundOn={playing || soundOn}
@@ -1004,9 +1008,122 @@ function originFor(key: string, clicks: Click[] = CLICK_DEFS): string {
     return `${((x + w / 2) / STAGE_W) * 100}% ${((y + h / 2) / STAGE_H) * 100}%`
 }
 
+/** Zoom into the laptop hotspot, then navigate to Work. */
+function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
+    if (typeof document === "undefined") return
+    if (document.getElementById("nabia-laptop-zoom")) {
+        window.location.href = href
+        return
+    }
+
+    try {
+        sessionStorage.setItem(LAPTOP_ZOOM_KEY, "1")
+    } catch {
+        /* private mode */
+    }
+
+    if (
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
+    ) {
+        window.location.href = href
+        return
+    }
+
+    const r = fromEl.getBoundingClientRect()
+    const right = Math.max(0, window.innerWidth - r.right)
+    const bottom = Math.max(0, window.innerHeight - r.bottom)
+    const ox = r.left + r.width / 2
+    const oy = r.top + r.height / 2
+
+    const overlay = document.createElement("div")
+    overlay.id = "nabia-laptop-zoom"
+    overlay.setAttribute("aria-hidden", "true")
+    Object.assign(overlay.style, {
+        position: "fixed",
+        inset: "0",
+        zIndex: "2147483000",
+        pointerEvents: "none",
+        background: cream || "#F3EFE6",
+        overflow: "hidden",
+        clipPath: `inset(${r.top}px ${right}px ${bottom}px ${r.left}px round 12px)`,
+        WebkitClipPath: `inset(${r.top}px ${right}px ${bottom}px ${r.left}px round 12px)`,
+        transform: "scale(0.94)",
+        transformOrigin: `${ox}px ${oy}px`,
+        opacity: "0.96",
+        transition:
+            "clip-path 820ms cubic-bezier(0.22, 1, 0.36, 1), -webkit-clip-path 820ms cubic-bezier(0.22, 1, 0.36, 1), transform 820ms cubic-bezier(0.22, 1, 0.36, 1), opacity 480ms ease",
+        willChange: "clip-path, transform, opacity",
+    } as CSSStyleDeclaration)
+
+    const grid = document.createElement("div")
+    Object.assign(grid.style, {
+        position: "absolute",
+        inset: "0",
+        backgroundImage: `url(${GRID_BG})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        opacity: "0.14",
+        filter: "grayscale(1)",
+        pointerEvents: "none",
+    } as CSSStyleDeclaration)
+    overlay.appendChild(grid)
+
+    // Soft “screen” that expands with the zoom so it feels like diving into the laptop.
+    const screen = document.createElement("div")
+    Object.assign(screen.style, {
+        position: "absolute",
+        left: `${ox}px`,
+        top: `${oy}px`,
+        width: `${Math.max(160, r.width * 0.78)}px`,
+        height: `${Math.max(100, r.height * 0.52)}px`,
+        transform: "translate(-50%, -58%) scale(1)",
+        borderRadius: "14px",
+        border: "9px solid #d9d2c6",
+        boxShadow:
+            "0 0 0 1px rgba(44,107,224,0.2), 0 22px 60px rgba(44, 107, 224, 0.14)",
+        background:
+            "linear-gradient(180deg, rgba(255,255,255,0.62), rgba(243,239,230,0.95))",
+        opacity: "0.72",
+        transition:
+            "transform 820ms cubic-bezier(0.22, 1, 0.36, 1), width 820ms cubic-bezier(0.22, 1, 0.36, 1), height 820ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease, left 820ms cubic-bezier(0.22, 1, 0.36, 1), top 820ms cubic-bezier(0.22, 1, 0.36, 1)",
+        pointerEvents: "none",
+    } as CSSStyleDeclaration)
+    overlay.appendChild(screen)
+
+    document.body.appendChild(overlay)
+    void overlay.offsetWidth
+    requestAnimationFrame(() => {
+        overlay.style.clipPath = "inset(0px 0px 0px 0px round 0px)"
+        ;(
+            overlay.style as CSSStyleDeclaration & { webkitClipPath?: string }
+        ).webkitClipPath = "inset(0px 0px 0px 0px round 0px)"
+        overlay.style.transform = "scale(1.08)"
+        overlay.style.opacity = "1"
+        screen.style.left = "50%"
+        screen.style.top = "48%"
+        screen.style.width = "min(88vw, 1100px)"
+        screen.style.height = "min(72vh, 720px)"
+        screen.style.transform = "translate(-50%, -50%) scale(1.04)"
+        screen.style.opacity = "0.95"
+    })
+
+    // Safety: if navigation stalls, drop the overlay so the desk isn't blocked.
+    window.setTimeout(() => {
+        const el = document.getElementById("nabia-laptop-zoom")
+        el?.parentElement?.removeChild(el)
+    }, 4000)
+
+    window.setTimeout(() => {
+        window.location.href = href
+    }, 780)
+}
+
 function Hotspot({
     c,
     accent,
+    cream,
     family,
     labelSize = 12,
     soundOn,
@@ -1017,6 +1134,7 @@ function Hotspot({
 }: {
     c: Click
     accent: string
+    cream: string
     family: string
     labelSize?: number
     soundOn: boolean
@@ -1081,11 +1199,13 @@ function Hotspot({
         </motion.span>
     )
 
-    // Native links for Work / Archive — do not preventDefault (lets Framer route).
+    // Native links for Work / Archive. Laptop → Work gets a zoom-in transition.
     if (c.action === "page" && c.href) {
         const path = c.href.startsWith("/")
             ? c.href
             : `/${String(c.href).replace(/^\.\//, "")}`
+        const isLaptopWork =
+            c.key === "laptop" || path.replace(/\/$/, "") === "/work"
         return (
             <a
                 href={path}
@@ -1096,9 +1216,21 @@ function Hotspot({
                 onMouseLeave={onLeave}
                 onFocus={onEnter}
                 onBlur={onLeave}
-                onClick={() => {
-                    // Click sound only; browser/Framer follow href.
+                onClick={(e) => {
+                    // Click sound via parent activate().
                     onClick()
+                    if (!isLaptopWork) return
+                    if (
+                        e.metaKey ||
+                        e.ctrlKey ||
+                        e.shiftKey ||
+                        e.altKey ||
+                        e.button !== 0
+                    ) {
+                        return
+                    }
+                    e.preventDefault()
+                    runLaptopZoom(e.currentTarget, path, cream)
                 }}
                 style={boxStyle}
             >

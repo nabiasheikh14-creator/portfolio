@@ -15,6 +15,8 @@ import {
 const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
+const GRID_BG =
+    "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
@@ -22,6 +24,7 @@ const PHONE_MQ = "(max-width: 809.98px)"
 const FOLDER_RADIUS = 26
 const DESKTOP_WORDMARK = "NABIA'S DESKTOP 2026 EDITION"
 const FOLDER_BLUE = "#2C6BE0"
+const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
 
 interface WorkItem {
     title: string
@@ -43,6 +46,7 @@ interface WorkIndexProps {
     ink: string
     muted: string
     titleSize: number
+    gridOpacity: number
     desktopWordmark: string
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
@@ -82,6 +86,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         cream = CREAM,
         ink = INK,
         titleSize = 160,
+        gridOpacity = 0.12,
         desktopWordmark = DESKTOP_WORDMARK,
         backLink = "/",
         projectBasePath = "/work",
@@ -91,10 +96,12 @@ export default function WorkIndex(props: WorkIndexProps) {
     const isStatic = useIsStaticRenderer()
     const [isPhone, setIsPhone] = useState(false)
     const [scrollP, setScrollP] = useState(0)
+    const [enterZoom, setEnterZoom] = useState(false)
     const backHref = resolveLink(backLink, "/")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
     const wordmark = String(desktopWordmark || DESKTOP_WORDMARK).trim()
+    const gridAlpha = Math.min(0.2, Math.max(0.04, Number(gridOpacity) || 0.12))
 
     useEffect(() => {
         if (typeof window === "undefined") return
@@ -108,6 +115,34 @@ export default function WorkIndex(props: WorkIndexProps) {
             window.removeEventListener("resize", sync)
         }
     }, [])
+
+    // Continue the laptop zoom: settle from slightly zoomed-in after navigation
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        // Drop any leftover transition overlay from the homepage zoom.
+        try {
+            document.getElementById("nabia-laptop-zoom")?.remove()
+        } catch (_) {}
+
+        let fromZoom = false
+        try {
+            fromZoom = sessionStorage.getItem(LAPTOP_ZOOM_KEY) === "1"
+            sessionStorage.removeItem(LAPTOP_ZOOM_KEY)
+        } catch (_) {}
+        if (!fromZoom) return
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+            return
+        }
+        setEnterZoom(true)
+        let raf2 = 0
+        const raf1 = requestAnimationFrame(() => {
+            raf2 = requestAnimationFrame(() => setEnterZoom(false))
+        })
+        return () => {
+            cancelAnimationFrame(raf1)
+            cancelAnimationFrame(raf2)
+        }
+    }, [isStatic])
 
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
@@ -210,6 +245,12 @@ export default function WorkIndex(props: WorkIndexProps) {
                 fontFamily: family,
                 boxSizing: "border-box",
                 overflow: "visible",
+                transform: enterZoom ? "scale(1.12)" : "scale(1)",
+                transformOrigin: "center center",
+                opacity: enterZoom ? 0.55 : 1,
+                transition: enterZoom
+                    ? "none"
+                    : "transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease",
             }}
         >
             <link
@@ -222,6 +263,22 @@ export default function WorkIndex(props: WorkIndexProps) {
                 label="Back"
                 ariaLabel="Back to home"
                 accent={accent}
+            />
+
+            {/* Same desk grid as homepage */}
+            <div
+                aria-hidden
+                style={{
+                    position: "fixed",
+                    inset: 0,
+                    zIndex: 0,
+                    pointerEvents: "none",
+                    backgroundImage: `url(${GRID_BG})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    opacity: gridAlpha,
+                    filter: "grayscale(1)",
+                }}
             />
 
             {/* Fixed horizontal wordmark track — moves with vertical scroll */}
@@ -793,5 +850,13 @@ addPropertyControls(WorkIndex, {
         min: 96,
         max: 240,
         step: 4,
+    },
+    gridOpacity: {
+        type: ControlType.Number,
+        title: "Grid Opacity",
+        defaultValue: 0.12,
+        min: 0,
+        max: 0.3,
+        step: 0.01,
     },
 })
