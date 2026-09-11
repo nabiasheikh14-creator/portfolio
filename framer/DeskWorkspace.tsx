@@ -1009,12 +1009,14 @@ function originFor(key: string, clicks: Click[] = CLICK_DEFS): string {
     return `${((x + w / 2) / STAGE_W) * 100}% ${((y + h / 2) / STAGE_H) * 100}%`
 }
 
-/** Zoom into the laptop hotspot, then navigate to Work. */
+/**
+ * Sandra Creates–style frame expand: the Work page starts the size of the
+ * laptop screen and zooms out to fill the viewport, then we navigate.
+ */
 let laptopZoomBusy = false
 
 function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     if (typeof document === "undefined" || typeof window === "undefined") return
-    // Ignore double-invokes (Strict Mode / duplicate handlers) — never navigate early.
     if (laptopZoomBusy || document.getElementById("nabia-laptop-zoom")) return
     laptopZoomBusy = true
 
@@ -1030,92 +1032,118 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     }
 
     const r = fromEl.getBoundingClientRect()
-    // Prefer the screen bezel (upper ~55% of the laptop hit area) as the zoom aperture.
     const screenRect = {
-        left: r.left + r.width * 0.08,
-        top: r.top + r.height * 0.04,
-        width: r.width * 0.84,
-        height: r.height * 0.52,
+        left: r.left + r.width * 0.1,
+        top: r.top + r.height * 0.05,
+        width: r.width * 0.8,
+        height: r.height * 0.5,
     }
-    const right = Math.max(
-        0,
-        window.innerWidth - (screenRect.left + screenRect.width),
-    )
-    const bottom = Math.max(
-        0,
-        window.innerHeight - (screenRect.top + screenRect.height),
-    )
-    const ox = screenRect.left + screenRect.width / 2
-    const oy = screenRect.top + screenRect.height / 2
-
-    // Scale the desk stage toward the laptop while the cream overlay expands.
-    const stage = fromEl.closest("[data-desk-stage]") as HTMLElement | null
-    if (stage) {
-        const sr = stage.getBoundingClientRect()
-        const originX = ((ox - sr.left) / Math.max(1, sr.width)) * 100
-        const originY = ((oy - sr.top) / Math.max(1, sr.height)) * 100
-        stage.style.transformOrigin = `${originX}% ${originY}%`
-        stage.style.transition =
-            "transform 860ms cubic-bezier(0.22, 1, 0.36, 1), filter 860ms ease"
-        const existing = stage.style.transform || ""
-        stage.style.transform = `${existing} scale(1.55)`.trim()
-        stage.style.filter = "blur(1.5px) brightness(1.05)"
-    }
+    const vw = window.innerWidth
+    const vh = window.innerHeight
+    const creamBg = cream || "#F3EFE6"
+    // Uniform scale so the frame grows like a portal (not a clipped wipe).
+    const s0 = Math.max(0.08, Math.min(screenRect.width / vw, screenRect.height / vh))
+    const tx0 = screenRect.left + screenRect.width / 2 - vw / 2
+    const ty0 = screenRect.top + screenRect.height / 2 - vh / 2
+    const stageScale = Math.min(vw / STAGE_W, vh / STAGE_H)
 
     const overlay = document.createElement("div")
     overlay.id = "nabia-laptop-zoom"
     overlay.setAttribute("aria-hidden", "true")
     Object.assign(overlay.style, {
         position: "fixed",
-        inset: "0",
+        left: "0",
+        top: "0",
+        width: `${vw}px`,
+        height: `${vh}px`,
         zIndex: "2147483000",
         pointerEvents: "auto",
-        background: cream || "#F3EFE6",
+        background: creamBg,
         overflow: "hidden",
-        clipPath: `inset(${screenRect.top}px ${right}px ${bottom}px ${screenRect.left}px round 10px)`,
-        WebkitClipPath: `inset(${screenRect.top}px ${right}px ${bottom}px ${screenRect.left}px round 10px)`,
-        transform: "scale(1)",
-        transformOrigin: `${ox}px ${oy}px`,
-        opacity: "0.88",
+        borderRadius: "16px",
+        boxShadow:
+            "0 0 0 10px #d9d2c6, 0 0 0 11px rgba(44,107,224,0.25), 0 40px 100px rgba(17,17,17,0.28)",
+        transformOrigin: "center center",
+        transform: `translate(${tx0}px, ${ty0}px) scale(${s0})`,
+        opacity: "1",
         transition:
-            "clip-path 860ms cubic-bezier(0.22, 1, 0.36, 1), -webkit-clip-path 860ms cubic-bezier(0.22, 1, 0.36, 1), transform 860ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease",
-        willChange: "clip-path, transform, opacity",
+            "transform 1.15s cubic-bezier(0.16, 1, 0.3, 1), border-radius 1.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 1s ease",
+        willChange: "transform, border-radius, box-shadow",
     } as CSSStyleDeclaration)
 
-    const grid = document.createElement("div")
-    Object.assign(grid.style, {
+    // Same stage-scaled grid as the Work page / homepage (not cover-zoomed).
+    const gridWrap = document.createElement("div")
+    Object.assign(gridWrap.style, {
         position: "absolute",
         inset: "0",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        pointerEvents: "none",
+        overflow: "hidden",
+    } as CSSStyleDeclaration)
+    const grid = document.createElement("div")
+    Object.assign(grid.style, {
+        width: `${STAGE_W}px`,
+        height: `${STAGE_H}px`,
+        flex: "none",
+        transform: `scale(${stageScale})`,
+        transformOrigin: "center center",
         backgroundImage: `url(${GRID_BG})`,
-        backgroundSize: "cover",
+        backgroundSize: "100% 100%",
         backgroundPosition: "center",
         backgroundRepeat: "no-repeat",
-        opacity: "0.14",
+        opacity: "0.12",
         filter: "grayscale(1)",
+    } as CSSStyleDeclaration)
+    gridWrap.appendChild(grid)
+    overlay.appendChild(gridWrap)
+
+    // Soft folder silhouettes so the expanding frame reads as the Work desktop.
+    const folders = document.createElement("div")
+    Object.assign(folders.style, {
+        position: "absolute",
+        inset: "0",
         pointerEvents: "none",
     } as CSSStyleDeclaration)
-    overlay.appendChild(grid)
+    ;[
+        { left: "9%", top: "14%", w: 280, h: 360 },
+        { right: "10%", top: "42%", w: 300, h: 380 },
+    ].forEach((f, i) => {
+        const card = document.createElement("div")
+        Object.assign(card.style, {
+            position: "absolute",
+            left: f.left || "auto",
+            right: (f as { right?: string }).right || "auto",
+            top: f.top,
+            width: `${f.w}px`,
+            height: `${f.h}px`,
+            borderRadius: "26px",
+            background: "rgba(255,255,255,0.55)",
+            border: "2px solid rgba(255,255,255,0.9)",
+            boxShadow: "0 18px 40px rgba(17,17,17,0.1), 0 0 40px rgba(44,107,224,0.22)",
+            opacity: String(0.55 + i * 0.12),
+        } as CSSStyleDeclaration)
+        folders.appendChild(card)
+    })
+    overlay.appendChild(folders)
 
     document.body.appendChild(overlay)
     void overlay.offsetWidth
     requestAnimationFrame(() => {
-        overlay.style.clipPath = "inset(0px 0px 0px 0px)"
-        ;(
-            overlay.style as CSSStyleDeclaration & { webkitClipPath?: string }
-        ).webkitClipPath = "inset(0px 0px 0px 0px)"
-        overlay.style.transform = "scale(1.04)"
-        overlay.style.opacity = "1"
+        overlay.style.transform = "translate(0px, 0px) scale(1)"
+        overlay.style.borderRadius = "0px"
+        overlay.style.boxShadow = "0 0 0 0 transparent"
     })
 
-    // Safety: if navigation stalls, drop the overlay so the desk isn't blocked.
     window.setTimeout(() => {
         document.getElementById("nabia-laptop-zoom")?.remove()
         laptopZoomBusy = false
-    }, 5000)
+    }, 6000)
 
     window.setTimeout(() => {
         window.location.assign(href)
-    }, 880)
+    }, 1080)
 }
 
 function Hotspot({

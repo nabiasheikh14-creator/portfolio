@@ -17,6 +17,9 @@ const SANS =
 const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const GRID_BG =
     "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
+/** Same stage as DeskWorkspace so the grid matches home scale/placement. */
+const STAGE_W = 1440
+const STAGE_H = 900
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
@@ -34,7 +37,6 @@ interface WorkItem {
     accent: string
     coverUrl?: string
     videoUrl?: string
-    /** Optional full link override for this card (set in properties). */
     href?: string
 }
 
@@ -50,9 +52,7 @@ interface WorkIndexProps {
     desktopWordmark: string
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
-    /** Editable Back pill destination. */
     backLink: string
-    /** Prefix used when a project card has no custom Link — e.g. `/work`. */
     projectBasePath: string
     style?: CSSProperties
 }
@@ -70,14 +70,30 @@ function resolveLink(value: unknown, fallback = ""): string {
     return fallback
 }
 
+function useStageScale() {
+    const [scale, setScale] = useState(1)
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const sync = () => {
+            setScale(
+                Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H),
+            )
+        }
+        sync()
+        window.addEventListener("resize", sync)
+        return () => window.removeEventListener("resize", sync)
+    }, [])
+    return scale
+}
+
 /**
- * Work Index — laptop desktop with horizontally parallaxing wordmark and
- * straight, mid-size project folders in a vertical scroll.
+ * Work Index — fixed desktop viewport (page does not scroll).
+ * Folders scroll inside; desk grid matches homepage stage scale.
  *
  * @framerIntrinsicWidth 1200
- * @framerIntrinsicHeight 2200
+ * @framerIntrinsicHeight 900
  * @framerSupportedLayoutWidth any-prefer-fixed
- * @framerSupportedLayoutHeight any
+ * @framerSupportedLayoutHeight any-prefer-fixed
  */
 export default function WorkIndex(props: WorkIndexProps) {
     const {
@@ -96,7 +112,9 @@ export default function WorkIndex(props: WorkIndexProps) {
     const isStatic = useIsStaticRenderer()
     const [isPhone, setIsPhone] = useState(false)
     const [scrollP, setScrollP] = useState(0)
-    const [enterZoom, setEnterZoom] = useState(false)
+    const [reveal, setReveal] = useState<"idle" | "from" | "to">("idle")
+    const scrollerRef = useRef<HTMLDivElement>(null)
+    const stageScale = useStageScale()
     const backHref = resolveLink(backLink, "/")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
@@ -116,10 +134,30 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
     }, [])
 
-    // Continue the laptop zoom: settle from slightly zoomed-in after navigation
+    // Lock document scroll — only the card scroller moves (Fasquelle-style).
+    useEffect(() => {
+        if (typeof document === "undefined" || isStatic) return
+        const html = document.documentElement
+        const body = document.body
+        const prevHtml = html.style.overflow
+        const prevBody = body.style.overflow
+        const prevHtmlH = html.style.height
+        const prevBodyH = body.style.height
+        html.style.overflow = "hidden"
+        body.style.overflow = "hidden"
+        html.style.height = "100%"
+        body.style.height = "100%"
+        return () => {
+            html.style.overflow = prevHtml
+            body.style.overflow = prevBody
+            html.style.height = prevHtmlH
+            body.style.height = prevBodyH
+        }
+    }, [isStatic])
+
+    // Home overlay already did the frame zoom-out — clear it; light settle only.
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
-        // Drop any leftover transition overlay from the homepage zoom.
         try {
             document.getElementById("nabia-laptop-zoom")?.remove()
         } catch (_) {}
@@ -133,37 +171,38 @@ export default function WorkIndex(props: WorkIndexProps) {
         if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
             return
         }
-        setEnterZoom(true)
-        let raf2 = 0
-        const raf1 = requestAnimationFrame(() => {
-            raf2 = requestAnimationFrame(() => setEnterZoom(false))
-        })
+
+        setReveal("from")
+        let toId = 0
+        const fromId = window.setTimeout(() => {
+            setReveal("to")
+            toId = window.setTimeout(() => setReveal("idle"), 700)
+        }, 30)
         return () => {
-            cancelAnimationFrame(raf1)
-            cancelAnimationFrame(raf2)
+            window.clearTimeout(fromId)
+            window.clearTimeout(toId)
         }
     }, [isStatic])
 
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
+        const el = scrollerRef.current
+        if (!el) return
         let raf = 0
         const update = () => {
-            const max = Math.max(
-                1,
-                document.documentElement.scrollHeight - window.innerHeight,
-            )
-            setScrollP(Math.min(1, Math.max(0, window.scrollY / max)))
+            const max = Math.max(1, el.scrollHeight - el.clientHeight)
+            setScrollP(Math.min(1, Math.max(0, el.scrollTop / max)))
         }
         const onScroll = () => {
             cancelAnimationFrame(raf)
             raf = requestAnimationFrame(update)
         }
         update()
-        window.addEventListener("scroll", onScroll, { passive: true })
+        el.addEventListener("scroll", onScroll, { passive: true })
         window.addEventListener("resize", onScroll)
         return () => {
             cancelAnimationFrame(raf)
-            window.removeEventListener("scroll", onScroll)
+            el.removeEventListener("scroll", onScroll)
             window.removeEventListener("resize", onScroll)
         }
     }, [isStatic])
@@ -224,33 +263,36 @@ export default function WorkIndex(props: WorkIndexProps) {
     delete framerStyle.maxWidth
     delete framerStyle.maxHeight
 
-    // Fasquelle-style: vertical scroll drives a long horizontal wordmark track
-    const trackShift = isPhone
-        ? 28 + scrollP * 70
-        : 18 + scrollP * 92
+    const trackShift = isPhone ? 28 + scrollP * 70 : 18 + scrollP * 92
     const wordmarkX = `${50 - trackShift}%`
+
+    // Soft handoff after the home frame-expand (avoid a second hard zoom).
+    const revealScale = reveal === "from" ? 1.04 : 1
+    const revealOpacity = reveal === "from" ? 0.88 : 1
 
     return (
         <div
+            id="nabia-work-index"
             style={{
                 ...framerStyle,
                 position: "relative",
                 width: "100%",
+                height: isStatic ? "100%" : "100vh",
+                maxHeight: isStatic ? undefined : "100vh",
                 minWidth: 0,
                 maxWidth: "100%",
-                height: "auto",
-                minHeight: isStatic ? "100%" : "100vh",
                 background: cream,
                 color: ink,
                 fontFamily: family,
                 boxSizing: "border-box",
-                overflow: "visible",
-                transform: enterZoom ? "scale(1.12)" : "scale(1)",
+                overflow: "hidden",
+                transform: `scale(${revealScale})`,
                 transformOrigin: "center center",
-                opacity: enterZoom ? 0.55 : 1,
-                transition: enterZoom
-                    ? "none"
-                    : "transform 0.85s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.55s ease",
+                opacity: revealOpacity,
+                transition:
+                    reveal === "from"
+                        ? "none"
+                        : "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
             }}
         >
             <link
@@ -265,27 +307,41 @@ export default function WorkIndex(props: WorkIndexProps) {
                 accent={accent}
             />
 
-            {/* Same desk grid as homepage */}
+            {/* Homepage-matched desk grid: 1440×900 stage, same fit-scale as DeskWorkspace */}
             <div
                 aria-hidden
                 style={{
-                    position: "fixed",
+                    position: "absolute",
                     inset: 0,
                     zIndex: 0,
                     pointerEvents: "none",
-                    backgroundImage: `url(${GRID_BG})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    opacity: gridAlpha,
-                    filter: "grayscale(1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    overflow: "hidden",
                 }}
-            />
+            >
+                <div
+                    style={{
+                        width: STAGE_W,
+                        height: STAGE_H,
+                        flex: "none",
+                        transform: `scale(${stageScale})`,
+                        transformOrigin: "center center",
+                        backgroundImage: `url(${GRID_BG})`,
+                        backgroundSize: "100% 100%",
+                        backgroundPosition: "center",
+                        backgroundRepeat: "no-repeat",
+                        opacity: gridAlpha,
+                        filter: "grayscale(1)",
+                    }}
+                />
+            </div>
 
-            {/* Fixed horizontal wordmark track — moves with vertical scroll */}
             <div
                 aria-hidden
                 style={{
-                    position: "fixed",
+                    position: "absolute",
                     inset: 0,
                     zIndex: 1,
                     display: "flex",
@@ -320,11 +376,10 @@ export default function WorkIndex(props: WorkIndexProps) {
                 </p>
             </div>
 
-            {/* Quiet progress chrome */}
             <div
                 aria-hidden
                 style={{
-                    position: "fixed",
+                    position: "absolute",
                     left: isPhone ? 14 : 28,
                     bottom: isPhone ? 18 : 28,
                     zIndex: 5,
@@ -338,20 +393,28 @@ export default function WorkIndex(props: WorkIndexProps) {
                     opacity: 0.75,
                 }}
             >
-                {Math.min(list.length, Math.max(1, Math.round(scrollP * list.length) || 1))}
+                {Math.min(
+                    list.length,
+                    Math.max(1, Math.round(scrollP * list.length) || 1),
+                )}
                 {" / "}
                 {list.length} folders
             </div>
 
-            {/* Vertically scrollable folder stack */}
+            {/* Cards scroll here — the page shell stays fixed */}
             <div
+                ref={scrollerRef}
+                data-work-scroller="true"
                 style={{
-                    position: "relative",
+                    position: "absolute",
+                    inset: 0,
                     zIndex: 2,
-                    width: "100%",
-                    minHeight: isStatic ? "100%" : "140vh",
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
                     padding: isPhone
-                        ? "120px 20px 140px"
+                        ? "120px 20px 160px"
                         : "120px 9vw 180px",
                     boxSizing: "border-box",
                     display: "flex",
@@ -406,7 +469,6 @@ function DesktopFolder({
     }, [item.videoUrl])
 
     const side = index % 2 === 0 ? "left" : "right"
-    // ~15% larger than previous 340
     const folderW = isPhone ? "min(345px, 86vw)" : 391
     const alignSelf = isPhone
         ? "center"
@@ -427,6 +489,7 @@ function DesktopFolder({
                 position: "relative",
                 alignSelf,
                 width: folderW,
+                flex: "none",
                 aspectRatio: "3 / 4",
                 textDecoration: "none",
                 color: "#fff",
@@ -436,7 +499,6 @@ function DesktopFolder({
                 transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
         >
-            {/* Soft brand-blue glow behind the folder (Fasquelle-style depth) */}
             <div
                 aria-hidden
                 style={{
@@ -451,7 +513,6 @@ function DesktopFolder({
                 }}
             />
 
-            {/* Folder tab */}
             <div
                 aria-hidden
                 style={{
@@ -468,7 +529,6 @@ function DesktopFolder({
                 }}
             />
 
-            {/* Folder body / frame */}
             <div
                 style={{
                     position: "relative",
@@ -486,7 +546,6 @@ function DesktopFolder({
                     transition: "box-shadow 280ms ease",
                 }}
             >
-                {/* Inner media window */}
                 <div
                     style={{
                         position: "absolute",
@@ -555,7 +614,6 @@ function DesktopFolder({
                         }}
                     />
 
-                    {/* Utility labels */}
                     <div
                         style={{
                             position: "absolute",
@@ -578,7 +636,6 @@ function DesktopFolder({
                         <span>{number}</span>
                     </div>
 
-                    {/* Hover name */}
                     <div
                         style={{
                             position: "absolute",
@@ -631,7 +688,6 @@ function DesktopFolder({
     )
 }
 
-/** Fixed back pill — matches Archive / TopBar chrome. */
 function DeskBack({
     href,
     label,
@@ -704,43 +760,40 @@ function DeskBack({
     return null
 }
 
-const DEFAULT_INTRO =
-    "Selected projects & full case studies — product, brand, and the work in between."
-
 const DEFAULT_ITEMS: WorkItem[] = [
     {
-        title: "Fintech App",
-        subtitle: "Onboarding redesign",
-        slug: "fintech-app",
+        title: "Fintech Onboarding",
+        subtitle: "Product design",
+        slug: "fintech-onboarding",
         year: "2025",
-        accent: "#7457C9",
+        accent: "#2C6BE0",
         videoUrl:
             "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
     },
     {
-        title: "Health Platform",
-        subtitle: "Design system",
-        slug: "health-platform",
+        title: "Archive System",
+        subtitle: "Brand & web",
+        slug: "archive-system",
         year: "2024",
-        accent: "#28A06A",
+        accent: "#2C6BE0",
         videoUrl:
             "https://framerusercontent.com/assets/BNCHHO0RxeNVJXt0bV6lIpxZeo.mp4",
     },
     {
-        title: "Chutney Studios",
-        subtitle: "Brand + site",
-        slug: "chutney-studios",
-        year: "2025",
-        accent: "#D17BB0",
+        title: "Studio Site",
+        subtitle: "Art direction",
+        slug: "studio-site",
+        year: "2024",
+        accent: "#2C6BE0",
         videoUrl:
             "https://framerusercontent.com/assets/1l5FmP2EGRoLJ5xUbGoAAne5sg.mp4",
     },
     {
-        title: "Travel App",
-        subtitle: "0→1 product",
-        slug: "travel-app",
+        title: "Editorial Deck",
+        subtitle: "Campaign",
+        slug: "editorial-deck",
         year: "2023",
-        accent: "#E0902F",
+        accent: "#2C6BE0",
         videoUrl:
             "https://framerusercontent.com/assets/08VoVyi5fkN62AMjxKHCOQ84iI.mp4",
     },
@@ -750,85 +803,82 @@ addPropertyControls(WorkIndex, {
     intro: {
         type: ControlType.String,
         title: "Intro",
-        defaultValue: DEFAULT_INTRO,
         displayTextArea: true,
-    },
-    desktopWordmark: {
-        type: ControlType.String,
-        title: "Desktop Wordmark",
-        defaultValue: DESKTOP_WORDMARK,
+        defaultValue:
+            "Selected work from product, brand, and editorial projects.",
     },
     items: {
         type: ControlType.Array,
         title: "Projects",
-        maxCount: 4,
         control: {
             type: ControlType.Object,
             controls: {
-                title: {
-                    type: ControlType.String,
-                    title: "Title",
-                    defaultValue: "Project",
-                },
-                subtitle: {
-                    type: ControlType.String,
-                    title: "Subtitle",
-                    defaultValue: "Type",
-                },
-                slug: {
-                    type: ControlType.String,
-                    title: "Slug",
-                    defaultValue: "project",
-                },
-                href: {
-                    type: ControlType.Link,
-                    title: "Link — Card (optional)",
-                },
-                year: {
-                    type: ControlType.String,
-                    title: "Year",
-                    defaultValue: "2025",
-                },
+                title: { type: ControlType.String, title: "Title" },
+                subtitle: { type: ControlType.String, title: "Subtitle" },
+                slug: { type: ControlType.String, title: "Slug" },
+                year: { type: ControlType.String, title: "Year" },
                 accent: {
                     type: ControlType.Color,
                     title: "Accent",
                     defaultValue: "#2C6BE0",
                 },
+                coverUrl: {
+                    type: ControlType.Image,
+                    title: "Cover",
+                },
                 videoUrl: {
                     type: ControlType.String,
                     title: "Video URL",
-                    defaultValue: "",
                 },
-                coverUrl: {
-                    type: ControlType.String,
-                    title: "Poster / Cover URL",
-                    defaultValue: "",
+                href: {
+                    type: ControlType.Link,
+                    title: "Link",
                 },
             },
         },
-        defaultValue: DEFAULT_ITEMS,
     },
-    accent: { type: ControlType.Color, title: "UI Accent", defaultValue: "#2C6BE0" },
+    accent: {
+        type: ControlType.Color,
+        title: "Accent",
+        defaultValue: "#2C6BE0",
+    },
+    cream: {
+        type: ControlType.Color,
+        title: "Cream",
+        defaultValue: "#F3EFE6",
+    },
+    ink: {
+        type: ControlType.Color,
+        title: "Ink",
+        defaultValue: "#111111",
+    },
+    muted: {
+        type: ControlType.Color,
+        title: "Muted",
+        defaultValue: "#555555",
+    },
     backLink: {
         type: ControlType.Link,
-        title: "Link — Back Button",
+        title: "Back Link",
         defaultValue: "/",
     },
     projectBasePath: {
-        type: ControlType.Link,
-        title: "Link — Project Base Path",
+        type: ControlType.String,
+        title: "Project Base",
         defaultValue: "/work",
     },
-    cream: { type: ControlType.Color, title: "Background", defaultValue: "#F3EFE6" },
-    ink: { type: ControlType.Color, title: "Ink", defaultValue: "#111111" },
-    muted: { type: ControlType.Color, title: "Muted Text", defaultValue: "#555555" },
+    desktopWordmark: {
+        type: ControlType.String,
+        title: "Wordmark",
+        defaultValue: DESKTOP_WORDMARK,
+    },
     displayFont: {
         type: ControlType.Font,
         title: "Display Font",
         controls: "extended",
         defaultFontType: "sans-serif",
         defaultValue: {
-            fontSize: "48px",
+            fontSize: "36px",
             variant: "Regular",
         },
     },
