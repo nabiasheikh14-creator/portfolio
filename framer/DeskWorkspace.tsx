@@ -1066,8 +1066,7 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
         transformOrigin: "center center",
         transform: `translate(${tx0}px, ${ty0}px) scale(${s0})`,
         opacity: "1",
-        transition:
-            "transform 1.15s cubic-bezier(0.16, 1, 0.3, 1), border-radius 1.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 1s ease",
+        transition: "none",
         willChange: "transform, border-radius, box-shadow",
     } as CSSStyleDeclaration)
 
@@ -1121,7 +1120,8 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
             borderRadius: "26px",
             background: "rgba(255,255,255,0.55)",
             border: "2px solid rgba(255,255,255,0.9)",
-            boxShadow: "0 18px 40px rgba(17,17,17,0.1), 0 0 40px rgba(44,107,224,0.22)",
+            boxShadow:
+                "0 18px 40px rgba(17,17,17,0.1), 0 0 40px rgba(44,107,224,0.22)",
             opacity: String(0.55 + i * 0.12),
         } as CSSStyleDeclaration)
         folders.appendChild(card)
@@ -1129,11 +1129,16 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     overlay.appendChild(folders)
 
     document.body.appendChild(overlay)
-    void overlay.offsetWidth
+    // Force layout so the starting transform paints before we enable transition.
+    void overlay.getBoundingClientRect()
     requestAnimationFrame(() => {
-        overlay.style.transform = "translate(0px, 0px) scale(1)"
-        overlay.style.borderRadius = "0px"
-        overlay.style.boxShadow = "0 0 0 0 transparent"
+        overlay.style.transition =
+            "transform 1.15s cubic-bezier(0.16, 1, 0.3, 1), border-radius 1.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 1s ease"
+        requestAnimationFrame(() => {
+            overlay.style.transform = "translate(0px, 0px) scale(1)"
+            overlay.style.borderRadius = "0px"
+            overlay.style.boxShadow = "0 0 0 0 transparent"
+        })
     })
 
     window.setTimeout(() => {
@@ -1143,7 +1148,7 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
 
     window.setTimeout(() => {
         window.location.assign(href)
-    }, 1080)
+    }, 1180)
 }
 
 function Hotspot({
