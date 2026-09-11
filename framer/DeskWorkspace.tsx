@@ -1199,13 +1199,39 @@ function Hotspot({
         </motion.span>
     )
 
-    // Native links for Work / Archive. Laptop → Work gets a zoom-in transition.
+    // Archive stays a native link. Laptop → Work uses a button so Framer's
+    // client router can't race the zoom-in transition.
     if (c.action === "page" && c.href) {
         const path = c.href.startsWith("/")
             ? c.href
             : `/${String(c.href).replace(/^\.\//, "")}`
         const isLaptopWork =
             c.key === "laptop" || path.replace(/\/$/, "") === "/work"
+
+        if (isLaptopWork) {
+            return (
+                <button
+                    type="button"
+                    aria-label={c.label}
+                    data-desk-page={c.key}
+                    data-desk-path={path}
+                    onMouseEnter={onEnter}
+                    onMouseLeave={onLeave}
+                    onFocus={onEnter}
+                    onBlur={onLeave}
+                    onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onClick()
+                        runLaptopZoom(e.currentTarget, path, cream)
+                    }}
+                    style={boxStyle}
+                >
+                    {labelEl}
+                </button>
+            )
+        }
+
         return (
             <a
                 href={path}
@@ -1216,21 +1242,8 @@ function Hotspot({
                 onMouseLeave={onLeave}
                 onFocus={onEnter}
                 onBlur={onLeave}
-                onClick={(e) => {
-                    // Click sound via parent activate().
+                onClick={() => {
                     onClick()
-                    if (!isLaptopWork) return
-                    if (
-                        e.metaKey ||
-                        e.ctrlKey ||
-                        e.shiftKey ||
-                        e.altKey ||
-                        e.button !== 0
-                    ) {
-                        return
-                    }
-                    e.preventDefault()
-                    runLaptopZoom(e.currentTarget, path, cream)
                 }}
                 style={boxStyle}
             >
