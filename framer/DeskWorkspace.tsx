@@ -685,6 +685,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 }}
             >
                 <div
+                    data-desk-stage
                     style={{
                         width: STAGE_W,
                         height: STAGE_H,
@@ -1009,12 +1010,13 @@ function originFor(key: string, clicks: Click[] = CLICK_DEFS): string {
 }
 
 /** Zoom into the laptop hotspot, then navigate to Work. */
+let laptopZoomBusy = false
+
 function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
-    if (typeof document === "undefined") return
-    if (document.getElementById("nabia-laptop-zoom")) {
-        window.location.href = href
-        return
-    }
+    if (typeof document === "undefined" || typeof window === "undefined") return
+    // Ignore double-invokes (Strict Mode / duplicate handlers) — never navigate early.
+    if (laptopZoomBusy || document.getElementById("nabia-laptop-zoom")) return
+    laptopZoomBusy = true
 
     try {
         sessionStorage.setItem(LAPTOP_ZOOM_KEY, "1")
@@ -1022,19 +1024,43 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
         /* private mode */
     }
 
-    if (
-        typeof window !== "undefined" &&
-        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    ) {
-        window.location.href = href
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+        window.location.assign(href)
         return
     }
 
     const r = fromEl.getBoundingClientRect()
-    const right = Math.max(0, window.innerWidth - r.right)
-    const bottom = Math.max(0, window.innerHeight - r.bottom)
-    const ox = r.left + r.width / 2
-    const oy = r.top + r.height / 2
+    // Prefer the screen bezel (upper ~55% of the laptop hit area) as the zoom aperture.
+    const screenRect = {
+        left: r.left + r.width * 0.08,
+        top: r.top + r.height * 0.04,
+        width: r.width * 0.84,
+        height: r.height * 0.52,
+    }
+    const right = Math.max(
+        0,
+        window.innerWidth - (screenRect.left + screenRect.width),
+    )
+    const bottom = Math.max(
+        0,
+        window.innerHeight - (screenRect.top + screenRect.height),
+    )
+    const ox = screenRect.left + screenRect.width / 2
+    const oy = screenRect.top + screenRect.height / 2
+
+    // Scale the desk stage toward the laptop while the cream overlay expands.
+    const stage = fromEl.closest("[data-desk-stage]") as HTMLElement | null
+    if (stage) {
+        const sr = stage.getBoundingClientRect()
+        const originX = ((ox - sr.left) / Math.max(1, sr.width)) * 100
+        const originY = ((oy - sr.top) / Math.max(1, sr.height)) * 100
+        stage.style.transformOrigin = `${originX}% ${originY}%`
+        stage.style.transition =
+            "transform 860ms cubic-bezier(0.22, 1, 0.36, 1), filter 860ms ease"
+        const existing = stage.style.transform || ""
+        stage.style.transform = `${existing} scale(1.55)`.trim()
+        stage.style.filter = "blur(1.5px) brightness(1.05)"
+    }
 
     const overlay = document.createElement("div")
     overlay.id = "nabia-laptop-zoom"
@@ -1043,16 +1069,16 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
         position: "fixed",
         inset: "0",
         zIndex: "2147483000",
-        pointerEvents: "none",
+        pointerEvents: "auto",
         background: cream || "#F3EFE6",
         overflow: "hidden",
-        clipPath: `inset(${r.top}px ${right}px ${bottom}px ${r.left}px round 12px)`,
-        WebkitClipPath: `inset(${r.top}px ${right}px ${bottom}px ${r.left}px round 12px)`,
-        transform: "scale(0.94)",
+        clipPath: `inset(${screenRect.top}px ${right}px ${bottom}px ${screenRect.left}px round 10px)`,
+        WebkitClipPath: `inset(${screenRect.top}px ${right}px ${bottom}px ${screenRect.left}px round 10px)`,
+        transform: "scale(1)",
         transformOrigin: `${ox}px ${oy}px`,
-        opacity: "0.96",
+        opacity: "0.88",
         transition:
-            "clip-path 820ms cubic-bezier(0.22, 1, 0.36, 1), -webkit-clip-path 820ms cubic-bezier(0.22, 1, 0.36, 1), transform 820ms cubic-bezier(0.22, 1, 0.36, 1), opacity 480ms ease",
+            "clip-path 860ms cubic-bezier(0.22, 1, 0.36, 1), -webkit-clip-path 860ms cubic-bezier(0.22, 1, 0.36, 1), transform 860ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease",
         willChange: "clip-path, transform, opacity",
     } as CSSStyleDeclaration)
 
@@ -1070,54 +1096,26 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     } as CSSStyleDeclaration)
     overlay.appendChild(grid)
 
-    // Soft “screen” that expands with the zoom so it feels like diving into the laptop.
-    const screen = document.createElement("div")
-    Object.assign(screen.style, {
-        position: "absolute",
-        left: `${ox}px`,
-        top: `${oy}px`,
-        width: `${Math.max(160, r.width * 0.78)}px`,
-        height: `${Math.max(100, r.height * 0.52)}px`,
-        transform: "translate(-50%, -58%) scale(1)",
-        borderRadius: "14px",
-        border: "9px solid #d9d2c6",
-        boxShadow:
-            "0 0 0 1px rgba(44,107,224,0.2), 0 22px 60px rgba(44, 107, 224, 0.14)",
-        background:
-            "linear-gradient(180deg, rgba(255,255,255,0.62), rgba(243,239,230,0.95))",
-        opacity: "0.72",
-        transition:
-            "transform 820ms cubic-bezier(0.22, 1, 0.36, 1), width 820ms cubic-bezier(0.22, 1, 0.36, 1), height 820ms cubic-bezier(0.22, 1, 0.36, 1), opacity 520ms ease, left 820ms cubic-bezier(0.22, 1, 0.36, 1), top 820ms cubic-bezier(0.22, 1, 0.36, 1)",
-        pointerEvents: "none",
-    } as CSSStyleDeclaration)
-    overlay.appendChild(screen)
-
     document.body.appendChild(overlay)
     void overlay.offsetWidth
     requestAnimationFrame(() => {
-        overlay.style.clipPath = "inset(0px 0px 0px 0px round 0px)"
+        overlay.style.clipPath = "inset(0px 0px 0px 0px)"
         ;(
             overlay.style as CSSStyleDeclaration & { webkitClipPath?: string }
-        ).webkitClipPath = "inset(0px 0px 0px 0px round 0px)"
-        overlay.style.transform = "scale(1.08)"
+        ).webkitClipPath = "inset(0px 0px 0px 0px)"
+        overlay.style.transform = "scale(1.04)"
         overlay.style.opacity = "1"
-        screen.style.left = "50%"
-        screen.style.top = "48%"
-        screen.style.width = "min(88vw, 1100px)"
-        screen.style.height = "min(72vh, 720px)"
-        screen.style.transform = "translate(-50%, -50%) scale(1.04)"
-        screen.style.opacity = "0.95"
     })
 
     // Safety: if navigation stalls, drop the overlay so the desk isn't blocked.
     window.setTimeout(() => {
-        const el = document.getElementById("nabia-laptop-zoom")
-        el?.parentElement?.removeChild(el)
-    }, 4000)
+        document.getElementById("nabia-laptop-zoom")?.remove()
+        laptopZoomBusy = false
+    }, 5000)
 
     window.setTimeout(() => {
-        window.location.href = href
-    }, 780)
+        window.location.assign(href)
+    }, 880)
 }
 
 function Hotspot({
