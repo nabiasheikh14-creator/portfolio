@@ -134,25 +134,75 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
     }, [])
 
-    // Lock document scroll — only the card scroller moves (Fasquelle-style).
+    // Hard-lock the Framer page: viewport stays put; only folders move.
     useEffect(() => {
         if (typeof document === "undefined" || isStatic) return
         const html = document.documentElement
         const body = document.body
-        const prevHtml = html.style.overflow
-        const prevBody = body.style.overflow
-        const prevHtmlH = html.style.height
-        const prevBodyH = body.style.height
-        html.style.overflow = "hidden"
-        body.style.overflow = "hidden"
-        html.style.height = "100%"
-        body.style.height = "100%"
-        return () => {
-            html.style.overflow = prevHtml
-            body.style.overflow = prevBody
-            html.style.height = prevHtmlH
-            body.style.height = prevBodyH
+        const prev = {
+            htmlOverflow: html.style.overflow,
+            bodyOverflow: body.style.overflow,
+            htmlHeight: html.style.height,
+            bodyHeight: body.style.height,
+            htmlOverscroll: html.style.overscrollBehavior,
+            bodyOverscroll: body.style.overscrollBehavior,
+            bodyPosition: body.style.position,
         }
+
+        const lock = () => {
+            html.style.overflow = "hidden"
+            body.style.overflow = "hidden"
+            html.style.height = "100%"
+            body.style.height = "100%"
+            html.style.overscrollBehavior = "none"
+            body.style.overscrollBehavior = "none"
+            window.scrollTo(0, 0)
+        }
+        lock()
+
+        const style = document.createElement("style")
+        style.setAttribute("data-nabia-work-lock", "true")
+        style.textContent = `
+          html, body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none !important; }
+          body > div, #main, [data-framer-root], [data-framer-page-container] {
+            overflow: hidden !important;
+            max-height: 100vh !important;
+          }
+          [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        `
+        document.head.appendChild(style)
+
+        const onScroll = () => {
+            if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0)
+        }
+        window.addEventListener("scroll", onScroll, { passive: false })
+        const interval = window.setInterval(lock, 500)
+
+        return () => {
+            window.clearInterval(interval)
+            window.removeEventListener("scroll", onScroll)
+            style.remove()
+            html.style.overflow = prev.htmlOverflow
+            body.style.overflow = prev.bodyOverflow
+            html.style.height = prev.htmlHeight
+            body.style.height = prev.bodyHeight
+            html.style.overscrollBehavior = prev.htmlOverscroll
+            body.style.overscrollBehavior = prev.bodyOverscroll
+            body.style.position = prev.bodyPosition
+        }
+    }, [isStatic])
+
+    // Route wheel / trackpad to the folder scroller (page never moves).
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        const onWheel = (e: WheelEvent) => {
+            const el = scrollerRef.current
+            if (!el) return
+            e.preventDefault()
+            el.scrollTop += e.deltaY
+        }
+        window.addEventListener("wheel", onWheel, { passive: false })
+        return () => window.removeEventListener("wheel", onWheel)
     }, [isStatic])
 
     // Home overlay already did the frame zoom-out — clear it; light settle only.
@@ -275,12 +325,18 @@ export default function WorkIndex(props: WorkIndexProps) {
             id="nabia-work-index"
             style={{
                 ...framerStyle,
-                position: "relative",
-                width: "100%",
+                position: isStatic ? "relative" : "fixed",
+                inset: isStatic ? undefined : 0,
+                left: isStatic ? undefined : 0,
+                top: isStatic ? undefined : 0,
+                right: isStatic ? undefined : 0,
+                bottom: isStatic ? undefined : 0,
+                width: isStatic ? "100%" : "100vw",
                 height: isStatic ? "100%" : "100vh",
-                maxHeight: isStatic ? undefined : "100vh",
+                maxWidth: "100vw",
+                maxHeight: "100vh",
                 minWidth: 0,
-                maxWidth: "100%",
+                zIndex: isStatic ? undefined : 2,
                 background: cream,
                 color: ink,
                 fontFamily: family,
@@ -414,12 +470,14 @@ export default function WorkIndex(props: WorkIndexProps) {
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     padding: isPhone
-                        ? "120px 20px 160px"
-                        : "120px 9vw 180px",
+                        ? "110px 18px 120px"
+                        : "110px 7vw 140px",
                     boxSizing: "border-box",
                     display: "flex",
                     flexDirection: "column",
-                    gap: isPhone ? 40 : 52,
+                    gap: isPhone ? 22 : 28,
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
                 }}
             >
                 {list.map((item, index) => (
@@ -469,7 +527,8 @@ function DesktopFolder({
     }, [item.videoUrl])
 
     const side = index % 2 === 0 ? "left" : "right"
-    const folderW = isPhone ? "min(345px, 86vw)" : 391
+    // Wide horizontal folders, tighter stack
+    const folderW = isPhone ? "min(100%, 92vw)" : "min(720px, 58vw)"
     const alignSelf = isPhone
         ? "center"
         : side === "left"
@@ -490,12 +549,12 @@ function DesktopFolder({
                 alignSelf,
                 width: folderW,
                 flex: "none",
-                aspectRatio: "3 / 4",
+                aspectRatio: isPhone ? "16 / 11" : "16 / 10",
                 textDecoration: "none",
                 color: "#fff",
                 cursor: "pointer",
                 outline: "none",
-                transform: hovered ? "translateY(-6px)" : "translateY(0)",
+                transform: hovered ? "translateY(-5px)" : "translateY(0)",
                 transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
         >
