@@ -485,7 +485,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                         key={item.slug}
                         item={item}
                         index={index}
-                        total={list.length}
                         isPhone={isPhone}
                         displayFamily={displayFamily}
                         bodyFamily={family}
@@ -500,7 +499,6 @@ export default function WorkIndex(props: WorkIndexProps) {
 function DesktopFolder({
     item,
     index,
-    total,
     isPhone,
     displayFamily,
     bodyFamily,
@@ -508,7 +506,6 @@ function DesktopFolder({
 }: {
     item: WorkItem
     index: number
-    total: number
     isPhone: boolean
     displayFamily: string
     bodyFamily: string
@@ -534,7 +531,6 @@ function DesktopFolder({
         : side === "left"
           ? "flex-start"
           : "flex-end"
-    const number = `${String(index + 1).padStart(2, "0")}/${String(total).padStart(2, "0")}`
 
     return (
         <a
@@ -672,28 +668,6 @@ function DesktopFolder({
                             pointerEvents: "none",
                         }}
                     />
-
-                    <div
-                        style={{
-                            position: "absolute",
-                            top: 14,
-                            left: 14,
-                            right: 14,
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            fontFamily: bodyFamily,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            letterSpacing: "0.1em",
-                            textTransform: "uppercase",
-                            color: "rgba(255,255,255,0.82)",
-                            pointerEvents: "none",
-                        }}
-                    >
-                        <span>(folder)</span>
-                        <span>{number}</span>
-                    </div>
 
                     <div
                         style={{
