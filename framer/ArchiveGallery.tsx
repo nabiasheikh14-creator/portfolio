@@ -25,6 +25,8 @@ interface GalleryItem {
     title: string
     description: string
     imageUrl: string
+    /** Optional larger/alternate image for the lightbox. */
+    popupImageUrl?: string
 }
 
 interface ArchiveGalleryProps {
@@ -177,10 +179,16 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                     (typeof it?.image === "string" ? it.image : "") ||
                     ""
                 if (!imageUrl) return null
+                const popupImageUrl =
+                    it?.popupImageUrl ||
+                    it?.popupImage?.src ||
+                    (typeof it?.popupImage === "string" ? it.popupImage : "") ||
+                    imageUrl
                 return {
                     title: it.title || "Untitled",
                     description: it.description || "",
                     imageUrl: String(imageUrl),
+                    popupImageUrl: String(popupImageUrl),
                 } as GalleryItem
             })
             .filter(Boolean) as GalleryItem[]
@@ -609,7 +617,7 @@ function Lightbox({
                     Close
                 </button>
                 <img
-                    src={item.imageUrl}
+                    src={item.popupImageUrl || item.imageUrl}
                     alt={item.title}
                     style={{
                         width: "100%",
@@ -650,18 +658,42 @@ function Lightbox({
 }
 
 const DEFAULT_ITEMS: GalleryItem[] = [
-    { title: "Poster Series", description: "Poster Series — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/EDLQntkSaJbnZp1yOK6OtSRlsY.jpg" },
-    { title: "Zine No.3", description: "Zine No.3 — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/0BNePQmVfEM8AvcQFkf9bvU1uk.jpg" },
-    { title: "Brand Marks", description: "Brand Marks — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/CPNGiVHiKfZ1cdFpCczUfZ8A.jpg" },
-    { title: "Type Study", description: "Type Study — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/DS6z3TfvONE7UyJGwD5VFHpj7A0.jpg" },
-    { title: "Social Kit", description: "Social Kit — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/HDUMcXuln281FyQNRgyuMOT7zhY.jpg" },
-    { title: "Packaging", description: "Packaging — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/EDLQntkSaJbnZp1yOK6OtSRlsY.jpg" },
-    { title: "Editorial Spread", description: "Editorial Spread — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/0BNePQmVfEM8AvcQFkf9bvU1uk.jpg" },
-    { title: "Sticker Pack", description: "Sticker Pack — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/CPNGiVHiKfZ1cdFpCczUfZ8A.jpg" },
-    { title: "Album Art", description: "Album Art — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/DS6z3TfvONE7UyJGwD5VFHpj7A0.jpg" },
-    { title: "Wayfinding", description: "Wayfinding — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/HDUMcXuln281FyQNRgyuMOT7zhY.jpg" },
-    { title: "Risograph", description: "Risograph — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/EDLQntkSaJbnZp1yOK6OtSRlsY.jpg" },
-    { title: "Lettering", description: "Lettering — placeholder description. Edit in the Archive CMS.", imageUrl: "https://framerusercontent.com/images/0BNePQmVfEM8AvcQFkf9bvU1uk.jpg" },
+    {
+        title: "Broken Hearts Crux",
+        description:
+            "Branding for a themed coffee pop-up with punk-hearted energy.",
+        imageUrl:
+            "https://framerusercontent.com/images/Un3gv23Abjx2sxAXxmWzbbiRoA.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/8NVeowU29foyOIpNXI9JXw4afA.webp",
+    },
+    {
+        title: "Travel Geithorn",
+        description:
+            "A travel site for Giethoorn — canals, thatched roofs, and boat-only streets.",
+        imageUrl:
+            "https://framerusercontent.com/images/fzKbAhil7uy4TYs6Vzq6TdSA.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/fzKbAhil7uy4TYs6Vzq6TdSA.png",
+    },
+    {
+        title: "Readings.pk",
+        description:
+            "A bookish mobile shop for Pakistan’s bookstore — discover, save, and buy.",
+        imageUrl:
+            "https://framerusercontent.com/images/q6831i4WSF25pHQgKITXoBNOc1M.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/q6831i4WSF25pHQgKITXoBNOc1M.png",
+    },
+    {
+        title: "Kodoto",
+        description:
+            "A playful video-sharing webapp where creators and viewers pick their desert path.",
+        imageUrl:
+            "https://framerusercontent.com/images/ajrLl6n56kdBWJ6fQuUoK8pTsE.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/ajrLl6n56kdBWJ6fQuUoK8pTsE.png",
+    },
 ]
 
 addPropertyControls(ArchiveGallery, {
@@ -671,7 +703,11 @@ addPropertyControls(ArchiveGallery, {
         control: {
             type: ControlType.Object,
             controls: {
-                title: { type: ControlType.String, title: "Title", defaultValue: "Untitled" },
+                title: {
+                    type: ControlType.String,
+                    title: "Title",
+                    defaultValue: "Untitled",
+                },
                 description: {
                     type: ControlType.String,
                     title: "Description",
@@ -679,9 +715,12 @@ addPropertyControls(ArchiveGallery, {
                     displayTextArea: true,
                 },
                 imageUrl: {
-                    type: ControlType.String,
-                    title: "Image URL",
-                    defaultValue: "https://framerusercontent.com/images/EDLQntkSaJbnZp1yOK6OtSRlsY.jpg",
+                    type: ControlType.Image,
+                    title: "Display Image",
+                },
+                popupImageUrl: {
+                    type: ControlType.Image,
+                    title: "Popup Image",
                 },
             },
         },
