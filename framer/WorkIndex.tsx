@@ -232,20 +232,20 @@ export default function WorkIndex(props: WorkIndexProps) {
                 <p
                     style={{
                         margin: 0,
-                        maxWidth: "100%",
+                        maxWidth: isPhone ? "100%" : "92vw",
                         fontFamily: family,
                         fontSize: isPhone
-                            ? `clamp(42px, 14vw, 88px)`
-                            : `clamp(72px, 9.2vw, ${Math.max(titleSize, 140)}px)`,
+                            ? `clamp(36px, 11vw, 72px)`
+                            : `clamp(56px, 7.2vw, ${Math.min(titleSize, 110)}px)`,
                         fontWeight: 700,
-                        letterSpacing: "-0.05em",
-                        lineHeight: 0.92,
+                        letterSpacing: "-0.045em",
+                        lineHeight: 0.95,
                         textAlign: "center",
                         textTransform: "none",
                         color: ink,
-                        opacity: 0.1,
+                        opacity: 0.11,
                         userSelect: "none",
-                        whiteSpace: isPhone ? "normal" : "nowrap",
+                        whiteSpace: "normal",
                     }}
                 >
                     {wordmark}
