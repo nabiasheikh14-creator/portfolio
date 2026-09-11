@@ -321,16 +321,29 @@ function layoutSlots(
         const col = (W - pad * 3) / 2
         const tall = Math.min(col * 1.25, (H - pad * 3) * 0.38)
         const short = Math.min(col * 1.05, (H - pad * 3) * 0.32)
+        // Same size intent on phone: shrink the three larger tiles, grow the lower-left (chutney)
         return [
-            { x: pad, y: pad + 72, w: col, h: tall, rot: -3.5 },
-            { x: pad * 2 + col, y: pad + 56, w: col, h: short, rot: 4 },
-            { x: pad, y: pad + 72 + tall + 14, w: col, h: short, rot: 3 },
+            { x: pad, y: pad + 72, w: col * 0.92, h: tall * 0.8, rot: -2 },
             {
-                x: pad * 2 + col,
-                y: pad + 56 + short + 14,
-                w: col,
-                h: tall * 0.92,
-                rot: -2.5,
+                x: pad * 2 + col + col * 0.04,
+                y: pad + 56,
+                w: col * 0.92,
+                h: short * 0.8,
+                rot: 2.2,
+            },
+            {
+                x: pad,
+                y: pad + 72 + tall * 0.8 + 18,
+                w: col * 1.08,
+                h: short * 1.2,
+                rot: 2.4,
+            },
+            {
+                x: pad * 2 + col + col * 0.04,
+                y: pad + 56 + short * 0.8 + 18,
+                w: col * 0.92,
+                h: tall * 0.8,
+                rot: -1.4,
             },
         ]
     }
@@ -340,45 +353,61 @@ function layoutSlots(
     const padBot = Math.max(44, H * 0.06)
     const usableW = W - padX * 2
     const usableH = H - padTop - padBot
-    const gap = Math.max(20, W * 0.018)
+    const gap = Math.max(22, W * 0.02)
 
-    // Magazine-like balance: large left, tall upper-right, wide lower-right, mid accent lower-left
-    const largeW = usableW * 0.47
-    const largeH = usableH * 0.6
-    const tallW = usableW - largeW - gap
-    const tallH = usableH * 0.46
-    const wideW = tallW
-    const wideH = usableH - tallH - gap
-    const smallW = largeW * 0.52
-    const smallH = usableH - largeH - gap
+    // Base magazine sizes, then: three big frames −20%, Chutney (lower-left) +20%
+    const baseLargeW = usableW * 0.47
+    const baseLargeH = usableH * 0.6
+    const baseTallW = usableW - baseLargeW - gap
+    const baseTallH = usableH * 0.46
+    const baseSmallW = baseLargeW * 0.52
+    const baseSmallH = Math.max(150, usableH - baseLargeH - gap)
+    const baseWideW = baseTallW
+    const baseWideH = Math.max(160, usableH - baseTallH - gap)
+
+    const largeW = baseLargeW * 0.8
+    const largeH = baseLargeH * 0.8
+    const tallW = baseTallW * 0.8
+    const tallH = baseTallH * 0.8
+    const smallW = baseSmallW * 1.2
+    const smallH = baseSmallH * 1.2
+    const wideW = baseWideW * 0.8
+    const wideH = baseWideH * 0.8
+
+    // Center the smaller overall cluster in the usable stage
+    const blockW = Math.max(largeW, smallW) + gap + Math.max(tallW, wideW)
+    const blockH = Math.max(largeH + gap + smallH, tallH + gap + wideH)
+    const originX = padX + Math.max(0, (usableW - blockW) / 2)
+    const originY = padTop + Math.max(0, (usableH - blockH) / 2)
 
     return [
         {
-            x: padX,
-            y: padTop,
+            x: originX,
+            y: originY,
             w: largeW,
             h: largeH,
             rot: -1.8,
         },
         {
-            x: padX + largeW + gap,
-            y: padTop,
+            x: originX + largeW + gap,
+            y: originY,
             w: tallW,
             h: tallH,
             rot: 2.2,
         },
         {
-            x: padX + largeW * 0.04,
-            y: padTop + largeH + gap,
+            // Chutney — lower left, +20%
+            x: originX + Math.max(0, (largeW - smallW) * 0.08),
+            y: originY + largeH + gap,
             w: smallW,
-            h: Math.max(150, smallH),
+            h: smallH,
             rot: 2.8,
         },
         {
-            x: padX + largeW + gap,
-            y: padTop + tallH + gap,
+            x: originX + largeW + gap,
+            y: originY + tallH + gap,
             w: wideW,
-            h: Math.max(160, wideH),
+            h: wideH,
             rot: -1.2,
         },
     ]
@@ -399,7 +428,6 @@ function FallingProjectStage({
     const bodiesRef = useRef<SimBody[]>([])
     const rafRef = useRef(0)
     const settledRef = useRef(false)
-    const floatTRef = useRef(0)
     const reduceMotionRef = useRef(false)
     const [, setTick] = useState(0)
     const [hovered, setHovered] = useState<string | null>(null)
@@ -425,16 +453,15 @@ function FallingProjectStage({
             const prev = preserve ? bodiesRef.current[i] : null
             const startX = preferStatic
                 ? slot.x
-                : slot.x + (Math.random() - 0.5) * 36
+                : slot.x + (Math.random() - 0.5) * 28
             const startY = preferStatic
                 ? slot.y
                 : -slot.h - 48 - i * (slot.h * 0.35 + 56)
             const startRot = preferStatic
                 ? slot.rot
-                : slot.rot + (Math.random() - 0.5) * 18
+                : slot.rot + (Math.random() - 0.5) * 14
 
             if (prev && preserve && settledRef.current) {
-                // On resize after settle: retarget without re-dropping
                 return {
                     ...prev,
                     item,
@@ -459,10 +486,10 @@ function FallingProjectStage({
                 h: slot.h,
                 x: startX,
                 y: startY,
-                vx: preferStatic ? 0 : (Math.random() - 0.5) * 40,
-                vy: preferStatic ? 0 : 20 + Math.random() * 30,
+                vx: preferStatic ? 0 : (Math.random() - 0.5) * 32,
+                vy: preferStatic ? 0 : 20 + Math.random() * 24,
                 rot: startRot,
-                vr: preferStatic ? 0 : (Math.random() - 0.5) * 36,
+                vr: preferStatic ? 0 : (Math.random() - 0.5) * 28,
                 phase: i * 1.15,
                 baseX: slot.x,
                 baseY: slot.y,
@@ -473,7 +500,6 @@ function FallingProjectStage({
             }
         })
         settledRef.current = preferStatic
-        floatTRef.current = 0
         setReady(true)
         bump()
     }
@@ -506,105 +532,101 @@ function FallingProjectStage({
         if (!ready || isStatic || reduceMotionRef.current) return
 
         let last = performance.now()
-        const GRAVITY = 2100
-        const AIR = 0.992
-        const SPIN_DAMP = 0.97
-        const HOME_X = 7.5
-        const HOME_Y = 10.5
-        const HOME_ROT = 9
-        const SETTLE_DIST = 2.2
-        const SETTLE_V = 40
+        const GRAVITY = 2200
+        const AIR = 0.991
+        const SPIN_DAMP = 0.96
+        const HOME_X = 8
+        const HOME_Y = 11
+        const HOME_ROT = 10
+        const SETTLE_DIST = 1.6
+        const SETTLE_V = 22
+        const BOUNCE = 0.36
 
         const step = (now: number) => {
             const dt = Math.min(0.033, (now - last) / 1000)
             last = now
             const bodies = bodiesRef.current
 
-            if (!settledRef.current) {
-                let allHome = true
-                for (const b of bodies) {
-                    // Soft homing into the balanced slot while gravity pulls down
-                    const dx = b.targetX - b.x
-                    const dy = b.targetY - b.y
-                    const dRot = b.targetRot - b.rot
+            if (settledRef.current) {
+                // Landed — stay put. No idle float.
+                return
+            }
 
-                    b.vx += dx * HOME_X * dt
-                    b.vy += GRAVITY * dt + dy * HOME_Y * dt
-                    b.vr += dRot * HOME_ROT * dt
+            let allHome = true
+            for (const b of bodies) {
+                const dx = b.targetX - b.x
+                const dy = b.targetY - b.y
+                const dRot = b.targetRot - b.rot
 
-                    b.vx *= AIR
-                    b.vy *= AIR
-                    b.vr *= SPIN_DAMP
+                b.vx += dx * HOME_X * dt
+                b.vy += GRAVITY * dt + dy * HOME_Y * dt
+                b.vr += dRot * HOME_ROT * dt
 
-                    // Light bounce once past the target — feels weightless, not sticky
-                    if (b.y > b.targetY && b.vy > 0) {
-                        b.vy *= -0.28
-                        b.y = b.targetY
-                        b.vx *= 0.72
-                    }
+                b.vx *= AIR
+                b.vy *= AIR
+                b.vr *= SPIN_DAMP
 
-                    b.x += b.vx * dt
-                    b.y += b.vy * dt
-                    b.rot += b.vr * dt
+                // One soft landing bounce, then settle
+                if (b.y > b.targetY && b.vy > 0) {
+                    b.y = b.targetY
+                    b.vy = -Math.abs(b.vy) * BOUNCE
+                    b.vx *= 0.7
+                    b.vr *= 0.55
+                }
 
-                    const dist = Math.hypot(b.targetX - b.x, b.targetY - b.y)
-                    const spinning = Math.abs(b.targetRot - b.rot) > 0.8
-                    const moving = Math.hypot(b.vx, b.vy) > SETTLE_V
-                    if (dist > SETTLE_DIST || spinning || moving) {
+                b.x += b.vx * dt
+                b.y += b.vy * dt
+                b.rot += b.vr * dt
+
+                const dist = Math.hypot(b.targetX - b.x, b.targetY - b.y)
+                const spinning = Math.abs(b.targetRot - b.rot) > 0.5
+                const moving = Math.hypot(b.vx, b.vy) > SETTLE_V
+                if (dist > SETTLE_DIST || spinning || moving) {
+                    allHome = false
+                }
+            }
+
+            // Soft separation while landing only
+            for (let i = 0; i < bodies.length; i++) {
+                for (let j = i + 1; j < bodies.length; j++) {
+                    const a = bodies[i]
+                    const b = bodies[j]
+                    const ax = a.x + a.w / 2
+                    const ay = a.y + a.h / 2
+                    const bx = b.x + b.w / 2
+                    const by = b.y + b.h / 2
+                    const gapX = (a.w + b.w) * 0.4
+                    const gapY = (a.h + b.h) * 0.4
+                    const ox = gapX - Math.abs(bx - ax)
+                    const oy = gapY - Math.abs(by - ay)
+                    if (ox > 0 && oy > 0) {
+                        const push = Math.min(ox, oy) * 0.06
+                        const sx = bx === ax ? 1 : Math.sign(bx - ax)
+                        const sy = by === ay ? 1 : Math.sign(by - ay)
+                        a.x -= sx * push
+                        b.x += sx * push
+                        a.y -= sy * push * 0.3
+                        b.y += sy * push * 0.3
                         allHome = false
                     }
                 }
+            }
 
-                // Soft separation so frames don't fully stack while landing
-                for (let i = 0; i < bodies.length; i++) {
-                    for (let j = i + 1; j < bodies.length; j++) {
-                        const a = bodies[i]
-                        const b = bodies[j]
-                        const ax = a.x + a.w / 2
-                        const ay = a.y + a.h / 2
-                        const bx = b.x + b.w / 2
-                        const by = b.y + b.h / 2
-                        const gapX = (a.w + b.w) * 0.42
-                        const gapY = (a.h + b.h) * 0.42
-                        const ox = gapX - Math.abs(bx - ax)
-                        const oy = gapY - Math.abs(by - ay)
-                        if (ox > 0 && oy > 0) {
-                            const push = Math.min(ox, oy) * 0.08
-                            const sx = bx === ax ? 1 : Math.sign(bx - ax)
-                            const sy = by === ay ? 1 : Math.sign(by - ay)
-                            a.x -= sx * push
-                            b.x += sx * push
-                            a.y -= sy * push * 0.35
-                            b.y += sy * push * 0.35
-                            allHome = false
-                        }
-                    }
-                }
-
-                if (allHome) {
-                    for (const b of bodies) {
-                        b.x = b.targetX
-                        b.y = b.targetY
-                        b.rot = b.targetRot
-                        b.baseX = b.targetX
-                        b.baseY = b.targetY
-                        b.baseRot = b.targetRot
-                        b.vx = 0
-                        b.vy = 0
-                        b.vr = 0
-                    }
-                    settledRef.current = true
-                    floatTRef.current = 0
-                }
-            } else {
-                floatTRef.current += dt
-                const t = floatTRef.current
+            if (allHome) {
                 for (const b of bodies) {
-                    b.x = b.baseX + Math.cos(t * 0.8 + b.phase) * 2.2
-                    b.y = b.baseY + Math.sin(t * 1.05 + b.phase) * 2.8
-                    b.rot =
-                        b.baseRot + Math.sin(t * 0.9 + b.phase * 0.7) * 1.1
+                    b.x = b.targetX
+                    b.y = b.targetY
+                    b.rot = b.targetRot
+                    b.baseX = b.targetX
+                    b.baseY = b.targetY
+                    b.baseRot = b.targetRot
+                    b.vx = 0
+                    b.vy = 0
+                    b.vr = 0
                 }
+                settledRef.current = true
+                bump()
+                return
             }
 
             bump()
