@@ -20,7 +20,8 @@ const INK = "#111111"
 const MUTED = "#555555"
 const PHONE_MQ = "(max-width: 809.98px)"
 const FOLDER_RADIUS = 26
-const DESKTOP_WORDMARK = "Nabia's desktop 2026 edition"
+const DESKTOP_WORDMARK = "NABIA'S DESKTOP 2026 EDITION"
+const FOLDER_BLUE = "#2C6BE0"
 
 interface WorkItem {
     title: string
@@ -248,16 +249,17 @@ export default function WorkIndex(props: WorkIndexProps) {
                             ? `clamp(64px, 18vw, 120px)`
                             : `clamp(96px, 12vw, ${Math.max(titleSize, 160)}px)`,
                         fontWeight: 700,
-                        letterSpacing: "-0.055em",
+                        letterSpacing: "-0.04em",
                         lineHeight: 0.9,
                         whiteSpace: "nowrap",
+                        textTransform: "uppercase",
                         color: ink,
-                        opacity: 0.13,
+                        opacity: 0.34,
                         userSelect: "none",
                         willChange: "left",
                     }}
                 >
-                    {`${wordmark}  ·  ${wordmark}  ·  ${wordmark}`}
+                    {`${wordmark.toUpperCase()}  ·  ${wordmark.toUpperCase()}  ·  ${wordmark.toUpperCase()}`}
                 </p>
             </div>
 
@@ -276,7 +278,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                     textTransform: "uppercase",
                     color: MUTED,
                     pointerEvents: "none",
-                    opacity: 0.7,
+                    opacity: 0.75,
                 }}
             >
                 {Math.min(list.length, Math.max(1, Math.round(scrollP * list.length) || 1))}
@@ -292,12 +294,12 @@ export default function WorkIndex(props: WorkIndexProps) {
                     width: "100%",
                     minHeight: isStatic ? "100%" : "140vh",
                     padding: isPhone
-                        ? "120px 20px 160px"
-                        : "130px 8vw 200px",
+                        ? "120px 20px 140px"
+                        : "120px 9vw 180px",
                     boxSizing: "border-box",
                     display: "flex",
                     flexDirection: "column",
-                    gap: isPhone ? 64 : 96,
+                    gap: isPhone ? 40 : 52,
                 }}
             >
                 {list.map((item, index) => (
@@ -309,6 +311,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                         isPhone={isPhone}
                         displayFamily={displayFamily}
                         bodyFamily={family}
+                        folderBlue={accent || FOLDER_BLUE}
                     />
                 ))}
             </div>
@@ -323,6 +326,7 @@ function DesktopFolder({
     isPhone,
     displayFamily,
     bodyFamily,
+    folderBlue,
 }: {
     item: WorkItem
     index: number
@@ -330,9 +334,11 @@ function DesktopFolder({
     isPhone: boolean
     displayFamily: string
     bodyFamily: string
+    folderBlue: string
 }) {
     const [hovered, setHovered] = useState(false)
     const videoRef = useRef<HTMLVideoElement>(null)
+    const blue = folderBlue || FOLDER_BLUE
 
     useEffect(() => {
         const v = videoRef.current
@@ -343,7 +349,8 @@ function DesktopFolder({
     }, [item.videoUrl])
 
     const side = index % 2 === 0 ? "left" : "right"
-    const folderW = isPhone ? "min(300px, 82vw)" : 340
+    // ~15% larger than previous 340
+    const folderW = isPhone ? "min(345px, 86vw)" : 391
     const alignSelf = isPhone
         ? "center"
         : side === "left"
@@ -369,30 +376,42 @@ function DesktopFolder({
                 cursor: "pointer",
                 outline: "none",
                 transform: hovered ? "translateY(-6px)" : "translateY(0)",
-                transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 280ms ease",
-                boxShadow: hovered
-                    ? "0 28px 60px rgba(17,17,17,0.16)"
-                    : "0 16px 40px rgba(17,17,17,0.1)",
-                borderRadius: FOLDER_RADIUS,
+                transition: "transform 280ms cubic-bezier(0.22, 1, 0.36, 1)",
             }}
         >
+            {/* Soft brand-blue glow behind the folder (Fasquelle-style depth) */}
+            <div
+                aria-hidden
+                style={{
+                    position: "absolute",
+                    inset: isPhone ? "-10% -8%" : "-12% -10%",
+                    background: `radial-gradient(ellipse at center, ${blue} 0%, rgba(44,107,224,0.35) 42%, rgba(44,107,224,0) 72%)`,
+                    opacity: hovered ? 0.9 : 0.7,
+                    filter: "blur(18px)",
+                    zIndex: 0,
+                    pointerEvents: "none",
+                    transition: "opacity 280ms ease",
+                }}
+            />
+
             {/* Folder tab */}
             <div
                 aria-hidden
                 style={{
                     position: "absolute",
-                    left: side === "right" ? undefined : 18,
-                    right: side === "right" ? 18 : undefined,
-                    top: -14,
-                    width: "32%",
-                    height: 22,
-                    background: item.accent || "#2C6BE0",
-                    borderRadius: "12px 12px 0 0",
-                    zIndex: 0,
+                    left: side === "right" ? undefined : 20,
+                    right: side === "right" ? 20 : undefined,
+                    top: -16,
+                    width: "34%",
+                    height: 26,
+                    background: blue,
+                    borderRadius: "14px 14px 0 0",
+                    zIndex: 1,
+                    boxShadow: `0 0 24px ${blue}55`,
                 }}
             />
 
-            {/* Folder body */}
+            {/* Folder body / frame */}
             <div
                 style={{
                     position: "relative",
@@ -400,149 +419,156 @@ function DesktopFolder({
                     height: "100%",
                     borderRadius: FOLDER_RADIUS,
                     overflow: "hidden",
-                    background: item.accent || "#1a1a1a",
-                    border: "1px solid rgba(17,17,17,0.08)",
+                    background: "#f7f4ee",
+                    border: `2.5px solid rgba(255,255,255,0.92)`,
+                    boxShadow: hovered
+                        ? `0 26px 50px rgba(17,17,17,0.14), 0 0 0 1px ${blue}33, inset 0 0 0 1px rgba(17,17,17,0.06)`
+                        : `0 18px 40px rgba(17,17,17,0.1), 0 0 0 1px ${blue}22, inset 0 0 0 1px rgba(17,17,17,0.05)`,
                     boxSizing: "border-box",
-                    zIndex: 1,
+                    zIndex: 2,
+                    transition: "box-shadow 280ms ease",
                 }}
             >
-                {item.videoUrl ? (
-                    <video
-                        ref={videoRef}
-                        src={item.videoUrl}
-                        poster={item.coverUrl || undefined}
-                        muted
-                        loop
-                        playsInline
-                        autoPlay
-                        preload="metadata"
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            display: "block",
-                            transform: hovered ? "scale(1.03)" : "scale(1)",
-                            transition: "transform 500ms ease",
-                        }}
-                    />
-                ) : item.coverUrl ? (
-                    <img
-                        src={item.coverUrl}
-                        alt=""
-                        draggable={false}
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            transform: hovered ? "scale(1.03)" : "scale(1)",
-                            transition: "transform 500ms ease",
-                        }}
-                    />
-                ) : (
-                    <div
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            background: `linear-gradient(145deg, ${item.accent} 0%, #111 125%)`,
-                        }}
-                    />
-                )}
-
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                            "linear-gradient(180deg, rgba(17,17,17,0.08) 0%, rgba(17,17,17,0.55) 100%)",
-                        opacity: hovered ? 1 : 0.45,
-                        transition: "opacity 240ms ease",
-                        pointerEvents: "none",
-                    }}
-                />
-
-                {/* Utility labels */}
+                {/* Inner media window */}
                 <div
                     style={{
                         position: "absolute",
-                        top: 16,
-                        left: 16,
-                        right: 16,
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        fontFamily: bodyFamily,
-                        fontSize: 10,
-                        fontWeight: 600,
-                        letterSpacing: "0.1em",
-                        textTransform: "uppercase",
-                        color: "rgba(255,255,255,0.78)",
-                        pointerEvents: "none",
+                        inset: 10,
+                        borderRadius: FOLDER_RADIUS - 10,
+                        overflow: "hidden",
+                        background: "#111",
                     }}
                 >
-                    <span>(project)</span>
-                    <span>{number}</span>
-                </div>
+                    {item.videoUrl ? (
+                        <video
+                            ref={videoRef}
+                            src={item.videoUrl}
+                            poster={item.coverUrl || undefined}
+                            muted
+                            loop
+                            playsInline
+                            autoPlay
+                            preload="metadata"
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                                transform: hovered ? "scale(1.04)" : "scale(1)",
+                                transition: "transform 500ms ease",
+                            }}
+                        />
+                    ) : item.coverUrl ? (
+                        <img
+                            src={item.coverUrl}
+                            alt=""
+                            draggable={false}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                transform: hovered ? "scale(1.04)" : "scale(1)",
+                                transition: "transform 500ms ease",
+                            }}
+                        />
+                    ) : (
+                        <div
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                background: `linear-gradient(145deg, ${blue} 0%, #111 125%)`,
+                            }}
+                        />
+                    )}
 
-                {/* Hover name */}
-                <div
-                    style={{
-                        position: "absolute",
-                        left: 18,
-                        right: 18,
-                        bottom: 20,
-                        opacity: hovered ? 1 : 0,
-                        transform: hovered ? "translateY(0)" : "translateY(10px)",
-                        transition: "opacity 240ms ease, transform 240ms ease",
-                        pointerEvents: "none",
-                    }}
-                >
                     <div
+                        aria-hidden
                         style={{
-                            fontFamily: displayFamily,
-                            fontSize: isPhone ? 30 : 34,
-                            fontWeight: 400,
-                            letterSpacing: "-0.02em",
-                            lineHeight: 1.05,
-                            color: "#fff",
-                            textShadow: "0 1px 16px rgba(0,0,0,0.3)",
+                            position: "absolute",
+                            inset: 0,
+                            background:
+                                "linear-gradient(180deg, rgba(17,17,17,0.1) 0%, rgba(17,17,17,0.58) 100%)",
+                            opacity: hovered ? 1 : 0.5,
+                            transition: "opacity 240ms ease",
+                            pointerEvents: "none",
                         }}
-                    >
-                        {item.title}
-                    </div>
+                    />
+
+                    {/* Utility labels */}
                     <div
                         style={{
-                            marginTop: 8,
+                            position: "absolute",
+                            top: 14,
+                            left: 14,
+                            right: 14,
                             display: "flex",
                             justifyContent: "space-between",
-                            gap: 12,
+                            alignItems: "flex-start",
                             fontFamily: bodyFamily,
-                            fontSize: 11,
-                            fontWeight: 500,
-                            letterSpacing: "0.04em",
+                            fontSize: 10,
+                            fontWeight: 600,
+                            letterSpacing: "0.1em",
                             textTransform: "uppercase",
-                            color: "rgba(255,255,255,0.88)",
+                            color: "rgba(255,255,255,0.82)",
+                            pointerEvents: "none",
                         }}
                     >
-                        <span>{item.subtitle || "Case study"}</span>
-                        {item.year ? <span>{item.year}</span> : null}
+                        <span>(folder)</span>
+                        <span>{number}</span>
+                    </div>
+
+                    {/* Hover name */}
+                    <div
+                        style={{
+                            position: "absolute",
+                            left: 16,
+                            right: 16,
+                            bottom: 18,
+                            opacity: hovered ? 1 : 0,
+                            transform: hovered
+                                ? "translateY(0)"
+                                : "translateY(10px)",
+                            transition:
+                                "opacity 240ms ease, transform 240ms ease",
+                            pointerEvents: "none",
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontFamily: displayFamily,
+                                fontSize: isPhone ? 30 : 36,
+                                fontWeight: 400,
+                                letterSpacing: "-0.02em",
+                                lineHeight: 1.05,
+                                color: "#fff",
+                                textShadow: "0 1px 16px rgba(0,0,0,0.3)",
+                            }}
+                        >
+                            {item.title}
+                        </div>
+                        <div
+                            style={{
+                                marginTop: 8,
+                                display: "flex",
+                                justifyContent: "space-between",
+                                gap: 12,
+                                fontFamily: bodyFamily,
+                                fontSize: 11,
+                                fontWeight: 500,
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                color: "rgba(255,255,255,0.9)",
+                            }}
+                        >
+                            <span>{item.subtitle || "Case study"}</span>
+                            {item.year ? <span>{item.year}</span> : null}
+                        </div>
                     </div>
                 </div>
-
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        borderRadius: FOLDER_RADIUS,
-                        boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.16)",
-                        pointerEvents: "none",
-                    }}
-                />
             </div>
         </a>
     )
