@@ -28,7 +28,7 @@ const PHONE_MQ = "(max-width: 809.98px)"
 const VISUAL_RADIUS = 24
 const ACCENT = "#2C6BE0"
 const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
-const LEFT_COL = "minmax(240px, 30%)"
+const LEFT_COL = "minmax(220px, 26%)"
 
 export interface WorkProject {
     title: string
@@ -597,6 +597,7 @@ function DesktopBrowser({
                 zIndex: 2,
                 display: "grid",
                 gridTemplateColumns: `${LEFT_COL} minmax(0, 1fr)`,
+                columnGap: 0,
                 width: "100%",
                 height: "100%",
                 boxSizing: "border-box",
@@ -761,8 +762,8 @@ function DesktopBrowser({
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
-                    // Equal L/R gutters so frames sit centered in the cream column
-                    padding: "64px 28px 72px 28px",
+                    // Equal L/R gutters — keep them tight so frames read wider
+                    padding: "56px 16px 64px 16px",
                     boxSizing: "border-box",
                     background: "transparent",
                 }}
@@ -960,11 +961,10 @@ function VisualSlide({
             data-work-slide={index}
             aria-label={item.title}
             style={{
-                // Tight stack — frame height + small gap, not a full viewport per card
                 display: "flex",
                 alignItems: "center",
                 boxSizing: "border-box",
-                padding: "0 0 20px",
+                padding: "0 0 10px",
             }}
         >
             <a
@@ -973,11 +973,11 @@ function VisualSlide({
                 style={{
                     display: "block",
                     width: "100%",
-                    height: "min(82vh, 760px)",
+                    height: "min(86vh, 800px)",
                     textDecoration: "none",
                     color: "inherit",
                     cursor: "pointer",
-                    opacity: active ? 1 : 0.88,
+                    opacity: active ? 1 : 0.9,
                     transition: "opacity 0.6s ease",
                 }}
             >
