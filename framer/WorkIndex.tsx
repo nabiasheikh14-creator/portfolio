@@ -16,7 +16,6 @@ import {
 
 const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const GRID_BG =
     "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
 /** Same stage as DeskWorkspace so the grid matches home scale/placement. */
