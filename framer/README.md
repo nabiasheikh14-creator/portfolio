@@ -10,11 +10,12 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
 - Desk **popups** show the clicked object on the modal.
 - **TopBar (design component)** — Inter, all caps, letter-spacing -1px.
 
-### Work — Heat Bureau–style index + case studies
-- **`WorkIndex.tsx`** — large lowercase “work” title, right intro, immersive
-  project cards (featured + grid). White stage + home desk grid at 50%.
+### Work — scroll-driven project browser + case studies
+- **`WorkIndex.tsx`** — interactive project browser: sticky info + large visual.
+  Scroll advances one active project at a time (title, description, media, CTA
+  update together). Mobile uses a natural vertical sequence. Cream stage +
+  homepage-matched desk grid.
 - Case studies keep CMS-bound content with a clearer type scale + hero band.
-- Sticky **laptop** flush bottom-right on `/work` and `/work/:slug`.
 
 ### Archive — cream stage
 - **`ArchiveGallery.tsx`** — cream `#F3EFE6`, opposite column drift.
