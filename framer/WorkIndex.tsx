@@ -5,7 +5,6 @@ import {
     useState,
     type CSSProperties,
     type MutableRefObject,
-    type RefObject,
 } from "react"
 import {
     addPropertyControls,
@@ -176,7 +175,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         cream = CREAM,
         ink = INK,
         muted = MUTED,
-        gridOpacity = 0.12,
+        gridOpacity = 0.05,
         backLink = "/",
         projectBasePath = "/work",
     } = props
@@ -198,7 +197,6 @@ export default function WorkIndex(props: WorkIndexProps) {
     const [activeIndex, setActiveIndex] = useState(0)
     const [infoVisible, setInfoVisible] = useState(true)
     const [reveal, setReveal] = useState<"idle" | "from" | "to">("idle")
-    const scrollerRef = useRef<HTMLDivElement>(null)
     const slideRefs = useRef<(HTMLElement | null)[]>([])
     const activeRef = useRef(0)
 
@@ -231,9 +229,14 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
     }, [isStatic])
 
-    // Desktop: lock page scroll; only the project scroller moves.
+    // Allow natural page scroll on Work (do not fight Framer / the viewport).
     useEffect(() => {
-        if (typeof document === "undefined" || isStatic || isPhone) return
+        if (typeof document === "undefined" || isStatic) return
+        document.getElementById("nabia-work-lock")?.remove()
+        document
+            .querySelectorAll("[data-nabia-work-lock]")
+            .forEach((n) => n.remove())
+
         const html = document.documentElement
         const body = document.body
         const prev = {
@@ -241,81 +244,58 @@ export default function WorkIndex(props: WorkIndexProps) {
             bodyOverflow: body.style.overflow,
             htmlHeight: html.style.height,
             bodyHeight: body.style.height,
-            htmlOverscroll: html.style.overscrollBehavior,
-            bodyOverscroll: body.style.overscrollBehavior,
         }
-
-        const lock = () => {
-            html.style.overflow = "hidden"
-            body.style.overflow = "hidden"
-            html.style.height = "100%"
-            body.style.height = "100%"
-            html.style.overscrollBehavior = "none"
-            body.style.overscrollBehavior = "none"
-            window.scrollTo(0, 0)
-        }
-        lock()
+        html.style.overflow = ""
+        body.style.overflow = ""
+        html.style.height = ""
+        body.style.height = ""
 
         const style = document.createElement("style")
-        style.setAttribute("data-nabia-work-lock", "true")
+        style.setAttribute("data-nabia-work-scroll", "true")
         style.textContent = `
-          html, body { overflow: hidden !important; height: 100% !important; overscroll-behavior: none !important; }
-          body > div, #main, [data-framer-root], [data-framer-page-container] {
-            overflow: hidden !important;
-            max-height: 100vh !important;
+          html, body {
+            overflow: auto !important;
+            overflow-x: hidden !important;
+            height: auto !important;
+            max-height: none !important;
           }
-          [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+          #nabia-work-index {
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
+          [data-framer-root], [data-framer-page-container],
+          body > div, #main {
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+          }
         `
         document.head.appendChild(style)
 
-        const onScroll = () => {
-            if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0)
-        }
-        window.addEventListener("scroll", onScroll, { passive: false })
-        const interval = window.setInterval(lock, 500)
-
         return () => {
-            window.clearInterval(interval)
-            window.removeEventListener("scroll", onScroll)
             style.remove()
             html.style.overflow = prev.htmlOverflow
             body.style.overflow = prev.bodyOverflow
             html.style.height = prev.htmlHeight
             body.style.height = prev.bodyHeight
-            html.style.overscrollBehavior = prev.htmlOverscroll
-            body.style.overscrollBehavior = prev.bodyOverscroll
         }
-    }, [isStatic, isPhone])
+    }, [isStatic])
 
-    // Route wheel to internal scroller on desktop
-    useEffect(() => {
-        if (typeof window === "undefined" || isStatic || isPhone) return
-        const onWheel = (e: WheelEvent) => {
-            const el = scrollerRef.current
-            if (!el) return
-            e.preventDefault()
-            el.scrollTop += e.deltaY
-        }
-        window.addEventListener("wheel", onWheel, { passive: false })
-        return () => window.removeEventListener("wheel", onWheel)
-    }, [isStatic, isPhone])
-
-    // Scroll-driven active project (desktop scroller or mobile window)
+    // Scroll-driven active project via IntersectionObserver (window scroll).
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
 
+        const nodes = () =>
+            slideRefs.current.filter(Boolean) as HTMLElement[]
+
         const pickActive = () => {
-            const nodes = slideRefs.current.filter(Boolean) as HTMLElement[]
-            if (!nodes.length) return
-
-            const root = isPhone ? null : scrollerRef.current
-            const viewTop = root ? root.getBoundingClientRect().top : 0
-            const viewH = root ? root.clientHeight : window.innerHeight
-            const center = viewTop + viewH * 0.42
-
+            const listNodes = nodes()
+            if (!listNodes.length) return
+            const center = window.innerHeight * 0.4
             let best = 0
             let bestDist = Infinity
-            nodes.forEach((node, i) => {
+            listNodes.forEach((node, i) => {
                 const r = node.getBoundingClientRect()
                 const mid = r.top + r.height / 2
                 const dist = Math.abs(mid - center)
@@ -324,14 +304,13 @@ export default function WorkIndex(props: WorkIndexProps) {
                     best = i
                 }
             })
-
             if (best !== activeRef.current) {
                 activeRef.current = best
                 setInfoVisible(false)
                 window.setTimeout(() => {
                     setActiveIndex(best)
                     setInfoVisible(true)
-                }, 120)
+                }, 90)
             }
         }
 
@@ -342,17 +321,24 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
 
         pickActive()
-        const root = scrollerRef.current
-        if (!isPhone && root) {
-            root.addEventListener("scroll", onScroll, { passive: true })
-        }
         window.addEventListener("scroll", onScroll, { passive: true })
         window.addEventListener("resize", onScroll)
+
+        const io =
+            typeof IntersectionObserver !== "undefined"
+                ? new IntersectionObserver(onScroll, {
+                      root: null,
+                      rootMargin: "-35% 0px -35% 0px",
+                      threshold: [0, 0.25, 0.5, 0.75, 1],
+                  })
+                : null
+        nodes().forEach((n) => io?.observe(n))
+
         return () => {
             cancelAnimationFrame(raf)
-            root?.removeEventListener("scroll", onScroll)
             window.removeEventListener("scroll", onScroll)
             window.removeEventListener("resize", onScroll)
+            io?.disconnect()
         }
     }, [isStatic, isPhone, list.length])
 
@@ -387,20 +373,17 @@ export default function WorkIndex(props: WorkIndexProps) {
 
     const shellStyle: CSSProperties = {
         ...framerStyle,
-        position: isStatic || isPhone ? "relative" : "fixed",
-        inset: isStatic || isPhone ? undefined : 0,
-        width: isStatic || isPhone ? "100%" : "100vw",
-        height: isStatic || isPhone ? "100%" : "100vh",
+        position: "relative",
+        width: "100%",
         minHeight: isPhone ? "100vh" : undefined,
         maxWidth: "100vw",
-        maxHeight: isStatic || isPhone ? undefined : "100vh",
         minWidth: 0,
         zIndex: isStatic ? undefined : 2,
         background: cream,
         color: ink,
         fontFamily: family,
         boxSizing: "border-box",
-        overflow: isPhone ? "visible" : "hidden",
+        overflow: "visible",
         transform: `scale(${revealScale})`,
         transformOrigin: "center center",
         opacity: revealOpacity,
@@ -424,7 +407,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                 accent={accent}
             />
 
-            <GridBackdrop stageScale={stageScale} opacity={gridAlpha} />
+            <GridBackdrop stageScale={stageScale} opacity={gridAlpha} fixed />
 
             {isPhone ? (
                 <MobileSequence
@@ -442,7 +425,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                     activeIndex={activeIndex}
                 />
             ) : (
-                    <DesktopBrowser
+                <DesktopBrowser
                     list={list}
                     active={active}
                     activeIndex={activeIndex}
@@ -456,7 +439,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                     ctaLabel={ctaLabel}
                     archiveLabel={archiveLabel}
                     archiveHref={archiveHref}
-                    scrollerRef={scrollerRef}
                     slideRefs={slideRefs}
                 />
             )}
@@ -467,15 +449,18 @@ export default function WorkIndex(props: WorkIndexProps) {
 function GridBackdrop({
     stageScale,
     opacity,
+    fixed = false,
 }: {
     stageScale: number
     opacity: number
+    fixed?: boolean
 }) {
+    if (opacity <= 0.001) return null
     return (
         <div
             aria-hidden
             style={{
-                position: "absolute",
+                position: fixed ? "fixed" : "absolute",
                 inset: 0,
                 zIndex: 0,
                 pointerEvents: "none",
@@ -518,7 +503,6 @@ function DesktopBrowser({
     ctaLabel,
     archiveLabel,
     archiveHref,
-    scrollerRef,
     slideRefs,
 }: {
     list: WorkProject[]
@@ -534,7 +518,6 @@ function DesktopBrowser({
     ctaLabel: string
     archiveLabel: string
     archiveHref: string
-    scrollerRef: RefObject<HTMLDivElement | null>
     slideRefs: MutableRefObject<(HTMLElement | null)[]>
 }) {
     return (
@@ -543,24 +526,26 @@ function DesktopBrowser({
                 position: "relative",
                 zIndex: 2,
                 display: "grid",
-                gridTemplateColumns: "minmax(260px, 32%) minmax(0, 1fr)",
+                gridTemplateColumns: "minmax(240px, 28%) minmax(0, 1fr)",
                 width: "100%",
-                height: "100%",
                 boxSizing: "border-box",
-                padding: "108px 4vw 48px",
-                gap: "clamp(28px, 4vw, 56px)",
+                padding: "0 3.5vw",
+                gap: "clamp(24px, 3.5vw, 48px)",
+                alignItems: "start",
             }}
         >
-            {/* Persistent info column */}
+            {/* Sticky info column — stays put while visuals scroll */}
             <aside
                 style={{
-                    position: "relative",
+                    position: "sticky",
+                    top: 0,
+                    height: "100vh",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    minHeight: 0,
-                    paddingTop: 8,
-                    paddingBottom: 8,
+                    padding: "120px 8px 56px 0",
+                    boxSizing: "border-box",
+                    maxWidth: 420,
                 }}
             >
                 <div
@@ -568,9 +553,9 @@ function DesktopBrowser({
                         opacity: infoVisible ? 1 : 0,
                         transform: infoVisible
                             ? "translateY(0)"
-                            : "translateY(10px)",
+                            : "translateY(8px)",
                         transition:
-                            "opacity 0.28s ease, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1)",
+                            "opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                     }}
                 >
                     <span
@@ -584,8 +569,8 @@ function DesktopBrowser({
                             fontWeight: 600,
                             letterSpacing: "0.06em",
                             textTransform: "uppercase",
-                            borderRadius: 6,
-                            marginBottom: 22,
+                            borderRadius: 4,
+                            marginBottom: 20,
                         }}
                     >
                         {sectionLabel}
@@ -593,11 +578,11 @@ function DesktopBrowser({
 
                     <h1
                         style={{
-                            margin: "0 0 18px",
+                            margin: "0 0 16px",
                             fontFamily: family,
-                            fontSize: "clamp(28px, 3.4vw, 52px)",
+                            fontSize: "clamp(26px, 3.2vw, 48px)",
                             fontWeight: 700,
-                            letterSpacing: "-0.04em",
+                            letterSpacing: "-0.045em",
                             lineHeight: 0.98,
                             textTransform: "uppercase",
                             color: ink,
@@ -609,11 +594,11 @@ function DesktopBrowser({
                     {(active.subtitle || active.year) && (
                         <p
                             style={{
-                                margin: "0 0 28px",
+                                margin: 0,
                                 fontFamily: family,
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: 500,
-                                letterSpacing: "0.04em",
+                                letterSpacing: "0.05em",
                                 textTransform: "uppercase",
                                 color: muted,
                             }}
@@ -630,19 +615,19 @@ function DesktopBrowser({
                         opacity: infoVisible ? 1 : 0,
                         transform: infoVisible
                             ? "translateY(0)"
-                            : "translateY(8px)",
+                            : "translateY(6px)",
                         transition:
-                            "opacity 0.28s ease 0.04s, transform 0.28s cubic-bezier(0.16, 1, 0.3, 1) 0.04s",
+                            "opacity 0.25s ease 0.03s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) 0.03s",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 28,
+                        gap: 24,
                     }}
                 >
                     {active.description ? (
                         <p
                             style={{
                                 margin: 0,
-                                maxWidth: 340,
+                                maxWidth: 320,
                                 fontFamily: family,
                                 fontSize: 15,
                                 fontWeight: 400,
@@ -654,80 +639,50 @@ function DesktopBrowser({
                         </p>
                     ) : null}
 
-                    <div
+                    <a
+                        href={active.href}
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 18,
+                            alignSelf: "flex-start",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "12px 22px",
+                            background: accent,
+                            color: "#fff",
+                            textDecoration: "none",
+                            fontFamily: family,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            letterSpacing: "-0.02em",
+                            textTransform: "uppercase",
+                            borderRadius: 999,
+                            border: `1.5px solid ${accent}`,
                         }}
                     >
-                        <a
-                            href={active.href}
-                            style={{
-                                alignSelf: "flex-start",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: 8,
-                                padding: "12px 22px",
-                                background: accent,
-                                color: "#fff",
-                                textDecoration: "none",
-                                fontFamily: family,
-                                fontSize: 13,
-                                fontWeight: 600,
-                                letterSpacing: "-0.02em",
-                                textTransform: "uppercase",
-                                borderRadius: 999,
-                                border: `1.5px solid ${accent}`,
-                                boxShadow: "0 10px 28px rgba(44,107,224,0.28)",
-                            }}
-                        >
-                            {ctaLabel}
-                            <span aria-hidden style={{ fontSize: 14 }}>
-                                →
-                            </span>
-                        </a>
+                        {ctaLabel}
+                        <span aria-hidden>→</span>
+                    </a>
 
-                        <ProjectMeta
-                            project={active}
-                            family={family}
-                            ink={ink}
-                            muted={muted}
-                            cream={cream}
-                        />
-                    </div>
+                    <ProjectMeta
+                        project={active}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                        cream={cream}
+                    />
                 </div>
-
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        right: -18,
-                        top: "8%",
-                        bottom: "8%",
-                        width: 1,
-                        background:
-                            "repeating-linear-gradient(to bottom, rgba(17,17,17,0.18) 0 4px, transparent 4px 9px)",
-                        pointerEvents: "none",
-                    }}
-                />
             </aside>
 
-            {/* Scrollable visual column */}
+            {/* Stacked visuals — native page scroll advances projects */}
             <div
-                ref={scrollerRef}
-                data-work-scroller="true"
                 style={{
                     position: "relative",
                     minWidth: 0,
-                    height: "100%",
-                    overflowX: "hidden",
-                    overflowY: "auto",
-                    WebkitOverflowScrolling: "touch",
-                    overscrollBehavior: "contain",
-                    scrollbarWidth: "none",
-                    msOverflowStyle: "none",
-                    scrollSnapType: "y mandatory",
+                    paddingTop: 96,
+                    paddingBottom: 64,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 20,
                 }}
             >
                 {list.map((item, index) => (
@@ -746,13 +701,11 @@ function DesktopBrowser({
 
                 <footer
                     style={{
-                        minHeight: "42vh",
+                        minHeight: "28vh",
                         display: "flex",
                         alignItems: "center",
-                        justifyContent: "stretch",
-                        padding: "24px 0 48px",
+                        padding: "12px 0 32px",
                         boxSizing: "border-box",
-                        scrollSnapAlign: "start",
                     }}
                 >
                     <a
@@ -762,51 +715,24 @@ function DesktopBrowser({
                             alignItems: "center",
                             justifyContent: "space-between",
                             width: "100%",
-                            minHeight: 88,
-                            padding: "22px 28px",
+                            minHeight: 80,
+                            padding: "20px 26px",
                             background: ink,
                             color: cream,
                             textDecoration: "none",
                             fontFamily: family,
-                            fontSize: 14,
+                            fontSize: 13,
                             fontWeight: 600,
                             letterSpacing: "0.06em",
                             textTransform: "uppercase",
-                            borderRadius: VISUAL_RADIUS,
+                            borderRadius: 18,
                             boxSizing: "border-box",
                         }}
                     >
                         <span>[ {archiveLabel} ]</span>
-                        <span aria-hidden style={{ fontSize: 18 }}>
-                            ↗
-                        </span>
+                        <span aria-hidden>↗</span>
                     </a>
                 </footer>
-
-                <div
-                    aria-live="polite"
-                    style={{
-                        position: "sticky",
-                        bottom: 16,
-                        left: 0,
-                        width: "fit-content",
-                        marginTop: -40,
-                        padding: "6px 12px",
-                        background: "rgba(255,255,255,0.88)",
-                        border: "1px solid rgba(17,17,17,0.12)",
-                        borderRadius: 999,
-                        fontFamily: family,
-                        fontSize: 11,
-                        fontWeight: 600,
-                        letterSpacing: "0.08em",
-                        textTransform: "uppercase",
-                        color: muted,
-                        pointerEvents: "none",
-                    }}
-                >
-                    {String(activeIndex + 1).padStart(2, "0")} /{" "}
-                    {String(list.length).padStart(2, "0")}
-                </div>
             </div>
         </div>
     )
@@ -1004,25 +930,19 @@ function VisualSlide({
             data-work-slide={index}
             aria-label={item.title}
             style={{
-                minHeight: "100%",
-                height: "100%",
+                minHeight: "100vh",
                 display: "flex",
                 alignItems: "center",
                 boxSizing: "border-box",
-                padding: "12px 0 28px",
-                scrollSnapAlign: "center",
-                scrollSnapStop: "always",
+                padding: "24px 0",
             }}
         >
             <div
                 style={{
                     width: "100%",
-                    height: "min(72vh, 640px)",
-                    transform: active ? "scale(1)" : "scale(0.965)",
-                    opacity: active ? 1 : 0.42,
-                    transition:
-                        "opacity 0.45s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)",
-                    willChange: "opacity, transform",
+                    height: "min(78vh, 720px)",
+                    opacity: active ? 1 : 0.55,
+                    transition: "opacity 0.35s ease",
                 }}
             >
                 <ProjectVisual item={item} accent={accent} cream={cream} fill />
@@ -1450,7 +1370,7 @@ addPropertyControls(WorkIndex, {
     gridOpacity: {
         type: ControlType.Number,
         title: "Grid Opacity",
-        defaultValue: 0.12,
+        defaultValue: 0.05,
         min: 0,
         max: 0.3,
         step: 0.01,
