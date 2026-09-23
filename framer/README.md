@@ -15,7 +15,9 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
   solid OUR offwhite `#F3EFE6` (same as home, no grid wash); only the right
   visual frames scroll (native trackpad momentum, no snap, no custom cursor).
   Mobile uses a natural vertical sequence on the same offwhite.
-- Case studies keep CMS-bound content with a clearer type scale + hero band.
+- **`WorkCase.tsx`** — Nevermind-style case study: sticky left (title, blurb,
+  meta, section TOC) + scrolling right narrative on the same cream. Large media
+  frames, bold overview type, section jump links that track scroll.
 
 ### Archive — cream stage
 - **`ArchiveGallery.tsx`** — cream `#F3EFE6`, opposite column drift.

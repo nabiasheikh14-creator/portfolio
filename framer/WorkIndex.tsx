@@ -318,7 +318,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior-y: contain;
                 scrollbar-width: none;
-                background: transparent !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
               }
               [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
               @keyframes nabia-work-fade {
@@ -773,7 +774,8 @@ function DesktopBrowser({
                     msOverflowStyle: "none",
                     padding: "72px 16px 120px 16px",
                     boxSizing: "border-box",
-                    background: "transparent",
+                    background: CREAM,
+                    backgroundColor: CREAM,
                     display: "flex",
                     flexDirection: "column",
                     gap: 14,

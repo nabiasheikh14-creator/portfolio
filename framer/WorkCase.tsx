@@ -1,4 +1,12 @@
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type ReactNode,
+    type RefObject,
+} from "react"
 import {
     addPropertyControls,
     ControlType,
@@ -9,13 +17,13 @@ import {
 const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
-const GRID_BG =
-    "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
 const LABEL = "#888888"
 const PHONE_MQ = "(max-width: 809.98px)"
+const LEFT_COL = "max(240px, 28vw)"
+const FRAME_RADIUS = 20
 
 function resolveLink(value: unknown, fallback = ""): string {
     if (value == null || value === "") return fallback
@@ -76,9 +84,7 @@ interface WorkCaseProps {
     accent: string
     font?: { fontFamily?: string }
     displayFont?: { fontFamily?: string }
-    /** Editable Back pill destination. */
     backLink: string
-    /** Base path for related project cards — e.g. `/work`. */
     projectBasePath: string
     footerSubline: string
     footerHomeLink: string
@@ -91,6 +97,8 @@ interface WorkCaseProps {
     style?: CSSProperties
 }
 
+type CaseNavItem = { id: string; label: string }
+
 function slugFromPath(): string {
     if (typeof window === "undefined") return ""
     const parts = window.location.pathname.replace(/\/$/, "").split("/").filter(Boolean)
@@ -98,11 +106,76 @@ function slugFromPath(): string {
     return ""
 }
 
+function useMediaQuery(query: string) {
+    const [matches, setMatches] = useState(false)
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const mq = window.matchMedia(query)
+        const sync = () => setMatches(mq.matches)
+        sync()
+        mq.addEventListener?.("change", sync)
+        window.addEventListener("resize", sync)
+        return () => {
+            mq.removeEventListener?.("change", sync)
+            window.removeEventListener("resize", sync)
+        }
+    }, [query])
+    return matches
+}
+
+function hasText(v: unknown) {
+    return Boolean(String(v || "").trim())
+}
+
+function hasMedia(v: unknown) {
+    return Boolean(String(v || "").trim())
+}
+
+function buildNav(p: ProjectRecord): CaseNavItem[] {
+    const items: CaseNavItem[] = []
+    if (hasMedia(p.heroImage) || hasText(p.overview) || hasText(p.context)) {
+        items.push({ id: "overview", label: "Overview" })
+    }
+    if (hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage)) {
+        items.push({ id: "challenge", label: "Challenge" })
+    }
+    if (
+        hasText(p.goals) ||
+        hasText(p.constraints) ||
+        hasText(p.process) ||
+        hasMedia(p.sketchImage) ||
+        hasMedia(p.wireframeImage) ||
+        hasMedia(p.flowImage) ||
+        hasMedia(p.processImage) ||
+        hasMedia(p.iterationImage)
+    ) {
+        items.push({ id: "approach", label: "Approach" })
+    }
+    if (hasText(p.decision1) || hasText(p.decision2) || hasText(p.decision3)) {
+        items.push({ id: "decisions", label: "Decisions" })
+    }
+    if (
+        hasMedia(p.finalImage1) ||
+        hasMedia(p.finalImage2) ||
+        hasMedia(p.finalImage3) ||
+        hasMedia(p.finalImage4) ||
+        hasMedia(p.prototypeVideo)
+    ) {
+        items.push({ id: "final", label: "Final" })
+    }
+    if (hasText(p.outcome) || hasMedia(p.outcomeImage)) {
+        items.push({ id: "outcome", label: "Outcome" })
+    }
+    if (hasText(p.reflection)) {
+        items.push({ id: "reflection", label: "Reflection" })
+    }
+    if (!items.length) items.push({ id: "overview", label: "Overview" })
+    return items
+}
+
 /**
- * Work Case — complete UI/UX case study.
- * Heat-style meta hero, then skimmable → deep sections:
- * Context → Problem → Goals & constraints → Process → Key decisions →
- * Final design → Outcome → Reflection.
+ * Work Case — Nevermind-style sticky left chrome + scrolling right narrative,
+ * in Nabia Work-page language (solid OUR offwhite, no grid wash).
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 2400
@@ -112,7 +185,6 @@ function slugFromPath(): string {
 export default function WorkCase(props: WorkCaseProps) {
     const {
         catalog = DEFAULT_CATALOG,
-        gridOpacity = 0.12,
         cream = CREAM,
         ink = INK,
         muted = MUTED,
@@ -131,52 +203,177 @@ export default function WorkCase(props: WorkCaseProps) {
     const family = props.font?.fontFamily || SANS
     const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
     const isStatic = useIsStaticRenderer()
-    const gridAlpha = Math.min(0.14, Math.max(0.04, Number(gridOpacity) || 0.12))
-    const [isPhone, setIsPhone] = useState(false)
+    const isPhone = useMediaQuery(PHONE_MQ)
     const backHref = resolveLink(backLink, "/work")
-    const homeHref = resolveLink(footerHomeLink, "/")
-    const basePath = resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
-    const igHref = resolveLink(footerInstagramUrl, "https://instagram.com/")
-    const liHref = resolveLink(footerLinkedinUrl, "https://linkedin.com/")
+    const basePath =
+        resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
 
+    const list = Array.isArray(catalog) && catalog.length ? catalog : DEFAULT_CATALOG
+    const [slug, setSlug] = useState(() =>
+        isStatic ? String(list[0]?.slug || "") : slugFromPath(),
+    )
     useEffect(() => {
-        if (typeof window === "undefined") return
-        const mq = window.matchMedia(PHONE_MQ)
-        const sync = () => setIsPhone(mq.matches)
-        sync()
-        mq.addEventListener?.("change", sync)
-        window.addEventListener("resize", sync)
-        return () => {
-            mq.removeEventListener?.("change", sync)
-            window.removeEventListener("resize", sync)
-        }
-    }, [])
+        if (isStatic) return
+        setSlug(slugFromPath())
+    }, [isStatic])
 
-    const slug = !isStatic ? slugFromPath() : ""
     const project =
-        (slug && (catalog || []).find((p) => p.slug === slug)) ||
-        (catalog || [])[0] ||
+        list.find((p) => p.slug === slug) ||
+        list.find((p) => p.slug && slug && p.slug.includes(slug)) ||
+        list[0] ||
         DEFAULT_CATALOG[0]
 
-    const related = (catalog || [])
-        .filter((p) => p.slug !== project.slug)
-        .slice(0, 3)
+    const nav = useMemo(() => buildNav(project), [project])
+    const [activeSection, setActiveSection] = useState(nav[0]?.id || "overview")
+    const scrollerRef = useRef<HTMLDivElement>(null)
+    const sectionRefs = useRef<Record<string, HTMLElement | null>>({})
 
-    const decisions = [project.decision1, project.decision2, project.decision3].filter(
-        (d) => d && String(d).trim(),
-    )
+    const related = list.filter((p) => p.slug && p.slug !== project.slug).slice(0, 3)
 
-    const tools = String(project.tools || "")
-        .split(/[,/|]+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-
+    // Desktop: lock page; only right column scrolls (same idea as WorkIndex)
     useEffect(() => {
-        if (typeof document === "undefined") return
-        document.querySelectorAll("[data-archive-mascot]").forEach((n) => n.remove())
-        // Footer owns desk art — clear any legacy fixed laptop corner
-        document.querySelectorAll('[data-desk-corner="laptop"]').forEach((n) => n.remove())
-    }, [])
+        if (typeof document === "undefined" || isStatic) return
+        document.querySelectorAll("[data-nabia-case-lock], [data-nabia-case-scroll]").forEach((n) => n.remove())
+        const html = document.documentElement
+        const body = document.body
+        const prev = {
+            htmlOverflow: html.style.overflow,
+            bodyOverflow: body.style.overflow,
+            htmlHeight: html.style.height,
+            bodyHeight: body.style.height,
+            htmlBg: html.style.background,
+            bodyBg: body.style.background,
+        }
+        const style = document.createElement("style")
+        if (isPhone) {
+            html.style.overflow = ""
+            body.style.overflow = ""
+            html.style.height = ""
+            body.style.height = ""
+            html.style.background = CREAM
+            body.style.background = CREAM
+            style.setAttribute("data-nabia-case-scroll", "true")
+            style.textContent = `
+              html, body { background: #F3EFE6 !important; background-color: #F3EFE6 !important; }
+              #nabia-work-case { height: auto !important; max-height: none !important; overflow: visible !important; }
+            `
+        } else {
+            html.style.overflow = "hidden"
+            body.style.overflow = "hidden"
+            html.style.height = "100%"
+            body.style.height = "100%"
+            html.style.background = CREAM
+            body.style.background = CREAM
+            window.scrollTo(0, 0)
+            style.setAttribute("data-nabia-case-lock", "true")
+            style.textContent = `
+              html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
+                overscroll-behavior: none !important;
+              }
+              body > div, #main, [data-framer-root], [data-framer-page-container] {
+                overflow: hidden !important;
+                max-height: 100vh !important;
+                height: 100% !important;
+              }
+              #nabia-work-case {
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                overflow: hidden !important;
+                background: #F3EFE6 !important;
+              }
+              [data-case-scroller] {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-y: contain;
+                scrollbar-width: none;
+                background: #F3EFE6 !important;
+              }
+              [data-case-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+            `
+        }
+        document.head.appendChild(style)
+        return () => {
+            style.remove()
+            html.style.overflow = prev.htmlOverflow
+            body.style.overflow = prev.bodyOverflow
+            html.style.height = prev.htmlHeight
+            body.style.height = prev.bodyHeight
+            html.style.background = prev.htmlBg
+            body.style.background = prev.bodyBg
+        }
+    }, [isStatic, isPhone])
+
+    // Active section from right scroller (desktop) or window (mobile)
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        const ids = nav.map((n) => n.id)
+        const pick = () => {
+            const root = isPhone ? null : scrollerRef.current
+            const viewTop = root ? root.getBoundingClientRect().top : 0
+            const viewH = root ? root.clientHeight : window.innerHeight
+            const marker = viewTop + viewH * 0.28
+            let best = ids[0]
+            let bestDist = Infinity
+            ids.forEach((id) => {
+                const el = sectionRefs.current[id]
+                if (!el) return
+                const top = el.getBoundingClientRect().top
+                const dist = Math.abs(top - marker)
+                if (top - marker <= 40 && dist < bestDist) {
+                    bestDist = dist
+                    best = id
+                }
+            })
+            setActiveSection((prev) => (prev === best ? prev : best))
+        }
+        pick()
+        const root = isPhone ? window : scrollerRef.current
+        root?.addEventListener("scroll", pick, { passive: true } as AddEventListenerOptions)
+        window.addEventListener("resize", pick)
+        return () => {
+            if (root && root !== window) root.removeEventListener("scroll", pick as EventListener)
+            else window.removeEventListener("scroll", pick)
+            window.removeEventListener("resize", pick)
+        }
+    }, [isStatic, isPhone, nav, project.slug])
+
+    // Forward wheel from left panel into right scroller
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic || isPhone) return
+        const onWheel = (e: WheelEvent) => {
+            const el = scrollerRef.current
+            if (!el) return
+            const target = e.target as Node | null
+            if (target && el.contains(target)) return
+            e.preventDefault()
+            el.scrollTop += e.deltaY
+        }
+        window.addEventListener("wheel", onWheel, { passive: false })
+        return () => window.removeEventListener("wheel", onWheel)
+    }, [isStatic, isPhone])
+
+    const scrollToSection = (id: string) => {
+        const el = sectionRefs.current[id]
+        if (!el) return
+        if (isPhone) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" })
+        } else {
+            const root = scrollerRef.current
+            if (!root) return
+            const top =
+                el.getBoundingClientRect().top -
+                root.getBoundingClientRect().top +
+                root.scrollTop -
+                24
+            root.scrollTo({ top, behavior: "smooth" })
+        }
+        setActiveSection(id)
+    }
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -195,7 +392,6 @@ export default function WorkCase(props: WorkCaseProps) {
         )
     }
 
-    // Framer may pass a collapsed width/height via props.style — never let that win.
     const framerStyle = { ...(props.style || {}) } as CSSProperties
     delete framerStyle.width
     delete framerStyle.height
@@ -204,456 +400,97 @@ export default function WorkCase(props: WorkCaseProps) {
     delete framerStyle.maxWidth
     delete framerStyle.maxHeight
 
+    const shellStyle: CSSProperties = {
+        ...framerStyle,
+        position: isStatic || isPhone ? "relative" : "fixed",
+        inset: isStatic || isPhone ? undefined : 0,
+        width: isStatic || isPhone ? "100%" : "100vw",
+        height: isStatic || isPhone ? undefined : "100vh",
+        minHeight: isPhone || isStatic ? "100vh" : undefined,
+        maxWidth: "100vw",
+        maxHeight: isStatic || isPhone ? undefined : "100vh",
+        minWidth: 0,
+        zIndex: isStatic ? undefined : 2,
+        background: CREAM,
+        backgroundColor: CREAM,
+        color: ink,
+        fontFamily: family,
+        boxSizing: "border-box",
+        overflow: isPhone ? "visible" : "hidden",
+    }
+
+    const setSectionRef = (id: string) => (el: HTMLElement | null) => {
+        sectionRefs.current[id] = el
+    }
+
     return (
-        <div
-            style={{
-                ...framerStyle,
-                position: "relative",
-                width: "100%",
-                minWidth: 0,
-                maxWidth: "100%",
-                height: "auto",
-                minHeight: isStatic ? "100%" : "100vh",
-                background: cream,
-                color: ink,
-                fontFamily: family,
-                boxSizing: "border-box",
-                overflow: "visible",
-            }}
-        >
+        <div id="nabia-work-case" style={shellStyle}>
             <link
                 href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
                 rel="stylesheet"
             />
 
-            <DeskBack href={backHref} label="Back" ariaLabel="Back to work" accent={accent} />
-
-            <div
-                aria-hidden
-                style={{
-                    position: "fixed",
-                    inset: 0,
-                    backgroundImage: `url(${GRID_BG})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                    opacity: gridAlpha,
-                    pointerEvents: "none",
-                    filter: "grayscale(1)",
-                    zIndex: 0,
-                }}
-            />
-
-            <div
-                style={{
-                    position: "relative",
-                    zIndex: 1,
-                    maxWidth: 1360,
-                    margin: "0 auto",
-                    padding: isPhone ? "148px 18px 56px" : "120px 40px 80px",
-                    boxSizing: "border-box",
-                }}
-            >
-                {/* ——— HERO (5-second skim) ——— */}
-                {/* auto-fit: no @media — Framer strips media queries from code-component <style> */}
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                        gap: 28,
-                        marginBottom: 36,
-                    }}
-                >
-                    <MetaCol label="project">
-                        <h1
-                            style={{
-                                margin: "0 0 18px",
-                                fontSize: "clamp(28px, 3.2vw, 42px)",
-                                fontWeight: 600,
-                                letterSpacing: "-0.03em",
-                                lineHeight: 1.05,
-                                fontFamily: displayFamily,
-                            }}
-                        >
-                            {project.title}
-                        </h1>
-                        <a
-                            href={backHref}
-                            aria-label="Back to work"
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                width: 44,
-                                height: 44,
-                                border: `1.5px solid ${INK}`,
-                                borderRadius: "50%",
-                                background: "rgba(255,255,255,0.85)",
-                                color: project.accent || "#2C6BE0",
-                                textDecoration: "none",
-                                fontSize: 20,
-                                fontWeight: 600,
-                            }}
-                        >
-                            ←
-                        </a>
-                    </MetaCol>
-
-                    <MetaCol label="bio">
-                        <div
-                            style={{
-                                fontSize: 22,
-                                fontWeight: 600,
-                                letterSpacing: "-0.02em",
-                                lineHeight: 1.2,
-                                marginBottom: 12,
-                            }}
-                        >
-                            {project.subtitle}
-                        </div>
-                        <p
-                            style={{
-                                margin: 0,
-                                fontSize: 15,
-                                lineHeight: 1.55,
-                                color: MUTED,
-                                maxWidth: 320,
-                            }}
-                        >
-                            {project.overview}
-                        </p>
-                    </MetaCol>
-
-                    <MetaCol label="role / tools">
-                        <div
-                            style={{
-                                fontSize: 18,
-                                fontWeight: 500,
-                                letterSpacing: "-0.02em",
-                                marginBottom: 10,
-                            }}
-                        >
-                            {project.role}
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                            {(tools.length ? tools : ["Figma", "Research", "Prototype"]).map(
-                                (t) => (
-                                    <div
-                                        key={t}
-                                        style={{
-                                            fontSize: 15,
-                                            color: MUTED,
-                                            letterSpacing: "-0.01em",
-                                        }}
-                                    >
-                                        {t}
-                                    </div>
-                                ),
-                            )}
-                        </div>
-                    </MetaCol>
-
-                    <MetaCol label="timeline">
-                        <div
-                            style={{
-                                fontSize: 22,
-                                fontWeight: 500,
-                                letterSpacing: "-0.02em",
-                            }}
-                        >
-                            {project.timeline || project.year}
-                        </div>
-                        {project.timeline && project.year && project.timeline !== project.year ? (
-                            <div style={{ marginTop: 8, fontSize: 14, color: MUTED }}>
-                                {project.year}
-                            </div>
-                        ) : null}
-                    </MetaCol>
-                </div>
-
-                {/* Hero visual / outcome stripe */}
-                <p
-                    style={{
-                        margin: "0 0 20px",
-                        fontSize: 18,
-                        lineHeight: 1.45,
-                        color: INK,
-                        maxWidth: 720,
-                        fontWeight: 500,
-                        letterSpacing: "-0.02em",
-                    }}
-                >
-                    {oneLiner(project)}
-                </p>
-                <MediaBlock
-                    src={project.heroImage}
-                    accent={project.accent}
-                    caption="Hero / key screen"
-                    placeholder="Drop hero imagery here"
-                    tall
-                />
-
-                {/* ——— DEPTH SECTIONS ——— */}
-                <Section kicker="01" title="Context" body={project.context} />
-                <MediaBlock
-                    src={project.contextImage}
-                    accent={project.accent}
-                    caption="Product / user context"
-                    placeholder="Drop context imagery here"
-                />
-
-                <Section kicker="02" title="The problem" body={project.problem} />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                        gap: 16,
-                        marginBottom: 56,
-                    }}
-                >
-                    <MediaBlock
-                        src={project.problemImage}
-                        accent={project.accent}
-                        caption="Problem in the wild"
-                        placeholder="Drop problem imagery here"
-                        fill
-                    />
-                    <MediaBlock
-                        src={project.researchImage}
-                        accent={project.accent}
-                        caption="Research / insight artifact"
-                        placeholder="Drop research imagery here"
-                        fill
-                    />
-                </div>
-
-                <div style={{ marginBottom: 56 }}>
-                    <SectionHeading kicker="03" title="Goals & constraints" />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                            gap: 20,
-                        }}
-                    >
-                        <TextCard title="Goals" body={project.goals} accent={project.accent} />
-                        <TextCard
-                            title="Constraints"
-                            body={project.constraints}
-                            accent={project.accent}
-                        />
-                    </div>
-                </div>
-
-                <Section kicker="04" title="Process" body={project.process} />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                        gap: 16,
-                        marginBottom: 16,
-                    }}
-                >
-                    <MediaBlock
-                        src={project.sketchImage}
-                        accent={project.accent}
-                        caption="Sketches"
-                        placeholder="Drop sketches here"
-                        fill
-                    />
-                    <MediaBlock
-                        src={project.wireframeImage}
-                        accent={project.accent}
-                        caption="Wireframes"
-                        placeholder="Drop wireframes here"
-                        fill
-                    />
-                    <MediaBlock
-                        src={project.flowImage}
-                        accent={project.accent}
-                        caption="Flows / IA"
-                        placeholder="Drop flow diagram here"
-                        fill
-                    />
-                </div>
-                <MediaBlock
-                    src={project.processImage}
-                    accent={project.accent}
-                    caption="Process overview — the messy middle"
-                    placeholder="Drop process collage here"
-                />
-                <MediaBlock
-                    src={project.iterationImage}
-                    accent={project.accent}
-                    caption="Iteration / before → after"
-                    placeholder="Drop iteration comparison here"
-                />
-
-                {decisions.length > 0 && (
-                    <div style={{ marginBottom: 56 }}>
-                        <SectionHeading kicker="05" title="Key decisions" />
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns:
-                                    "repeat(auto-fit, minmax(220px, 1fr))",
-                                gap: 16,
-                            }}
-                        >
-                            {decisions.map((d, i) => (
-                                <TextCard
-                                    key={i}
-                                    title={`Decision ${i + 1}`}
-                                    body={d}
-                                    accent={project.accent}
-                                    compact
-                                />
-                            ))}
-                        </div>
-                    </div>
-                )}
-
-                <SectionHeading kicker="06" title="Final design" />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                        gap: 16,
-                        marginBottom: 16,
-                    }}
-                >
-                    <MediaBlock
-                        src={project.finalImage1}
-                        accent={project.accent}
-                        caption="Primary screen / flow"
-                        placeholder="Drop final screen 1 here"
-                        fill
-                    />
-                    <MediaBlock
-                        src={project.finalImage2}
-                        accent={project.accent}
-                        caption="Supporting screen / state"
-                        placeholder="Drop final screen 2 here"
-                        fill
-                    />
-                </div>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                        gap: 16,
-                        marginBottom: 16,
-                    }}
-                >
-                    <MediaBlock
-                        src={project.finalImage3}
-                        accent={project.accent}
-                        caption="Detail / component"
-                        placeholder="Drop final screen 3 here"
-                        fill
-                    />
-                    <MediaBlock
-                        src={project.finalImage4}
-                        accent={project.accent}
-                        caption="Edge case / empty state"
-                        placeholder="Drop final screen 4 here"
-                        fill
-                    />
-                </div>
-                <VideoBlock
-                    src={project.prototypeVideo}
-                    accent={project.accent}
-                    caption="Prototype walkthrough / motion study"
-                />
-
-                <Section kicker="07" title="Outcome" body={project.outcome} />
-                <MediaBlock
-                    src={project.outcomeImage}
-                    accent={project.accent}
-                    caption="Outcome / shipped result"
-                    placeholder="Drop outcome imagery here"
-                />
-                {project.reflection ? (
-                    <Section kicker="08" title="Reflection" body={project.reflection} />
-                ) : null}
-
-                {/* Related */}
-                {related.length > 0 && (
-                    <div style={{ marginTop: 72 }}>
-                        <h2
-                            style={{
-                                margin: "0 0 24px",
-                                fontSize: "clamp(32px, 5vw, 52px)",
-                                fontWeight: 600,
-                                letterSpacing: "-0.03em",
-                                lineHeight: 1,
-                            }}
-                        >
-                            Related projects
-                        </h2>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                                gap: 16,
-                            }}
-                        >
-                            {related.map((r) => (
-                                <a
-                                    key={r.slug}
-                                    href={`${basePath}/${r.slug}`}
-                                    style={{
-                                        display: "block",
-                                        minHeight: 220,
-                                        background: `linear-gradient(145deg, ${r.accent} 0%, #111 120%)`,
-                                        textDecoration: "none",
-                                        color: "#fff",
-                                        padding: 20,
-                                        boxSizing: "border-box",
-                                        position: "relative",
-                                    }}
-                                >
-                                    <div style={{ position: "absolute", left: 20, bottom: 20, right: 20 }}>
-                                        <div
-                                            style={{
-                                                fontSize: 22,
-                                                fontWeight: 600,
-                                                letterSpacing: "-0.02em",
-                                            }}
-                                        >
-                                            {r.title}
-                                        </div>
-                                        <div
-                                            style={{
-                                                marginTop: 6,
-                                                fontSize: 13,
-                                                opacity: 0.9,
-                                            }}
-                                        >
-                                            {r.subtitle}
-                                        </div>
-                                    </div>
-                                </a>
-                            ))}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            <DeskWorkFooter
+            <DeskBack
+                href={backHref}
+                label="Back"
+                ariaLabel="Back to work"
                 accent={accent}
-                cream={cream}
-                ink={ink}
-                muted={muted}
-                subline={footerSubline}
-                homeHref={homeHref}
-                deskScale={footerDeskScale}
-                railHeight={footerHeight}
-                headlineSize={footerHeadlineSize}
-                instagramUrl={igHref}
-                linkedinUrl={liHref}
-                email={footerEmail}
-                font={props.font}
             />
+
+            {isPhone ? (
+                <MobileCase
+                    project={project}
+                    nav={nav}
+                    activeSection={activeSection}
+                    onNavigate={scrollToSection}
+                    setSectionRef={setSectionRef}
+                    related={related}
+                    basePath={basePath}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    displayFamily={displayFamily}
+                    footer={{
+                        subline: footerSubline,
+                        homeHref: footerHomeLink,
+                        deskScale: footerDeskScale,
+                        railHeight: footerHeight,
+                        headlineSize: footerHeadlineSize,
+                        instagramUrl: footerInstagramUrl,
+                        linkedinUrl: footerLinkedinUrl,
+                        email: footerEmail,
+                    }}
+                />
+            ) : (
+                <DesktopCase
+                    project={project}
+                    nav={nav}
+                    activeSection={activeSection}
+                    onNavigate={scrollToSection}
+                    scrollerRef={scrollerRef}
+                    setSectionRef={setSectionRef}
+                    related={related}
+                    basePath={basePath}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    displayFamily={displayFamily}
+                    footer={{
+                        subline: footerSubline,
+                        homeHref: footerHomeLink,
+                        deskScale: footerDeskScale,
+                        railHeight: footerHeight,
+                        headlineSize: footerHeadlineSize,
+                        instagramUrl: footerInstagramUrl,
+                        linkedinUrl: footerLinkedinUrl,
+                        email: footerEmail,
+                    }}
+                />
+            )}
         </div>
     )
 }
@@ -731,87 +568,779 @@ function DeskBack({
     return null
 }
 
-function oneLiner(p: ProjectRecord) {
-    const problem = (p.problem || "").split(/[.!?]/)[0]
-    const outcome = (p.outcome || "").split(/[.!?]/)[0]
-    if (problem && outcome) return `${problem.trim()}. → ${outcome.trim()}.`
-    return p.overview
-}
-
-function MetaCol({ label, children }: { label: string; children: ReactNode }) {
+function DesktopCase({
+    project,
+    nav,
+    activeSection,
+    onNavigate,
+    scrollerRef,
+    setSectionRef,
+    related,
+    basePath,
+    accent,
+    ink,
+    muted,
+    cream,
+    family,
+    displayFamily,
+    footer,
+}: {
+    project: ProjectRecord
+    nav: CaseNavItem[]
+    activeSection: string
+    onNavigate: (id: string) => void
+    scrollerRef: RefObject<HTMLDivElement | null>
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    related: ProjectRecord[]
+    basePath: string
+    accent: string
+    ink: string
+    muted: string
+    cream: string
+    family: string
+    displayFamily: string
+    footer: FooterBits
+}) {
     return (
-        <div>
-            <div
+        <div
+            style={{
+                position: "relative",
+                zIndex: 2,
+                width: "100%",
+                height: "100%",
+                boxSizing: "border-box",
+            }}
+        >
+            <aside
                 style={{
-                    fontSize: 12,
-                    fontWeight: 500,
-                    letterSpacing: "-0.5px",
-                    textTransform: "lowercase",
-                    color: LABEL,
-                    marginBottom: 14,
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    zIndex: 3,
+                    width: LEFT_COL,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: "108px 2.2vw 40px 3.2vw",
+                    boxSizing: "border-box",
+                    overflow: "hidden",
+                    background: CREAM,
+                    backgroundColor: CREAM,
+                    pointerEvents: "none",
                 }}
             >
-                {label}
+                <div style={{ position: "relative", zIndex: 1, pointerEvents: "auto" }}>
+                    <h1
+                        style={{
+                            margin: "0 0 16px",
+                            fontFamily: family,
+                            fontSize: "clamp(28px, 3.2vw, 48px)",
+                            fontWeight: 700,
+                            letterSpacing: "-0.045em",
+                            lineHeight: 0.96,
+                            textTransform: "uppercase",
+                            color: ink,
+                        }}
+                    >
+                        {project.title}
+                    </h1>
+                    {project.overview ? (
+                        <p
+                            style={{
+                                margin: "0 0 22px",
+                                fontFamily: family,
+                                fontSize: 15,
+                                lineHeight: 1.55,
+                                color: ink,
+                                maxWidth: 340,
+                            }}
+                        >
+                            {project.overview}
+                        </p>
+                    ) : null}
+                    <MetaChips project={project} family={family} muted={muted} ink={ink} />
+                </div>
+
+                <nav
+                    aria-label="Case sections"
+                    style={{
+                        position: "relative",
+                        zIndex: 1,
+                        pointerEvents: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        paddingTop: 24,
+                    }}
+                >
+                    {nav.map((item) => {
+                        const active = item.id === activeSection
+                        return (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() => onNavigate(item.id)}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 10,
+                                    background: "transparent",
+                                    border: "none",
+                                    padding: 0,
+                                    cursor: "pointer",
+                                    fontFamily: family,
+                                    fontSize: 13,
+                                    fontWeight: active ? 700 : 500,
+                                    letterSpacing: "-0.01em",
+                                    color: active ? ink : muted,
+                                    textAlign: "left",
+                                }}
+                            >
+                                <span
+                                    aria-hidden
+                                    style={{
+                                        width: 7,
+                                        height: 7,
+                                        background: active ? ink : "transparent",
+                                        border: active ? "none" : `1px solid ${LABEL}`,
+                                        flex: "none",
+                                    }}
+                                />
+                                {item.label}
+                            </button>
+                        )
+                    })}
+                </nav>
+            </aside>
+
+            <div
+                ref={scrollerRef}
+                data-case-scroller="true"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: LEFT_COL,
+                    zIndex: 2,
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    scrollbarWidth: "none",
+                    padding: "72px 18px 64px 12px",
+                    boxSizing: "border-box",
+                    background: CREAM,
+                    backgroundColor: CREAM,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 64,
+                }}
+            >
+                <CaseNarrative
+                    project={project}
+                    setSectionRef={setSectionRef}
+                    related={related}
+                    basePath={basePath}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    displayFamily={displayFamily}
+                />
+                <DeskWorkFooter
+                    accent={accent}
+                    cream={cream}
+                    ink={ink}
+                    muted={muted}
+                    subline={footer.subline}
+                    homeHref={footer.homeHref}
+                    deskScale={footer.deskScale}
+                    railHeight={footer.railHeight}
+                    headlineSize={footer.headlineSize}
+                    instagramUrl={footer.instagramUrl}
+                    linkedinUrl={footer.linkedinUrl}
+                    email={footer.email}
+                    font={{ fontFamily: family }}
+                    contained
+                />
             </div>
-            {children}
         </div>
     )
 }
 
-function SectionHeading({ kicker, title }: { kicker: string; title: string }) {
+function MobileCase({
+    project,
+    nav,
+    activeSection,
+    onNavigate,
+    setSectionRef,
+    related,
+    basePath,
+    accent,
+    ink,
+    muted,
+    cream,
+    family,
+    displayFamily,
+    footer,
+}: {
+    project: ProjectRecord
+    nav: CaseNavItem[]
+    activeSection: string
+    onNavigate: (id: string) => void
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    related: ProjectRecord[]
+    basePath: string
+    accent: string
+    ink: string
+    muted: string
+    cream: string
+    family: string
+    displayFamily: string
+    footer: FooterBits
+}) {
     return (
-        <div style={{ marginBottom: 18 }}>
+        <div
+            style={{
+                position: "relative",
+                zIndex: 2,
+                padding: "100px 18px 48px",
+                boxSizing: "border-box",
+                background: CREAM,
+            }}
+        >
+            <h1
+                style={{
+                    margin: "0 0 14px",
+                    fontFamily: family,
+                    fontSize: 34,
+                    fontWeight: 700,
+                    letterSpacing: "-0.04em",
+                    lineHeight: 0.98,
+                    textTransform: "uppercase",
+                    color: ink,
+                }}
+            >
+                {project.title}
+            </h1>
+            {project.overview ? (
+                <p
+                    style={{
+                        margin: "0 0 20px",
+                        fontFamily: family,
+                        fontSize: 15,
+                        lineHeight: 1.55,
+                        color: ink,
+                    }}
+                >
+                    {project.overview}
+                </p>
+            ) : null}
+            <MetaChips project={project} family={family} muted={muted} ink={ink} />
+
+            <nav
+                aria-label="Case sections"
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 10,
+                    margin: "28px 0 40px",
+                }}
+            >
+                {nav.map((item) => {
+                    const active = item.id === activeSection
+                    return (
+                        <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => onNavigate(item.id)}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 10,
+                                background: "transparent",
+                                border: "none",
+                                padding: 0,
+                                cursor: "pointer",
+                                fontFamily: family,
+                                fontSize: 14,
+                                fontWeight: active ? 700 : 500,
+                                letterSpacing: "-0.01em",
+                                color: active ? ink : muted,
+                                textAlign: "left",
+                            }}
+                        >
+                            <span
+                                aria-hidden
+                                style={{
+                                    width: 7,
+                                    height: 7,
+                                    background: active ? ink : "transparent",
+                                    border: active ? "none" : `1px solid ${LABEL}`,
+                                    flex: "none",
+                                }}
+                            />
+                            {item.label}
+                        </button>
+                    )
+                })}
+            </nav>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+                <CaseNarrative
+                    project={project}
+                    setSectionRef={setSectionRef}
+                    related={related}
+                    basePath={basePath}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    displayFamily={displayFamily}
+                />
+            </div>
+
+            <DeskWorkFooter
+                accent={accent}
+                cream={cream}
+                ink={ink}
+                muted={muted}
+                subline={footer.subline}
+                homeHref={footer.homeHref}
+                deskScale={footer.deskScale}
+                railHeight={footer.railHeight}
+                headlineSize={footer.headlineSize}
+                instagramUrl={footer.instagramUrl}
+                linkedinUrl={footer.linkedinUrl}
+                email={footer.email}
+                font={{ fontFamily: family }}
+                contained
+            />
+        </div>
+    )
+}
+
+type FooterBits = {
+    subline: string
+    homeHref: string
+    deskScale: number
+    railHeight: number
+    headlineSize: number
+    instagramUrl: string
+    linkedinUrl: string
+    email: string
+}
+
+function MetaChips({
+    project,
+    family,
+    muted,
+    ink,
+}: {
+    project: ProjectRecord
+    family: string
+    muted: string
+    ink: string
+}) {
+    // Nevermind-style left meta: Date + Duration first, then role.
+    const bits = [
+        project.year && { k: "Date", v: project.year },
+        project.timeline && { k: "Duration", v: project.timeline },
+        project.role && { k: "Role", v: project.role },
+    ].filter(Boolean) as { k: string; v: string }[]
+    if (!bits.length) return null
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {bits.map((b) => (
+                <div key={b.k}>
+                    <div
+                        style={{
+                            fontFamily: family,
+                            fontSize: 10,
+                            fontWeight: 600,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: LABEL,
+                            marginBottom: 3,
+                        }}
+                    >
+                        {b.k}
+                    </div>
+                    <div
+                        style={{
+                            fontFamily: family,
+                            fontSize: 13,
+                            lineHeight: 1.4,
+                            color: ink,
+                        }}
+                    >
+                        {b.v}
+                    </div>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function CaseNarrative({
+    project,
+    setSectionRef,
+    related,
+    basePath,
+    accent,
+    ink,
+    muted,
+    cream,
+    family,
+    displayFamily,
+}: {
+    project: ProjectRecord
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    related: ProjectRecord[]
+    basePath: string
+    accent: string
+    ink: string
+    muted: string
+    cream: string
+    family: string
+    displayFamily: string
+}) {
+    const p = project
+    return (
+        <>
+            <section ref={setSectionRef("overview")} id="overview" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                {hasMedia(p.heroImage) ? (
+                    <MediaFrame src={p.heroImage} accent={p.accent || accent} label="Hero" tall />
+                ) : (
+                    <MediaFrame src="" accent={p.accent || accent} label="Hero / key screen" tall />
+                )}
+                {(hasText(p.context) || hasText(p.overview)) && (
+                    <StoryBlock
+                        kicker="Overview"
+                        title={null}
+                        body={p.context || p.overview}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                        large
+                    />
+                )}
+                {hasMedia(p.contextImage) && (
+                    <MediaFrame src={p.contextImage} accent={p.accent || accent} label="Context" />
+                )}
+            </section>
+
+            {(hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage)) && (
+                <section ref={setSectionRef("challenge")} id="challenge" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                    <StoryBlock
+                        kicker="Challenge"
+                        title="The challenge"
+                        body={p.problem}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                        large
+                    />
+                    <MediaRow>
+                        {hasMedia(p.problemImage) && (
+                            <MediaFrame src={p.problemImage} accent={p.accent || accent} label="Problem" />
+                        )}
+                        {hasMedia(p.researchImage) && (
+                            <MediaFrame src={p.researchImage} accent={p.accent || accent} label="Research" />
+                        )}
+                    </MediaRow>
+                </section>
+            )}
+
+            {(hasText(p.goals) ||
+                hasText(p.constraints) ||
+                hasText(p.process) ||
+                hasMedia(p.sketchImage) ||
+                hasMedia(p.wireframeImage) ||
+                hasMedia(p.flowImage) ||
+                hasMedia(p.processImage) ||
+                hasMedia(p.iterationImage)) && (
+                <section ref={setSectionRef("approach")} id="approach" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                    <StoryBlock
+                        kicker="Approach"
+                        title="How we got there"
+                        body={p.process}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                    />
+                    {(hasText(p.goals) || hasText(p.constraints)) && (
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                                gap: 14,
+                            }}
+                        >
+                            {hasText(p.goals) && (
+                                <TextCard title="Goals" body={p.goals} accent={accent} ink={ink} muted={muted} family={family} />
+                            )}
+                            {hasText(p.constraints) && (
+                                <TextCard title="Constraints" body={p.constraints} accent={accent} ink={ink} muted={muted} family={family} />
+                            )}
+                        </div>
+                    )}
+                    <MediaRow>
+                        {hasMedia(p.sketchImage) && (
+                            <MediaFrame src={p.sketchImage} accent={p.accent || accent} label="Sketches" />
+                        )}
+                        {hasMedia(p.wireframeImage) && (
+                            <MediaFrame src={p.wireframeImage} accent={p.accent || accent} label="Wireframes" />
+                        )}
+                        {hasMedia(p.flowImage) && (
+                            <MediaFrame src={p.flowImage} accent={p.accent || accent} label="Flow" />
+                        )}
+                    </MediaRow>
+                    <MediaRow>
+                        {hasMedia(p.processImage) && (
+                            <MediaFrame src={p.processImage} accent={p.accent || accent} label="Process" />
+                        )}
+                        {hasMedia(p.iterationImage) && (
+                            <MediaFrame src={p.iterationImage} accent={p.accent || accent} label="Iteration" />
+                        )}
+                    </MediaRow>
+                </section>
+            )}
+
+            {(hasText(p.decision1) || hasText(p.decision2) || hasText(p.decision3)) && (
+                <section ref={setSectionRef("decisions")} id="decisions" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <StoryBlock
+                        kicker="Decisions"
+                        title="Key decisions"
+                        body=""
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                    />
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                            gap: 14,
+                        }}
+                    >
+                        {hasText(p.decision1) && (
+                            <TextCard title="01" body={p.decision1} accent={accent} ink={ink} muted={muted} family={family} />
+                        )}
+                        {hasText(p.decision2) && (
+                            <TextCard title="02" body={p.decision2} accent={accent} ink={ink} muted={muted} family={family} />
+                        )}
+                        {hasText(p.decision3) && (
+                            <TextCard title="03" body={p.decision3} accent={accent} ink={ink} muted={muted} family={family} />
+                        )}
+                    </div>
+                </section>
+            )}
+
+            {(hasMedia(p.finalImage1) ||
+                hasMedia(p.finalImage2) ||
+                hasMedia(p.finalImage3) ||
+                hasMedia(p.finalImage4) ||
+                hasMedia(p.prototypeVideo)) && (
+                <section ref={setSectionRef("final")} id="final" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                    <StoryBlock
+                        kicker="Final"
+                        title="Final design"
+                        body=""
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                    />
+                    <div
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                            gap: 14,
+                        }}
+                    >
+                        {hasMedia(p.finalImage1) && (
+                            <MediaFrame src={p.finalImage1} accent={p.accent || accent} label="Final 01" />
+                        )}
+                        {hasMedia(p.finalImage2) && (
+                            <MediaFrame src={p.finalImage2} accent={p.accent || accent} label="Final 02" />
+                        )}
+                        {hasMedia(p.finalImage3) && (
+                            <MediaFrame src={p.finalImage3} accent={p.accent || accent} label="Final 03" />
+                        )}
+                        {hasMedia(p.finalImage4) && (
+                            <MediaFrame src={p.finalImage4} accent={p.accent || accent} label="Final 04" />
+                        )}
+                    </div>
+                    {hasMedia(p.prototypeVideo) && (
+                        <VideoFrame src={p.prototypeVideo} accent={p.accent || accent} label="Prototype" />
+                    )}
+                </section>
+            )}
+
+            {(hasText(p.outcome) || hasMedia(p.outcomeImage)) && (
+                <section ref={setSectionRef("outcome")} id="outcome" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                    <StoryBlock
+                        kicker="Outcome"
+                        title="What changed"
+                        body={p.outcome}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                        large
+                    />
+                    {hasMedia(p.outcomeImage) && (
+                        <MediaFrame src={p.outcomeImage} accent={p.accent || accent} label="Outcome" />
+                    )}
+                </section>
+            )}
+
+            {hasText(p.reflection) && (
+                <section ref={setSectionRef("reflection")} id="reflection">
+                    <StoryBlock
+                        kicker="Reflection"
+                        title="What I'd do next"
+                        body={p.reflection}
+                        family={family}
+                        ink={ink}
+                        muted={muted}
+                    />
+                </section>
+            )}
+
+            {related.length > 0 && (
+                <section style={{ display: "flex", flexDirection: "column", gap: 18, paddingTop: 12 }}>
+                    <p
+                        style={{
+                            margin: 0,
+                            fontFamily: family,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            color: LABEL,
+                        }}
+                    >
+                        More work
+                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                        {related.map((r) => (
+                            <a
+                                key={r.slug}
+                                href={`${basePath}/${r.slug}`}
+                                style={{
+                                    display: "flex",
+                                    alignItems: "baseline",
+                                    justifyContent: "space-between",
+                                    gap: 16,
+                                    padding: "14px 0",
+                                    textDecoration: "none",
+                                    color: ink,
+                                    borderBottom: "1px solid rgba(17,17,17,0.12)",
+                                }}
+                            >
+                                <span
+                                    style={{
+                                        fontFamily: family,
+                                        fontSize: 20,
+                                        fontWeight: 700,
+                                        letterSpacing: "-0.03em",
+                                        textTransform: "uppercase",
+                                        lineHeight: 1.1,
+                                    }}
+                                >
+                                    {r.title}
+                                </span>
+                                <span
+                                    style={{
+                                        fontFamily: family,
+                                        fontSize: 12,
+                                        fontWeight: 500,
+                                        letterSpacing: "0.04em",
+                                        textTransform: "uppercase",
+                                        color: muted,
+                                        flex: "none",
+                                    }}
+                                >
+                                    {r.year || "View"} →
+                                </span>
+                            </a>
+                        ))}
+                    </div>
+                </section>
+            )}
+        </>
+    )
+}
+
+function StoryBlock({
+    kicker,
+    title,
+    body,
+    family,
+    ink,
+    muted,
+    large,
+}: {
+    kicker: string
+    title: string | null
+    body: string
+    family: string
+    ink: string
+    muted: string
+    large?: boolean
+}) {
+    // Nevermind-style: small section label, then a dominant narrative block.
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: large ? 18 : 12 }}>
             <div
                 style={{
+                    fontFamily: family,
                     fontSize: 12,
                     fontWeight: 600,
-                    letterSpacing: "-1px",
+                    letterSpacing: "0.06em",
                     textTransform: "uppercase",
                     color: LABEL,
-                    marginBottom: 8,
                 }}
             >
                 {kicker}
             </div>
-            <h2
-                style={{
-                    margin: 0,
-                    fontSize: "clamp(28px, 4vw, 40px)",
-                    fontWeight: 600,
-                    letterSpacing: "-0.03em",
-                    lineHeight: 1.1,
-                }}
-            >
-                {title}
-            </h2>
-        </div>
-    )
-}
-
-function Section({
-    kicker,
-    title,
-    body,
-}: {
-    kicker: string
-    title: string
-    body: string
-}) {
-    if (!body || !String(body).trim()) return null
-    return (
-        <div style={{ marginBottom: 56, maxWidth: 720 }}>
-            <SectionHeading kicker={kicker} title={title} />
-            <p
-                style={{
-                    margin: 0,
-                    fontSize: 17,
-                    lineHeight: 1.65,
-                    color: MUTED,
-                    whiteSpace: "pre-wrap",
-                }}
-            >
-                {body}
-            </p>
+            {title ? (
+                <h2
+                    style={{
+                        margin: 0,
+                        fontFamily: family,
+                        fontSize: large ? "clamp(24px, 2.6vw, 36px)" : 22,
+                        fontWeight: 700,
+                        letterSpacing: "-0.03em",
+                        lineHeight: 1.15,
+                        color: ink,
+                        maxWidth: 720,
+                    }}
+                >
+                    {title}
+                </h2>
+            ) : null}
+            {hasText(body) ? (
+                <p
+                    style={{
+                        margin: 0,
+                        fontFamily: family,
+                        fontSize: large ? "clamp(18px, 1.7vw, 26px)" : 15,
+                        fontWeight: large ? 600 : 400,
+                        letterSpacing: large ? "-0.02em" : "0",
+                        lineHeight: large ? 1.35 : 1.55,
+                        color: large ? ink : muted,
+                        maxWidth: large ? 760 : 640,
+                        whiteSpace: "pre-wrap",
+                    }}
+                >
+                    {body}
+                </p>
+            ) : null}
         </div>
     )
 }
@@ -820,34 +1349,27 @@ function TextCard({
     title,
     body,
     accent,
-    compact,
+    ink,
+    muted,
+    family,
 }: {
     title: string
     body: string
     accent: string
-    compact?: boolean
+    ink: string
+    muted: string
+    family: string
 }) {
-    if (!body || !String(body).trim()) return null
     return (
-        <div
-            style={{
-                background: "rgba(255,255,255,0.72)",
-                border: `1.5px solid ${INK}`,
-                padding: compact ? "20px 18px" : "28px 24px",
-                boxSizing: "border-box",
-                minHeight: compact ? 160 : 200,
-            }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             <div
                 style={{
-                    fontSize: 12,
+                    fontFamily: family,
+                    fontSize: 11,
                     fontWeight: 700,
-                    letterSpacing: "1px",
+                    letterSpacing: "0.06em",
                     textTransform: "uppercase",
-                    color: INK,
-                    borderLeft: `4px solid ${accent}`,
-                    paddingLeft: 10,
-                    marginBottom: 14,
+                    color: accent || ink,
                 }}
             >
                 {title}
@@ -855,9 +1377,10 @@ function TextCard({
             <p
                 style={{
                     margin: 0,
+                    fontFamily: family,
                     fontSize: 15,
-                    lineHeight: 1.55,
-                    color: MUTED,
+                    lineHeight: 1.5,
+                    color: muted,
                     whiteSpace: "pre-wrap",
                 }}
             >
@@ -867,224 +1390,116 @@ function TextCard({
     )
 }
 
-function MediaBlock({
-    src,
-    accent,
-    caption,
-    placeholder = "Drop project imagery here",
-    tall,
-    fill,
-}: {
-    src?: string
-    accent: string
-    caption?: string
-    placeholder?: string
-    tall?: boolean
-    fill?: boolean
-}) {
-    const url = resolveMedia(src)
+function MediaRow({ children }: { children: ReactNode }) {
+    const kids = Array.isArray(children) ? children.filter(Boolean) : [children]
+    if (!kids.length) return null
     return (
-        <figure
+        <div
             style={{
-                width: "100%",
-                margin: tall || !fill ? "0 0 56px" : 0,
-                padding: 0,
+                display: "grid",
+                gridTemplateColumns: kids.length > 1 ? "repeat(auto-fit, minmax(240px, 1fr))" : "1fr",
+                gap: 14,
             }}
         >
+            {children}
+        </div>
+    )
+}
+
+function MediaFrame({
+    src,
+    accent,
+    label,
+    tall,
+}: {
+    src: string
+    accent: string
+    label?: string
+    tall?: boolean
+}) {
+    const url = String(src || "").trim()
+    return (
+        <figure style={{ margin: 0 }}>
             <div
                 style={{
-                    width: "100%",
-                    minHeight: tall ? 420 : fill ? 240 : 300,
-                    border: `1.5px solid ${INK}`,
-                    background: url
-                        ? "#111"
-                        : `linear-gradient(145deg, ${accent} 0%, #111 125%)`,
                     position: "relative",
+                    width: "100%",
+                    aspectRatio: tall ? "16 / 10" : "16 / 9",
+                    borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
+                    background: url
+                        ? `#111 url(${url}) center/cover no-repeat`
+                        : `linear-gradient(160deg, ${accent} 0%, #1a1a1a 125%)`,
                     boxSizing: "border-box",
                 }}
             >
-                {url ? (
-                    <img
-                        src={url}
-                        alt=""
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                        }}
-                    />
-                ) : (
+                {!url && (
                     <div
                         style={{
                             position: "absolute",
                             inset: 0,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 10,
-                            color: "rgba(255,255,255,0.88)",
-                            fontSize: 14,
-                            fontWeight: 500,
-                            letterSpacing: "-0.01em",
+                            display: "grid",
+                            placeItems: "center",
+                            color: "rgba(255,255,255,0.55)",
+                            fontFamily: SANS,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            letterSpacing: "0.04em",
+                            textTransform: "uppercase",
                             padding: 24,
                             textAlign: "center",
                         }}
                     >
-                        <div
-                            style={{
-                                width: 44,
-                                height: 44,
-                                border: "1.5px solid rgba(255,255,255,0.7)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 20,
-                            }}
-                        >
-                            ▦
-                        </div>
-                        {placeholder}
+                        Drop {label || "imagery"} here
                     </div>
                 )}
             </div>
-            {caption ? (
-                <figcaption
-                    style={{
-                        marginTop: 10,
-                        fontSize: 13,
-                        lineHeight: 1.4,
-                        color: LABEL,
-                        letterSpacing: "-0.01em",
-                    }}
-                >
-                    {caption}
-                </figcaption>
-            ) : null}
         </figure>
     )
 }
 
-function VideoBlock({
+function VideoFrame({
     src,
     accent,
-    caption,
+    label,
 }: {
-    src?: string
+    src: string
     accent: string
-    caption?: string
+    label?: string
 }) {
-    const url = resolveMedia(src)
+    const url = String(src || "").trim()
+    if (!url) return null
     return (
-        <figure style={{ width: "100%", margin: "0 0 56px", padding: 0 }}>
+        <figure style={{ margin: 0 }}>
             <div
                 style={{
-                    width: "100%",
-                    minHeight: 420,
-                    border: `1.5px solid ${INK}`,
-                    background: url
-                        ? "#000"
-                        : `linear-gradient(160deg, ${accent} 0%, #0a0a0a 120%)`,
                     position: "relative",
+                    width: "100%",
+                    aspectRatio: "16 / 9",
+                    borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
-                    boxSizing: "border-box",
+                    background: "#111",
                 }}
             >
-                {url ? (
-                    <video
-                        src={url}
-                        controls
-                        playsInline
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "cover",
-                            background: "#000",
-                        }}
-                    />
-                ) : (
-                    <div
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 14,
-                            color: "rgba(255,255,255,0.9)",
-                            padding: 28,
-                            textAlign: "center",
-                        }}
-                    >
-                        <div
-                            style={{
-                                width: 64,
-                                height: 64,
-                                borderRadius: "50%",
-                                border: "1.5px solid rgba(255,255,255,0.85)",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontSize: 22,
-                                paddingLeft: 4,
-                            }}
-                        >
-                            ▶
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 15,
-                                fontWeight: 600,
-                                letterSpacing: "-0.01em",
-                            }}
-                        >
-                            Drop prototype video here
-                        </div>
-                        <div
-                            style={{
-                                fontSize: 13,
-                                opacity: 0.8,
-                                maxWidth: 320,
-                                lineHeight: 1.4,
-                            }}
-                        >
-                            MP4 / WebM walkthrough of the final flow
-                        </div>
-                    </div>
-                )}
-            </div>
-            {caption ? (
-                <figcaption
+                <video
+                    src={url}
+                    muted
+                    playsInline
+                    loop
+                    autoPlay
+                    controls
                     style={{
-                        marginTop: 10,
-                        fontSize: 13,
-                        lineHeight: 1.4,
-                        color: LABEL,
-                        letterSpacing: "-0.01em",
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
                     }}
-                >
-                    {caption}
-                </figcaption>
-            ) : null}
+                />
+            </div>
         </figure>
     )
 }
 
-function resolveMedia(value: unknown): string {
-    if (!value) return ""
-    if (typeof value === "string") return value.trim()
-    if (typeof value === "object" && value !== null) {
-        const v = value as { src?: string; url?: string }
-        return String(v.src || v.url || "").trim()
-    }
-    return ""
-}
 
 const STAGE_W = 1440
 const STAGE_H = 900
@@ -1259,6 +1674,7 @@ interface DeskWorkFooterProps {
     railHeight?: number
     headlineSize?: number
     bodySize?: number
+    contained?: boolean
     font?: { fontFamily?: string }
     bodyFont?: { fontFamily?: string }
     style?: CSSProperties
@@ -1280,6 +1696,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         objectScale = 1,
         railHeight = 280,
         headlineSize = 36,
+        contained = false,
         style,
     } = props
     const family =
@@ -1304,10 +1721,10 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         <footer
             style={{
                 position: "relative",
-                width: "100vw",
-                maxWidth: "100vw",
+                width: contained ? "100%" : "100vw",
+                maxWidth: contained ? "100%" : "100vw",
                 marginTop: 64,
-                marginLeft: "calc(50% - 50vw)",
+                marginLeft: contained ? 0 : "calc(50% - 50vw)",
                 background: cream,
                 overflow: "hidden",
                 fontFamily: family,
