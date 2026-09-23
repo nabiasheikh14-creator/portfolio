@@ -5,6 +5,7 @@ import {
     useState,
     type CSSProperties,
     type MutableRefObject,
+    type RefObject,
 } from "react"
 import {
     addPropertyControls,
@@ -199,6 +200,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         list.map((_, i) => (i === 0 ? 0 : 1)),
     )
     const [reveal, setReveal] = useState<"idle" | "from" | "to">("idle")
+    const scrollerRef = useRef<HTMLDivElement>(null)
     const slideRefs = useRef<(HTMLElement | null)[]>([])
     const activeRef = useRef(0)
     const dimsRef = useRef<number[]>(dims)
@@ -240,8 +242,8 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
     }, [isStatic])
 
-    // Desktop + mobile: natural document scroll (Nevermind-style smoothness).
-    // Left panel is sticky; only the right stack grows page height.
+    // Desktop: lock the page; ONLY the right visual column scrolls (native overflow).
+    // Mobile: natural document scroll.
     useEffect(() => {
         if (typeof document === "undefined" || isStatic) return
         document
@@ -257,36 +259,73 @@ export default function WorkIndex(props: WorkIndexProps) {
             bodyHeight: body.style.height,
         }
 
-        html.style.overflow = ""
-        body.style.overflow = ""
-        html.style.height = ""
-        body.style.height = ""
-
         const style = document.createElement("style")
-        style.setAttribute("data-nabia-work-scroll", "true")
-        style.textContent = `
-          html, body {
-            overflow-x: clip;
-            overflow-y: auto !important;
-            height: auto !important;
-            max-height: none !important;
-          }
-          #nabia-work-index {
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-          }
-          [data-framer-root], [data-framer-page-container],
-          body > div, #main {
-            height: auto !important;
-            max-height: none !important;
-            overflow: visible !important;
-          }
-          @keyframes nabia-work-fade {
-            from { opacity: 0; transform: translateY(6px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `
+        if (isPhone) {
+            html.style.overflow = ""
+            body.style.overflow = ""
+            html.style.height = ""
+            body.style.height = ""
+            style.setAttribute("data-nabia-work-scroll", "true")
+            style.textContent = `
+              html, body {
+                overflow-x: clip;
+                overflow-y: auto !important;
+                height: auto !important;
+                max-height: none !important;
+              }
+              #nabia-work-index {
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+              }
+              @keyframes nabia-work-fade {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `
+        } else {
+            html.style.overflow = "hidden"
+            body.style.overflow = "hidden"
+            html.style.height = "100%"
+            body.style.height = "100%"
+            window.scrollTo(0, 0)
+            style.setAttribute("data-nabia-work-lock", "true")
+            style.textContent = `
+              html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+                overscroll-behavior: none !important;
+              }
+              body > div, #main, [data-framer-root], [data-framer-page-container] {
+                overflow: hidden !important;
+                max-height: 100vh !important;
+                height: 100% !important;
+              }
+              #nabia-work-index {
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+                overflow: hidden !important;
+                background: #ffffff !important;
+              }
+              [data-work-info-col] {
+                background: #F3EFE6 !important;
+              }
+              [data-work-scroller] {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-y: contain;
+                scrollbar-width: none;
+                background: transparent !important;
+              }
+              [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+              @keyframes nabia-work-fade {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `
+        }
         document.head.appendChild(style)
 
         return () => {
@@ -298,6 +337,24 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
     }, [isStatic, isPhone])
 
+    // Desktop wheel: never fight the right scroller's native momentum.
+    // When the pointer is over the left panel / chrome, forward delta into the scroller.
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic || isPhone) return
+        const onWheel = (e: WheelEvent) => {
+            const el = scrollerRef.current
+            if (!el) return
+            const target = e.target as Node | null
+            // Over the scroller → let the browser handle it (smooth / inertial)
+            if (target && el.contains(target)) return
+            // Elsewhere (left copy, back pill, empty chrome) → drive the scroller
+            e.preventDefault()
+            el.scrollTop += e.deltaY
+        }
+        window.addEventListener("wheel", onWheel, { passive: false })
+        return () => window.removeEventListener("wheel", onWheel)
+    }, [isStatic, isPhone])
+
     // Scroll-driven active project + continuous dim for white overlays
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
@@ -306,8 +363,10 @@ export default function WorkIndex(props: WorkIndexProps) {
             const nodes = slideRefs.current.filter(Boolean) as HTMLElement[]
             if (!nodes.length) return
 
-            const viewH = window.innerHeight
-            const center = viewH * 0.42
+            const root = isPhone ? null : scrollerRef.current
+            const viewTop = root ? root.getBoundingClientRect().top : 0
+            const viewH = root ? root.clientHeight : window.innerHeight
+            const center = viewTop + viewH * 0.42
             const nextDims = nodes.map(() => 1)
             let best = 0
             let bestDist = Infinity
@@ -320,7 +379,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                     bestDist = dist
                     best = i
                 }
-                // Clear near center; milky white overlay grows with distance
                 const t = Math.min(
                     1,
                     Math.max(0, (dist - viewH * 0.08) / (viewH * 0.38)),
@@ -328,7 +386,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                 nextDims[i] = t
             })
 
-            // Only commit dims when something meaningfully changed
             const prev = dimsRef.current
             let changed = prev.length !== nextDims.length
             if (!changed) {
@@ -357,10 +414,15 @@ export default function WorkIndex(props: WorkIndexProps) {
         }
 
         pickActive()
+        const root = scrollerRef.current
+        if (!isPhone && root) {
+            root.addEventListener("scroll", onScroll, { passive: true })
+        }
         window.addEventListener("scroll", onScroll, { passive: true })
         window.addEventListener("resize", onScroll)
         return () => {
             cancelAnimationFrame(raf)
+            root?.removeEventListener("scroll", onScroll)
             window.removeEventListener("scroll", onScroll)
             window.removeEventListener("resize", onScroll)
         }
@@ -397,17 +459,21 @@ export default function WorkIndex(props: WorkIndexProps) {
 
     const shellStyle: CSSProperties = {
         ...framerStyle,
-        position: "relative",
-        width: "100%",
-        minHeight: "100vh",
+        position: isStatic || isPhone ? "relative" : "fixed",
+        inset: isStatic || isPhone ? undefined : 0,
+        width: isStatic || isPhone ? "100%" : "100vw",
+        height: isStatic || isPhone ? undefined : "100vh",
+        minHeight: isPhone || isStatic ? "100vh" : undefined,
         maxWidth: "100vw",
+        maxHeight: isStatic || isPhone ? undefined : "100vh",
         minWidth: 0,
         zIndex: isStatic ? undefined : 2,
-        background: cream,
+        // Cream lives on the LEFT panel only — right stays clean white (no off-white fill)
+        background: isPhone ? cream : "#FFFFFF",
         color: ink,
         fontFamily: family,
         boxSizing: "border-box",
-        overflow: "visible",
+        overflow: isPhone ? "visible" : "hidden",
         ...(reveal !== "idle"
             ? {
                   transform: `scale(${revealScale})`,
@@ -464,6 +530,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                     family={family}
                     sectionLabel={sectionLabel}
                     ctaLabel={ctaLabel}
+                    scrollerRef={scrollerRef}
                     slideRefs={slideRefs}
                     gridAlpha={gridAlpha}
                     stageScale={stageScale}
@@ -537,6 +604,7 @@ function DesktopBrowser({
     family,
     sectionLabel,
     ctaLabel,
+    scrollerRef,
     slideRefs,
     gridAlpha,
     stageScale,
@@ -552,6 +620,7 @@ function DesktopBrowser({
     family: string
     sectionLabel: string
     ctaLabel: string
+    scrollerRef: RefObject<HTMLDivElement | null>
     slideRefs: MutableRefObject<(HTMLElement | null)[]>
     gridAlpha: number
     stageScale: number
@@ -561,31 +630,28 @@ function DesktopBrowser({
             style={{
                 position: "relative",
                 zIndex: 2,
-                display: "grid",
-                gridTemplateColumns: `${LEFT_COL} minmax(0, 1fr)`,
-                columnGap: 0,
                 width: "100%",
+                height: "100%",
                 boxSizing: "border-box",
             }}
         >
-            {/* Spacer keeps the grid column; info panel is fixed for reliable stickiness */}
-            <div aria-hidden data-work-info-spacer="true" style={{ minHeight: "100vh" }} />
+            {/* Left typography panel — cream fill + soft grid (only place with the fill) */}
             <aside
                 data-work-info-col="true"
                 style={{
-                    position: "fixed",
+                    position: "absolute",
                     top: 0,
                     left: 0,
+                    bottom: 0,
                     zIndex: 3,
                     width: "max(220px, 26vw)",
-                    height: "100vh",
-                    maxHeight: "100vh",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
                     padding: "108px 2.5vw 48px 3.5vw",
                     boxSizing: "border-box",
                     overflow: "hidden",
+                    background: cream,
                     pointerEvents: "none",
                 }}
             >
@@ -720,12 +786,23 @@ function DesktopBrowser({
                 </div>
             </aside>
 
-            {/* Right visual stack — native page scroll */}
+            {/* Right visual scroller — native overflow, no cream fill */}
             <div
+                ref={scrollerRef}
                 data-work-scroller="true"
                 style={{
-                    position: "relative",
-                    minWidth: 0,
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: "max(220px, 26vw)",
+                    zIndex: 2,
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
                     padding: "72px 16px 120px 16px",
                     boxSizing: "border-box",
                     background: "transparent",
