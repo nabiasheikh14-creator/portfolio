@@ -531,7 +531,6 @@ function DesktopBrowser({
                 boxSizing: "border-box",
                 padding: "0 3.5vw",
                 gap: "clamp(24px, 3.5vw, 48px)",
-                alignItems: "start",
             }}
         >
             {/* Sticky info column — stays put while visuals scroll */}
@@ -539,6 +538,7 @@ function DesktopBrowser({
                 style={{
                     position: "sticky",
                     top: 0,
+                    alignSelf: "start",
                     height: "100vh",
                     display: "flex",
                     flexDirection: "column",
@@ -546,6 +546,7 @@ function DesktopBrowser({
                     padding: "120px 8px 56px 0",
                     boxSizing: "border-box",
                     maxWidth: 420,
+                    width: "100%",
                 }}
             >
                 <div
