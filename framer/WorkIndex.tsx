@@ -308,11 +308,27 @@ export default function WorkIndex(props: WorkIndexProps) {
                 height: 100vh !important;
                 max-height: 100vh !important;
                 overflow: hidden !important;
-                background: #ffffff !important;
+                background: linear-gradient(
+                  to right,
+                  #F3EFE6 0,
+                  #F3EFE6 max(220px, 26vw),
+                  #FFFFFF max(220px, 26vw),
+                  #FFFFFF 100%
+                ) !important;
               }
               [data-work-info-col] {
                 background: #F3EFE6 !important;
                 background-color: #F3EFE6 !important;
+              }
+              [data-nabia-cream-strip] {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                bottom: 0 !important;
+                width: max(220px, 26vw) !important;
+                background: #F3EFE6 !important;
+                z-index: 1 !important;
+                pointer-events: none !important;
               }
               [data-work-scroller] {
                 -webkit-overflow-scrolling: touch;
@@ -326,11 +342,19 @@ export default function WorkIndex(props: WorkIndexProps) {
                 to { opacity: 1; transform: translateY(0); }
               }
             `
+
+            // Body-level cream strip so off-white always sits behind typography
+            document.querySelectorAll("[data-nabia-cream-strip]").forEach((n) => n.remove())
+            const strip = document.createElement("div")
+            strip.setAttribute("data-nabia-cream-strip", "true")
+            strip.setAttribute("aria-hidden", "true")
+            document.body.appendChild(strip)
         }
         document.head.appendChild(style)
 
         return () => {
             style.remove()
+            document.querySelectorAll("[data-nabia-cream-strip]").forEach((n) => n.remove())
             html.style.overflow = prev.htmlOverflow
             body.style.overflow = prev.bodyOverflow
             html.style.height = prev.htmlHeight
@@ -458,6 +482,7 @@ export default function WorkIndex(props: WorkIndexProps) {
     const revealOpacity = reveal === "from" ? 0.88 : 1
     const active = list[Math.min(activeIndex, list.length - 1)] || list[0]
 
+    const leftW = "max(220px, 26vw)"
     const shellStyle: CSSProperties = {
         ...framerStyle,
         position: isStatic || isPhone ? "relative" : "fixed",
@@ -469,8 +494,10 @@ export default function WorkIndex(props: WorkIndexProps) {
         maxHeight: isStatic || isPhone ? undefined : "100vh",
         minWidth: 0,
         zIndex: isStatic ? undefined : 2,
-        // Cream lives on the LEFT panel only — right stays clean white (no off-white fill)
-        background: isPhone ? cream : "#FFFFFF",
+        // Off-white behind typography (left); clean white behind frames (right)
+        background: isPhone
+            ? CREAM
+            : `linear-gradient(to right, ${CREAM} 0, ${CREAM} ${leftW}, #FFFFFF ${leftW}, #FFFFFF 100%)`,
         color: ink,
         fontFamily: family,
         boxSizing: "border-box",
