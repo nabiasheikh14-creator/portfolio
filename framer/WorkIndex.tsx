@@ -312,6 +312,7 @@ export default function WorkIndex(props: WorkIndexProps) {
               }
               [data-work-info-col] {
                 background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
               }
               [data-work-scroller] {
                 -webkit-overflow-scrolling: touch;
@@ -558,7 +559,8 @@ function LeftPanelGrid({
                 zIndex: 0,
                 pointerEvents: "none",
                 overflow: "hidden",
-                background: cream,
+                backgroundColor: cream || CREAM,
+                background: cream || CREAM,
             }}
         >
             {opacity > 0.001 ? (
@@ -635,7 +637,7 @@ function DesktopBrowser({
                 boxSizing: "border-box",
             }}
         >
-            {/* Left typography panel — cream fill + soft grid (only place with the fill) */}
+            {/* Left typography panel — brand off-white (#F3EFE6) + soft grid */}
             <aside
                 data-work-info-col="true"
                 style={{
@@ -651,12 +653,25 @@ function DesktopBrowser({
                     padding: "108px 2.5vw 48px 3.5vw",
                     boxSizing: "border-box",
                     overflow: "hidden",
-                    background: cream,
+                    // Always our brand off-white behind typography
+                    backgroundColor: CREAM,
+                    background: CREAM,
                     pointerEvents: "none",
                 }}
             >
+                {/* Opaque cream plate so type never sits on white */}
+                <div
+                    aria-hidden
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        zIndex: 0,
+                        backgroundColor: CREAM,
+                        pointerEvents: "none",
+                    }}
+                />
                 <LeftPanelGrid
-                    cream={cream}
+                    cream={CREAM}
                     opacity={gridAlpha}
                     stageScale={stageScale}
                 />
