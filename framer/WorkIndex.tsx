@@ -396,6 +396,7 @@ export default function WorkIndex(props: WorkIndexProps) {
                           : "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
               }
             : {
+                  transform: "none",
                   opacity: 1,
               }),
     }
@@ -540,22 +541,30 @@ function DesktopBrowser({
                 gap: "clamp(24px, 3.5vw, 48px)",
             }}
         >
-            {/* Sticky info column — stays put while visuals scroll */}
-            <aside
+            {/* Sticky info column — outer grid cell must stretch to full row height */}
+            <div
+                data-work-info-col="true"
                 style={{
-                    position: "sticky",
-                    top: 0,
-                    alignSelf: "start",
-                    height: "100vh",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    padding: "120px 8px 56px 0",
-                    boxSizing: "border-box",
-                    maxWidth: 420,
-                    width: "100%",
+                    position: "relative",
+                    height: "100%",
+                    minHeight: "100%",
+                    alignSelf: "stretch",
                 }}
             >
+                <aside
+                    style={{
+                        position: "sticky",
+                        top: 0,
+                        height: "100vh",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        padding: "120px 8px 56px 0",
+                        boxSizing: "border-box",
+                        maxWidth: 420,
+                        width: "100%",
+                    }}
+                >
                 <div
                     style={{
                         opacity: infoVisible ? 1 : 0,
@@ -679,7 +688,8 @@ function DesktopBrowser({
                         cream={cream}
                     />
                 </div>
-            </aside>
+                </aside>
+            </div>
 
             {/* Stacked visuals — native page scroll advances projects */}
             <div
