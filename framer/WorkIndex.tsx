@@ -116,20 +116,33 @@ function normalizeProjects(
             const slug =
                 String(it?.slug || "").replace(/^\//, "") || `project-${index + 1}`
             const custom = resolveLink(it?.href || it?.link, "")
-            const fallback = DEFAULT_ITEMS[index % DEFAULT_ITEMS.length]
+            const fallback =
+                DEFAULT_ITEMS.find((d) => d.slug === slug) ||
+                DEFAULT_ITEMS[index % DEFAULT_ITEMS.length]
+            const title = String(it?.title || fallback?.title || "Untitled")
+            const description = String(
+                it?.description || it?.overview || "",
+            ).trim()
+            const matchedDefault =
+                DEFAULT_ITEMS.find(
+                    (d) =>
+                        d.slug === slug ||
+                        d.title.toLowerCase() === title.toLowerCase(),
+                ) || null
             return {
-                title: String(it?.title || fallback?.title || "Untitled"),
-                subtitle: String(it?.subtitle || fallback?.subtitle || ""),
-                description: String(
-                    it?.description || fallback?.description || "",
-                ),
+                title,
+                subtitle: String(it?.subtitle || matchedDefault?.subtitle || ""),
+                description:
+                    description || matchedDefault?.description || "",
                 slug,
-                year: String(it?.year || fallback?.year || ""),
+                year: String(it?.year || matchedDefault?.year || ""),
                 accent: String(it?.accent || accent || ACCENT),
-                coverUrl: it?.coverUrl ? String(it.coverUrl) : fallback?.coverUrl || "",
+                coverUrl: it?.coverUrl
+                    ? String(it.coverUrl)
+                    : matchedDefault?.coverUrl || "",
                 videoUrl: it?.videoUrl
                     ? String(it.videoUrl)
-                    : fallback?.videoUrl || "",
+                    : matchedDefault?.videoUrl || fallback?.videoUrl || "",
                 href: custom || `${basePath}/${slug}`,
             } satisfies WorkProject
         })
@@ -1275,44 +1288,44 @@ function DeskBack({
 
 const DEFAULT_ITEMS: WorkProject[] = [
     {
-        title: "Fintech Onboarding",
-        subtitle: "Product design",
+        title: "Fintech App",
+        subtitle: "Onboarding redesign",
         description:
             "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. Reworked the first-run experience end to end.",
-        slug: "fintech-onboarding",
+        slug: "fintech-app",
         year: "2025",
         accent: ACCENT,
         videoUrl:
             "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
     },
     {
-        title: "Archive System",
-        subtitle: "Brand & web",
+        title: "Health Platform",
+        subtitle: "Design system",
         description:
-            "A growing brand needed a clearer archive and web presence — structured, editorial, and easy to extend.",
-        slug: "archive-system",
+            "A growing health platform had drifting UI across teams. Led the creation of a shared system.",
+        slug: "health-platform",
         year: "2024",
         accent: ACCENT,
         videoUrl:
             "https://framerusercontent.com/assets/BNCHHO0RxeNVJXt0bV6lIpxZeo.mp4",
     },
     {
-        title: "Studio Site",
-        subtitle: "Art direction",
+        title: "Chutney Studios",
+        subtitle: "Brand + site",
         description:
-            "Art direction and site structure for a studio that needed to feel warm and clear — not agency-slick.",
-        slug: "studio-site",
-        year: "2024",
+            "Chutney Studios is my after-hours practice — brand and site built to feel warm and clear, not agency-slick.",
+        slug: "chutney-studios",
+        year: "2025",
         accent: ACCENT,
         videoUrl:
             "https://framerusercontent.com/assets/1l5FmP2EGRoLJ5xUbGoAAne5sg.mp4",
     },
     {
-        title: "Editorial Deck",
-        subtitle: "Campaign",
+        title: "Travel App",
+        subtitle: "0→1 product",
         description:
-            "Campaign storytelling shaped into an editorial deck — tactile pacing, strong hierarchy, and room to breathe.",
-        slug: "editorial-deck",
+            "A 0→1 travel app that needed to feel effortless for people planning trips on the move.",
+        slug: "travel-app",
         year: "2023",
         accent: ACCENT,
         videoUrl:
