@@ -254,8 +254,8 @@ export default function WorkIndex(props: WorkIndexProps) {
         style.setAttribute("data-nabia-work-scroll", "true")
         style.textContent = `
           html, body {
-            overflow: auto !important;
-            overflow-x: hidden !important;
+            overflow-x: clip;
+            overflow-y: auto !important;
             height: auto !important;
             max-height: none !important;
           }
@@ -541,30 +541,31 @@ function DesktopBrowser({
                 gap: "clamp(24px, 3.5vw, 48px)",
             }}
         >
-            {/* Sticky info column — outer grid cell must stretch to full row height */}
+            {/* Fixed info column — stays in viewport while visuals scroll */}
             <div
                 data-work-info-col="true"
+                aria-hidden
                 style={{
-                    position: "relative",
-                    height: "100%",
-                    minHeight: "100%",
-                    alignSelf: "stretch",
+                    // Spacer keeps the grid column width while info is fixed
+                    minHeight: "100vh",
+                }}
+            />
+            <aside
+                style={{
+                    position: "fixed",
+                    top: 0,
+                    left: "3.5vw",
+                    width: "min(420px, 26vw)",
+                    height: "100vh",
+                    zIndex: 3,
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    padding: "120px 8px 56px 0",
+                    boxSizing: "border-box",
+                    pointerEvents: "none",
                 }}
             >
-                <aside
-                    style={{
-                        position: "sticky",
-                        top: 0,
-                        height: "100vh",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        padding: "120px 8px 56px 0",
-                        boxSizing: "border-box",
-                        maxWidth: 420,
-                        width: "100%",
-                    }}
-                >
                 <div
                     style={{
                         opacity: infoVisible ? 1 : 0,
@@ -573,6 +574,7 @@ function DesktopBrowser({
                             : "translateY(8px)",
                         transition:
                             "opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                        pointerEvents: "auto",
                     }}
                 >
                     <span
@@ -638,6 +640,7 @@ function DesktopBrowser({
                         display: "flex",
                         flexDirection: "column",
                         gap: 24,
+                        pointerEvents: "auto",
                     }}
                 >
                     {active.description ? (
@@ -688,8 +691,7 @@ function DesktopBrowser({
                         cream={cream}
                     />
                 </div>
-                </aside>
-            </div>
+            </aside>
 
             {/* Stacked visuals — native page scroll advances projects */}
             <div
