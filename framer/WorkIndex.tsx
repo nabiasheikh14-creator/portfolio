@@ -187,7 +187,10 @@ export default function WorkIndex(props: WorkIndexProps) {
     const archiveHref = resolveLink(archiveLink, "/archive")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
-    const gridAlpha = Math.min(0.2, Math.max(0.04, Number(gridOpacity) || 0.12))
+    const rawGrid = Number(gridOpacity)
+    const gridAlpha = Number.isFinite(rawGrid)
+        ? Math.min(0.2, Math.max(0, rawGrid))
+        : 0.05
 
     const list = useMemo(
         () => normalizeProjects(items, accent, basePath),
