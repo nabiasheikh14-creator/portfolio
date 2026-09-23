@@ -11,10 +11,10 @@ Source backup for the Framer project (`wqGhea2Mgr0hAu7EfUQV`). Live preview:
 - **TopBar (design component)** — Inter, all caps, letter-spacing -1px.
 
 ### Work — scroll-driven project browser + case studies
-- **`WorkIndex.tsx`** — interactive project browser: sticky left info panel
-  (cream + soft low-opacity grid) with smooth crossfading project copy; only the
-  right visual frames scroll (native trackpad momentum, no snap, no custom
-  cursor). Mobile uses a natural vertical sequence.
+- **`WorkIndex.tsx`** — interactive project browser: sticky left typography on
+  solid OUR offwhite `#F3EFE6` (same as home, no grid wash); only the right
+  visual frames scroll (native trackpad momentum, no snap, no custom cursor).
+  Mobile uses a natural vertical sequence on the same offwhite.
 - Case studies keep CMS-bound content with a clearer type scale + hero band.
 
 ### Archive — cream stage
