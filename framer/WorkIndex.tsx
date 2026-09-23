@@ -1003,7 +1003,8 @@ function VisualSlide({
                     style={{
                         position: "absolute",
                         inset: 0,
-                        background: "#ffffff",
+                        // Cream veil (not pure white) so dimmed frames stay on OUR offwhite
+                        background: CREAM,
                         opacity: overlay,
                         pointerEvents: "none",
                         transition: "opacity 0.35s ease",

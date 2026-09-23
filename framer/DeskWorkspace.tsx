@@ -1338,7 +1338,7 @@ function ModalShell({
                 transition={{ type: "spring", stiffness: 320, damping: 26 }}
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    background: "#fff",
+                    background: CREAM,
                     border: `1.5px solid ${INK}`,
                     width,
                     maxHeight: "min(86vh, 820px)",
@@ -1523,7 +1523,7 @@ function ExperiencePopup({
                         borderRight: `1.5px solid ${ink}`,
                         padding: "52px 24px 36px",
                         boxSizing: "border-box",
-                        background: "#FAFAF8",
+                        background: CREAM,
                         overflow: "auto",
                     }}
                 >
@@ -1605,7 +1605,7 @@ function ExperiencePopup({
                                             color: muted,
                                             border: "1px solid rgba(17,17,17,0.16)",
                                             padding: "6px 10px",
-                                            background: "#fff",
+                background: "#fff", // CTA chips — keep white for contrast on cream panels
                                             lineHeight: 1.2,
                                         }}
                                     >
