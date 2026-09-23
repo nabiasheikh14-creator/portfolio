@@ -384,13 +384,20 @@ export default function WorkIndex(props: WorkIndexProps) {
         fontFamily: family,
         boxSizing: "border-box",
         overflow: "visible",
-        transform: `scale(${revealScale})`,
-        transformOrigin: "center center",
-        opacity: revealOpacity,
-        transition:
-            reveal === "from"
-                ? "none"
-                : "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
+        // Avoid permanent `transform` — it breaks position:sticky for the info column.
+        ...(reveal !== "idle"
+            ? {
+                  transform: `scale(${revealScale})`,
+                  transformOrigin: "center center",
+                  opacity: revealOpacity,
+                  transition:
+                      reveal === "from"
+                          ? "none"
+                          : "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
+              }
+            : {
+                  opacity: 1,
+              }),
     }
 
     return (
