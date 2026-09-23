@@ -136,8 +136,8 @@ function normalizeProjects(
 
 /**
  * Work Index — scroll-driven project browser.
- * Desktop: sticky left typography on solid OUR offwhite (#F3EFE6, same as home)
- * + native-smooth right visual scroll (white stage).
+ * Desktop: sticky left typography + right visual scroll on solid OUR offwhite
+ * (#F3EFE6, same as home — no pure white stage).
  * Mobile: natural vertical project sequence on the same offwhite.
  *
  * @framerIntrinsicWidth 1200
@@ -280,6 +280,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 overflow: hidden !important;
                 height: 100% !important;
                 overscroll-behavior: none !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
               }
               body > div, #main, [data-framer-root], [data-framer-page-container] {
                 overflow: hidden !important;
@@ -293,13 +295,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 height: 100vh !important;
                 max-height: 100vh !important;
                 overflow: hidden !important;
-                background: linear-gradient(
-                  to right,
-                  #F3EFE6 0,
-                  #F3EFE6 max(220px, 26vw),
-                  #FFFFFF max(220px, 26vw),
-                  #FFFFFF 100%
-                ) !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
               }
               /* Typography column = solid OUR offwhite (same as home), no grid */
               [data-work-info-col] {
@@ -311,10 +308,8 @@ export default function WorkIndex(props: WorkIndexProps) {
               }
               [data-nabia-cream-strip] {
                 position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                bottom: 0 !important;
-                width: max(220px, 26vw) !important;
+                inset: 0 !important;
+                width: 100vw !important;
                 background: #F3EFE6 !important;
                 z-index: 1 !important;
                 pointer-events: none !important;
@@ -483,10 +478,9 @@ export default function WorkIndex(props: WorkIndexProps) {
         maxHeight: isStatic || isPhone ? undefined : "100vh",
         minWidth: 0,
         zIndex: isStatic ? undefined : 2,
-        // Solid OUR offwhite behind typography (left); clean white behind frames (right)
-        background: isPhone
-            ? CREAM
-            : `linear-gradient(to right, ${CREAM} 0, ${CREAM} ${leftW}, #FFFFFF ${leftW}, #FFFFFF 100%)`,
+        // Solid OUR offwhite behind the whole Work stage (type + frames)
+        background: CREAM,
+        backgroundColor: CREAM,
         color: ink,
         fontFamily: family,
         boxSizing: "border-box",
@@ -760,7 +754,7 @@ function DesktopBrowser({
                 </div>
             </aside>
 
-            {/* Right visual scroller — native overflow, no cream fill */}
+            {/* Right visual scroller — native overflow over OUR offwhite stage */}
             <div
                 ref={scrollerRef}
                 data-work-scroller="true"
