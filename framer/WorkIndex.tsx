@@ -28,7 +28,7 @@ const PHONE_MQ = "(max-width: 809.98px)"
 const VISUAL_RADIUS = 24
 const ACCENT = "#2C6BE0"
 const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
-const LEFT_COL = "minmax(260px, 34%)"
+const LEFT_COL = "minmax(240px, 30%)"
 
 export interface WorkProject {
     title: string
@@ -761,7 +761,8 @@ function DesktopBrowser({
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
-                    padding: "72px 3.5vw 96px 16px",
+                    // Equal L/R gutters so frames sit centered in the cream column
+                    padding: "64px 28px 72px 28px",
                     boxSizing: "border-box",
                     background: "transparent",
                 }}
@@ -959,11 +960,11 @@ function VisualSlide({
             data-work-slide={index}
             aria-label={item.title}
             style={{
-                minHeight: "100vh",
+                // Tight stack — frame height + small gap, not a full viewport per card
                 display: "flex",
                 alignItems: "center",
                 boxSizing: "border-box",
-                padding: "12px 0 20px",
+                padding: "0 0 20px",
             }}
         >
             <a
@@ -972,7 +973,7 @@ function VisualSlide({
                 style={{
                     display: "block",
                     width: "100%",
-                    height: "min(78vh, 720px)",
+                    height: "min(82vh, 760px)",
                     textDecoration: "none",
                     color: "inherit",
                     cursor: "pointer",
