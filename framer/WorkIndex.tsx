@@ -16,11 +16,6 @@ import {
 
 const SANS =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
-const GRID_BG =
-    "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
-/** Same stage as DeskWorkspace so the grid matches home scale/placement. */
-const STAGE_W = 1440
-const STAGE_H = 900
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
@@ -91,22 +86,6 @@ function useMediaQuery(query: string) {
     return matches
 }
 
-function useStageScale() {
-    const [scale, setScale] = useState(1)
-    useEffect(() => {
-        if (typeof window === "undefined") return
-        const sync = () => {
-            setScale(
-                Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H),
-            )
-        }
-        sync()
-        window.addEventListener("resize", sync)
-        return () => window.removeEventListener("resize", sync)
-    }, [])
-    return scale
-}
-
 function normalizeProjects(
     items: WorkProject[] | undefined,
     accent: string,
@@ -157,8 +136,9 @@ function normalizeProjects(
 
 /**
  * Work Index — scroll-driven project browser.
- * Desktop: sticky left info (cream + soft grid) + native-smooth right visual scroll.
- * Mobile: natural vertical project sequence.
+ * Desktop: sticky left typography on solid OUR offwhite (#F3EFE6, same as home)
+ * + native-smooth right visual scroll (white stage).
+ * Mobile: natural vertical project sequence on the same offwhite.
  *
  * @framerIntrinsicWidth 1200
  * @framerIntrinsicHeight 900
@@ -174,21 +154,15 @@ export default function WorkIndex(props: WorkIndexProps) {
         cream = CREAM,
         ink = INK,
         muted = MUTED,
-        gridOpacity = 0.05,
         backLink = "/",
         projectBasePath = "/work",
     } = props
     const family = props.font?.fontFamily || SANS
     const isStatic = useIsStaticRenderer()
     const isPhone = useMediaQuery(PHONE_MQ)
-    const stageScale = useStageScale()
     const backHref = resolveLink(backLink, "/")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
-    const rawGrid = Number(gridOpacity)
-    const gridAlpha = Number.isFinite(rawGrid)
-        ? Math.min(0.2, Math.max(0, rawGrid))
-        : 0.05
 
     const list = useMemo(
         () => normalizeProjects(items, accent, basePath),
@@ -273,10 +247,21 @@ export default function WorkIndex(props: WorkIndexProps) {
                 height: auto !important;
                 max-height: none !important;
               }
+              html, body, #nabia-work-index {
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
+              }
               #nabia-work-index {
                 height: auto !important;
                 max-height: none !important;
                 overflow: visible !important;
+              }
+              /* Kill any Framer page-level grid behind mobile typography */
+              [data-framer-name="Grid"],
+              [data-framer-name="grid"],
+              [style*="uTiMeYZo7Cgq17Mt2w60JYMnptc"] {
+                opacity: 0 !important;
+                visibility: hidden !important;
               }
               @keyframes nabia-work-fade {
                 from { opacity: 0; transform: translateY(6px); }
@@ -316,9 +301,13 @@ export default function WorkIndex(props: WorkIndexProps) {
                   #FFFFFF 100%
                 ) !important;
               }
+              /* Typography column = solid OUR offwhite (same as home), no grid */
               [data-work-info-col] {
                 background: #F3EFE6 !important;
                 background-color: #F3EFE6 !important;
+              }
+              [data-work-info-col] [data-nabia-left-grid] {
+                display: none !important;
               }
               [data-nabia-cream-strip] {
                 position: fixed !important;
@@ -494,7 +483,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         maxHeight: isStatic || isPhone ? undefined : "100vh",
         minWidth: 0,
         zIndex: isStatic ? undefined : 2,
-        // Off-white behind typography (left); clean white behind frames (right)
+        // Solid OUR offwhite behind typography (left); clean white behind frames (right)
         background: isPhone
             ? CREAM
             : `linear-gradient(to right, ${CREAM} 0, ${CREAM} ${leftW}, #FFFFFF ${leftW}, #FFFFFF 100%)`,
@@ -560,64 +549,27 @@ export default function WorkIndex(props: WorkIndexProps) {
                     ctaLabel={ctaLabel}
                     scrollerRef={scrollerRef}
                     slideRefs={slideRefs}
-                    gridAlpha={gridAlpha}
-                    stageScale={stageScale}
                 />
             )}
         </div>
     )
 }
 
-function LeftPanelGrid({
-    cream,
-    opacity,
-    stageScale,
-}: {
-    cream: string
-    opacity: number
-    stageScale: number
-}) {
+/** Solid OUR offwhite plate — matches home `#F3EFE6`, no grid wash. */
+function TypographyOffwhite() {
     return (
         <div
             aria-hidden
+            data-nabia-type-offwhite="true"
             style={{
                 position: "absolute",
                 inset: 0,
                 zIndex: 0,
                 pointerEvents: "none",
-                overflow: "hidden",
-                backgroundColor: cream || CREAM,
-                background: cream || CREAM,
+                backgroundColor: CREAM,
+                background: CREAM,
             }}
-        >
-            {opacity > 0.001 ? (
-                <div
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <div
-                        style={{
-                            width: STAGE_W,
-                            height: STAGE_H,
-                            flex: "none",
-                            transform: `scale(${stageScale})`,
-                            transformOrigin: "center center",
-                            backgroundImage: `url(${GRID_BG})`,
-                            backgroundSize: "100% 100%",
-                            backgroundPosition: "center",
-                            backgroundRepeat: "no-repeat",
-                            opacity,
-                            filter: "grayscale(1)",
-                        }}
-                    />
-                </div>
-            ) : null}
-        </div>
+        />
     )
 }
 
@@ -635,8 +587,6 @@ function DesktopBrowser({
     ctaLabel,
     scrollerRef,
     slideRefs,
-    gridAlpha,
-    stageScale,
 }: {
     list: WorkProject[]
     active: WorkProject
@@ -651,8 +601,6 @@ function DesktopBrowser({
     ctaLabel: string
     scrollerRef: RefObject<HTMLDivElement | null>
     slideRefs: MutableRefObject<(HTMLElement | null)[]>
-    gridAlpha: number
-    stageScale: number
 }) {
     return (
         <div
@@ -664,7 +612,7 @@ function DesktopBrowser({
                 boxSizing: "border-box",
             }}
         >
-            {/* Left typography panel — brand off-white (#F3EFE6) + soft grid */}
+            {/* Left typography — solid OUR offwhite (#F3EFE6), same as home */}
             <aside
                 data-work-info-col="true"
                 style={{
@@ -680,28 +628,12 @@ function DesktopBrowser({
                     padding: "108px 2.5vw 48px 3.5vw",
                     boxSizing: "border-box",
                     overflow: "hidden",
-                    // Always our brand off-white behind typography
                     backgroundColor: CREAM,
                     background: CREAM,
                     pointerEvents: "none",
                 }}
             >
-                {/* Opaque cream plate so type never sits on white */}
-                <div
-                    aria-hidden
-                    style={{
-                        position: "absolute",
-                        inset: 0,
-                        zIndex: 0,
-                        backgroundColor: CREAM,
-                        pointerEvents: "none",
-                    }}
-                />
-                <LeftPanelGrid
-                    cream={CREAM}
-                    opacity={gridAlpha}
-                    stageScale={stageScale}
-                />
+                <TypographyOffwhite />
 
                 <div
                     key={`top-${active.slug}`}
