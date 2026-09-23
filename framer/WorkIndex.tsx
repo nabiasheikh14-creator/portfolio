@@ -25,10 +25,10 @@ const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
 const PHONE_MQ = "(max-width: 809.98px)"
-const VISUAL_RADIUS = 28
+const VISUAL_RADIUS = 24
 const ACCENT = "#2C6BE0"
 const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
-const LEFT_COL = "minmax(260px, 32%)"
+const LEFT_COL = "minmax(260px, 34%)"
 
 export interface WorkProject {
     title: string
@@ -133,8 +133,7 @@ function normalizeProjects(
             return {
                 title,
                 subtitle: String(it?.subtitle || matchedDefault?.subtitle || ""),
-                description:
-                    description || matchedDefault?.description || "",
+                description: description || matchedDefault?.description || "",
                 slug,
                 year: String(it?.year || matchedDefault?.year || ""),
                 accent: String(it?.accent || accent || ACCENT),
@@ -158,8 +157,7 @@ function normalizeProjects(
 
 /**
  * Work Index — scroll-driven project browser.
- * Desktop: sticky left info panel (cream + soft grid) + right visual scroller.
- * Custom "View [project]" cursor on visual hover.
+ * Desktop: sticky left info (cream + soft grid) + native-smooth right visual scroll.
  * Mobile: natural vertical project sequence.
  *
  * @framerIntrinsicWidth 1200
@@ -172,8 +170,6 @@ export default function WorkIndex(props: WorkIndexProps) {
         items = DEFAULT_ITEMS,
         sectionLabel = "Selected work",
         ctaLabel = "View case study",
-        archiveLabel = "View archive",
-        archiveLink = "/archive",
         accent = ACCENT,
         cream = CREAM,
         ink = INK,
@@ -187,7 +183,6 @@ export default function WorkIndex(props: WorkIndexProps) {
     const isPhone = useMediaQuery(PHONE_MQ)
     const stageScale = useStageScale()
     const backHref = resolveLink(backLink, "/")
-    const archiveHref = resolveLink(archiveLink, "/archive")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
     const rawGrid = Number(gridOpacity)
@@ -201,14 +196,7 @@ export default function WorkIndex(props: WorkIndexProps) {
     )
 
     const [activeIndex, setActiveIndex] = useState(0)
-    const [infoVisible, setInfoVisible] = useState(true)
     const [reveal, setReveal] = useState<"idle" | "from" | "to">("idle")
-    const [cursor, setCursor] = useState<{
-        visible: boolean
-        x: number
-        y: number
-        label: string
-    }>({ visible: false, x: 0, y: 0, label: "View project" })
     const scrollerRef = useRef<HTMLDivElement>(null)
     const slideRefs = useRef<(HTMLElement | null)[]>([])
     const activeRef = useRef(0)
@@ -245,12 +233,8 @@ export default function WorkIndex(props: WorkIndexProps) {
     // Desktop: lock page scroll; only the right visual scroller moves.
     useEffect(() => {
         if (typeof document === "undefined" || isStatic || isPhone) return
-        document.getElementById("nabia-work-lock")?.remove()
         document
-            .querySelectorAll("[data-nabia-work-lock]")
-            .forEach((n) => n.remove())
-        document
-            .querySelectorAll("[data-nabia-work-scroll]")
+            .querySelectorAll("[data-nabia-work-lock], [data-nabia-work-scroll]")
             .forEach((n) => n.remove())
 
         const html = document.documentElement
@@ -264,16 +248,13 @@ export default function WorkIndex(props: WorkIndexProps) {
             bodyOverscroll: body.style.overscrollBehavior,
         }
 
-        const lock = () => {
-            html.style.overflow = "hidden"
-            body.style.overflow = "hidden"
-            html.style.height = "100%"
-            body.style.height = "100%"
-            html.style.overscrollBehavior = "none"
-            body.style.overscrollBehavior = "none"
-            window.scrollTo(0, 0)
-        }
-        lock()
+        html.style.overflow = "hidden"
+        body.style.overflow = "hidden"
+        html.style.height = "100%"
+        body.style.height = "100%"
+        html.style.overscrollBehavior = "none"
+        body.style.overscrollBehavior = "none"
+        window.scrollTo(0, 0)
 
         const style = document.createElement("style")
         style.setAttribute("data-nabia-work-lock", "true")
@@ -292,18 +273,25 @@ export default function WorkIndex(props: WorkIndexProps) {
             max-height: 100vh !important;
             overflow: hidden !important;
           }
+          [data-work-scroller] {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            scroll-behavior: auto;
+          }
           [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+          @keyframes nabia-work-fade {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
         `
         document.head.appendChild(style)
 
         const onScroll = () => {
             if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0)
         }
-        window.addEventListener("scroll", onScroll, { passive: false })
-        const interval = window.setInterval(lock, 500)
+        window.addEventListener("scroll", onScroll, { passive: true })
 
         return () => {
-            window.clearInterval(interval)
             window.removeEventListener("scroll", onScroll)
             style.remove()
             html.style.overflow = prev.htmlOverflow
@@ -341,18 +329,15 @@ export default function WorkIndex(props: WorkIndexProps) {
         return () => style.remove()
     }, [isStatic, isPhone])
 
-    // Route wheel to internal scroller on desktop (unless over interactive left chrome)
+    // Forward wheel from left panel into the scroller — but NEVER hijack when
+    // the pointer is already over the scroller (keeps native trackpad momentum).
     useEffect(() => {
         if (typeof window === "undefined" || isStatic || isPhone) return
         const onWheel = (e: WheelEvent) => {
             const el = scrollerRef.current
             if (!el) return
-            const target = e.target as HTMLElement | null
-            if (target?.closest?.("a, button, input, textarea, select")) {
-                // Still allow scrolling visuals when hovering CTA — only skip if
-                // the left panel itself is the intended focus (rare). Prefer always
-                // advancing the visual column.
-            }
+            const target = e.target as Node | null
+            if (target && el.contains(target)) return
             e.preventDefault()
             el.scrollTop += e.deltaY
         }
@@ -360,7 +345,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         return () => window.removeEventListener("wheel", onWheel)
     }, [isStatic, isPhone])
 
-    // Scroll-driven active project (desktop scroller or mobile window)
+    // Scroll-driven active project — update immediately for smooth heading fade
     useEffect(() => {
         if (typeof window === "undefined" || isStatic) return
 
@@ -371,7 +356,7 @@ export default function WorkIndex(props: WorkIndexProps) {
             const root = isPhone ? null : scrollerRef.current
             const viewTop = root ? root.getBoundingClientRect().top : 0
             const viewH = root ? root.clientHeight : window.innerHeight
-            const center = viewTop + viewH * 0.42
+            const center = viewTop + viewH * 0.45
 
             let best = 0
             let bestDist = Infinity
@@ -387,11 +372,7 @@ export default function WorkIndex(props: WorkIndexProps) {
 
             if (best !== activeRef.current) {
                 activeRef.current = best
-                setInfoVisible(false)
-                window.setTimeout(() => {
-                    setActiveIndex(best)
-                    setInfoVisible(true)
-                }, 90)
+                setActiveIndex(best)
             }
         }
 
@@ -415,16 +396,6 @@ export default function WorkIndex(props: WorkIndexProps) {
             window.removeEventListener("resize", onScroll)
         }
     }, [isStatic, isPhone, list.length])
-
-    const showCursor = (label: string, x: number, y: number) => {
-        setCursor({ visible: true, x, y, label })
-    }
-    const moveCursor = (x: number, y: number) => {
-        setCursor((c) => (c.visible ? { ...c, x, y } : c))
-    }
-    const hideCursor = () => {
-        setCursor((c) => ({ ...c, visible: false }))
-    }
 
     if (RenderTarget.current() === RenderTarget.thumbnail) {
         return (
@@ -511,8 +482,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                     family={family}
                     sectionLabel={sectionLabel}
                     ctaLabel={ctaLabel}
-                    archiveLabel={archiveLabel}
-                    archiveHref={archiveHref}
                     slideRefs={slideRefs}
                     activeIndex={activeIndex}
                 />
@@ -521,7 +490,6 @@ export default function WorkIndex(props: WorkIndexProps) {
                     list={list}
                     active={active}
                     activeIndex={activeIndex}
-                    infoVisible={infoVisible}
                     accent={accent}
                     ink={ink}
                     muted={muted}
@@ -529,28 +497,12 @@ export default function WorkIndex(props: WorkIndexProps) {
                     family={family}
                     sectionLabel={sectionLabel}
                     ctaLabel={ctaLabel}
-                    archiveLabel={archiveLabel}
-                    archiveHref={archiveHref}
                     scrollerRef={scrollerRef}
                     slideRefs={slideRefs}
                     gridAlpha={gridAlpha}
                     stageScale={stageScale}
-                    onVisualEnter={showCursor}
-                    onVisualMove={moveCursor}
-                    onVisualLeave={hideCursor}
                 />
             )}
-
-            {!isPhone && !isStatic ? (
-                <ViewCursor
-                    visible={cursor.visible}
-                    x={cursor.x}
-                    y={cursor.y}
-                    label={cursor.label}
-                    accent={accent}
-                    family={family}
-                />
-            ) : null}
         </div>
     )
 }
@@ -607,71 +559,10 @@ function LeftPanelGrid({
     )
 }
 
-function ViewCursor({
-    visible,
-    x,
-    y,
-    label,
-    accent,
-    family,
-}: {
-    visible: boolean
-    x: number
-    y: number
-    label: string
-    accent: string
-    family: string
-}) {
-    return (
-        <div
-            aria-hidden
-            style={{
-                position: "fixed",
-                left: 0,
-                top: 0,
-                zIndex: 2000,
-                pointerEvents: "none",
-                transform: `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%) scale(${visible ? 1 : 0.86})`,
-                opacity: visible ? 1 : 0,
-                transition: visible
-                    ? "opacity 0.15s ease, transform 0.18s cubic-bezier(0.16, 1, 0.3, 1)"
-                    : "opacity 0.12s ease, transform 0.12s ease",
-                willChange: "transform, opacity",
-            }}
-        >
-            <div
-                style={{
-                    display: "inline-flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "10px 16px",
-                    background: accent,
-                    color: "#fff",
-                    fontFamily: family,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                    borderRadius: 999,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 12px 32px rgba(17,17,17,0.22)",
-                    border: "1.5px solid rgba(255,255,255,0.35)",
-                }}
-            >
-                <span>{label}</span>
-                <span aria-hidden style={{ fontSize: 13 }}>
-                    →
-                </span>
-            </div>
-        </div>
-    )
-}
-
 function DesktopBrowser({
     list,
     active,
     activeIndex,
-    infoVisible,
     accent,
     ink,
     muted,
@@ -679,20 +570,14 @@ function DesktopBrowser({
     family,
     sectionLabel,
     ctaLabel,
-    archiveLabel,
-    archiveHref,
     scrollerRef,
     slideRefs,
     gridAlpha,
     stageScale,
-    onVisualEnter,
-    onVisualMove,
-    onVisualLeave,
 }: {
     list: WorkProject[]
     active: WorkProject
     activeIndex: number
-    infoVisible: boolean
     accent: string
     ink: string
     muted: string
@@ -700,15 +585,10 @@ function DesktopBrowser({
     family: string
     sectionLabel: string
     ctaLabel: string
-    archiveLabel: string
-    archiveHref: string
     scrollerRef: RefObject<HTMLDivElement | null>
     slideRefs: MutableRefObject<(HTMLElement | null)[]>
     gridAlpha: number
     stageScale: number
-    onVisualEnter: (label: string, x: number, y: number) => void
-    onVisualMove: (x: number, y: number) => void
-    onVisualLeave: () => void
 }) {
     return (
         <div
@@ -722,7 +602,7 @@ function DesktopBrowser({
                 boxSizing: "border-box",
             }}
         >
-            {/* Sticky info column — cream + soft grid; text crossfades only */}
+            {/* Sticky info — cream + soft grid; copy crossfades via keyed animation */}
             <aside
                 data-work-info-col="true"
                 style={{
@@ -745,15 +625,12 @@ function DesktopBrowser({
                 />
 
                 <div
+                    key={`top-${active.slug}`}
                     style={{
                         position: "relative",
                         zIndex: 1,
-                        opacity: infoVisible ? 1 : 0,
-                        transform: infoVisible
-                            ? "translateY(0)"
-                            : "translateY(8px)",
-                        transition:
-                            "opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+                        animation:
+                            "nabia-work-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) both",
                     }}
                 >
                     <span
@@ -809,18 +686,15 @@ function DesktopBrowser({
                 </div>
 
                 <div
+                    key={`bot-${active.slug}`}
                     style={{
                         position: "relative",
                         zIndex: 1,
-                        opacity: infoVisible ? 1 : 0,
-                        transform: infoVisible
-                            ? "translateY(0)"
-                            : "translateY(6px)",
-                        transition:
-                            "opacity 0.25s ease 0.03s, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) 0.03s",
                         display: "flex",
                         flexDirection: "column",
                         gap: 24,
+                        animation:
+                            "nabia-work-fade 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both",
                     }}
                 >
                     {active.description ? (
@@ -870,33 +744,10 @@ function DesktopBrowser({
                         muted={muted}
                         cream={cream}
                     />
-
-                    <a
-                        href={archiveHref}
-                        style={{
-                            alignSelf: "flex-start",
-                            marginTop: 8,
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 8,
-                            fontFamily: family,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            color: ink,
-                            textDecoration: "none",
-                            borderBottom: `1.5px solid ${ink}`,
-                            paddingBottom: 2,
-                        }}
-                    >
-                        [ {archiveLabel} ]
-                        <span aria-hidden>↗</span>
-                    </a>
                 </div>
             </aside>
 
-            {/* Right visual scroller — only this column scrolls */}
+            {/* Right visual scroller — native overflow, no snap */}
             <div
                 ref={scrollerRef}
                 data-work-scroller="true"
@@ -910,10 +761,9 @@ function DesktopBrowser({
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
                     msOverflowStyle: "none",
-                    scrollSnapType: "y mandatory",
-                    padding: "96px 3.5vw 64px 12px",
+                    padding: "72px 3.5vw 96px 16px",
                     boxSizing: "border-box",
-                    background: cream,
+                    background: "transparent",
                 }}
             >
                 {list.map((item, index) => (
@@ -927,9 +777,6 @@ function DesktopBrowser({
                         setRef={(el) => {
                             slideRefs.current[index] = el
                         }}
-                        onEnter={onVisualEnter}
-                        onMove={onVisualMove}
-                        onLeave={onVisualLeave}
                     />
                 ))}
             </div>
@@ -946,8 +793,6 @@ function MobileSequence({
     family,
     sectionLabel,
     ctaLabel,
-    archiveLabel,
-    archiveHref,
     slideRefs,
     activeIndex,
 }: {
@@ -959,8 +804,6 @@ function MobileSequence({
     family: string
     sectionLabel: string
     ctaLabel: string
-    archiveLabel: string
-    archiveHref: string
     slideRefs: MutableRefObject<(HTMLElement | null)[]>
     activeIndex: number
 }) {
@@ -1006,8 +849,8 @@ function MobileSequence({
                         display: "flex",
                         flexDirection: "column",
                         gap: 18,
-                        opacity: Math.abs(index - activeIndex) <= 1 ? 1 : 0.72,
-                        transition: "opacity 0.35s ease",
+                        opacity: Math.abs(index - activeIndex) <= 1 ? 1 : 0.78,
+                        transition: "opacity 0.4s ease",
                     }}
                 >
                     <a
@@ -1091,28 +934,6 @@ function MobileSequence({
                     </a>
                 </article>
             ))}
-
-            <a
-                href={archiveHref}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    padding: "20px 22px",
-                    background: ink,
-                    color: cream,
-                    textDecoration: "none",
-                    fontFamily: family,
-                    fontSize: 13,
-                    fontWeight: 600,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    borderRadius: 22,
-                }}
-            >
-                <span>[ {archiveLabel} ]</span>
-                <span aria-hidden>↗</span>
-            </a>
         </div>
     )
 }
@@ -1124,9 +945,6 @@ function VisualSlide({
     accent,
     cream,
     setRef,
-    onEnter,
-    onMove,
-    onLeave,
 }: {
     item: WorkProject
     index: number
@@ -1134,46 +952,32 @@ function VisualSlide({
     accent: string
     cream: string
     setRef: (el: HTMLElement | null) => void
-    onEnter: (label: string, x: number, y: number) => void
-    onMove: (x: number, y: number) => void
-    onLeave: () => void
 }) {
-    const label = item.title ? `View ${item.title}` : "View project"
-
     return (
         <section
             ref={setRef}
             data-work-slide={index}
             aria-label={item.title}
             style={{
-                minHeight: "100%",
-                height: "100%",
+                minHeight: "100vh",
                 display: "flex",
                 alignItems: "center",
                 boxSizing: "border-box",
-                padding: "12px 0 28px",
-                scrollSnapAlign: "center",
-                scrollSnapStop: "always",
+                padding: "12px 0 20px",
             }}
         >
             <a
                 href={item.href}
-                aria-label={label}
-                onMouseEnter={(e) => onEnter(label, e.clientX, e.clientY)}
-                onMouseMove={(e) => onMove(e.clientX, e.clientY)}
-                onMouseLeave={onLeave}
+                aria-label={`View ${item.title}`}
                 style={{
                     display: "block",
                     width: "100%",
-                    height: "min(72vh, 640px)",
+                    height: "min(78vh, 720px)",
                     textDecoration: "none",
                     color: "inherit",
-                    cursor: "none",
-                    transform: active ? "scale(1)" : "scale(0.965)",
-                    opacity: active ? 1 : 0.48,
-                    transition:
-                        "opacity 0.45s ease, transform 0.55s cubic-bezier(0.16, 1, 0.3, 1)",
-                    willChange: "opacity, transform",
+                    cursor: "pointer",
+                    opacity: active ? 1 : 0.88,
+                    transition: "opacity 0.6s ease",
                 }}
             >
                 <ProjectVisual item={item} accent={accent} cream={cream} fill />
@@ -1217,10 +1021,8 @@ function ProjectVisual({
                 aspectRatio: fill ? undefined : tall ? "4 / 5" : "16 / 10",
                 borderRadius: VISUAL_RADIUS,
                 overflow: "hidden",
-                background: `linear-gradient(145deg, ${cream} 0%, ${accent}22 55%, ${accent}44 100%)`,
-                border: "2px solid rgba(255,255,255,0.85)",
-                boxShadow:
-                    "0 22px 50px rgba(17,17,17,0.12), 0 0 0 1px rgba(17,17,17,0.04)",
+                // Neutral dark under video — no tinted accent fill flashing through
+                background: "#1a1a1a",
             }}
         >
             {item.videoUrl ? (
@@ -1263,12 +1065,13 @@ function ProjectVisual({
                         placeItems: "center",
                         padding: 24,
                         textAlign: "center",
-                        color: "rgba(17,17,17,0.45)",
+                        color: "rgba(255,255,255,0.45)",
                         fontFamily: SANS,
                         fontSize: 14,
                         fontWeight: 600,
                         letterSpacing: "0.08em",
                         textTransform: "uppercase",
+                        background: cream,
                     }}
                 >
                     {item.title}
