@@ -60,6 +60,7 @@ function markDeskIntroSeen() {
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const INTER =
     '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#444444"
 
