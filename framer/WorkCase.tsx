@@ -1028,7 +1028,7 @@ function CaseNarrative({
     return (
         <>
             <CaseSection id="overview" setSectionRef={setSectionRef}>
-                <MediaFrame src={p.heroImage} accent={a} label="Hero" tall />
+                <MediaFrame src={p.heroImage} accent={a} label="Hero image" tall />
                 <StoryBlock
                     kicker="Overview"
                     body={p.context || p.overview}
@@ -1037,7 +1037,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
-                <MediaFrame src={p.contextImage} accent={a} label="Context" />
+                <MediaFrame src={p.contextImage} accent={a} label="Context image" tall />
             </CaseSection>
 
             <CaseSection id="challenge" setSectionRef={setSectionRef}>
@@ -1049,106 +1049,51 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
-                <MediaRow>
-                    <MediaFrame src={p.problemImage} accent={a} label="Problem" />
-                    <MediaFrame src={p.researchImage} accent={a} label="Research" />
-                </MediaRow>
+                <MediaFrame src={p.problemImage} accent={a} label="Problem image" tall />
+                <MediaFrame src={p.researchImage} accent={a} label="Research image" />
             </CaseSection>
 
             <CaseSection id="approach" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Approach"
-                    body={p.process}
+                    body={
+                        [
+                            p.process,
+                            hasText(p.goals) ? `Goals — ${p.goals}` : "",
+                            hasText(p.constraints) ? `Constraints — ${p.constraints}` : "",
+                        ]
+                            .filter(Boolean)
+                            .join("\n\n")
+                    }
                     family={family}
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
                 />
-                {(hasText(p.goals) || hasText(p.constraints)) && (
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                            gap: BLOCK_GAP,
-                        }}
-                    >
-                        {hasText(p.goals) && (
-                            <StoryBlock
-                                kicker="Goals"
-                                body={p.goals}
-                                family={family}
-                                displayFamily={displayFamily}
-                                ink={ink}
-                                muted={muted}
-                            />
-                        )}
-                        {hasText(p.constraints) && (
-                            <StoryBlock
-                                kicker="Constraints"
-                                body={p.constraints}
-                                family={family}
-                                displayFamily={displayFamily}
-                                ink={ink}
-                                muted={muted}
-                            />
-                        )}
-                    </div>
-                )}
-                <MediaRow>
-                    <MediaFrame src={p.sketchImage} accent={a} label="Sketches" />
-                    <MediaFrame src={p.wireframeImage} accent={a} label="Wireframes" />
-                </MediaRow>
-                <MediaFrame src={p.flowImage || p.processImage} accent={a} label="Process" tall />
+                <MediaFrame src={p.sketchImage} accent={a} label="Sketches" tall />
+                <MediaFrame src={p.wireframeImage} accent={a} label="Wireframes" tall />
+                <MediaFrame
+                    src={p.flowImage || p.processImage}
+                    accent={a}
+                    label="Process"
+                    tall
+                />
                 <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
             </CaseSection>
 
             <CaseSection id="decisions" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Decisions"
-                    body=""
+                    body={[p.decision1, p.decision2, p.decision3]
+                        .filter((d) => hasText(d))
+                        .map((d, i) => `${String(i + 1).padStart(2, "0")} — ${d}`)
+                        .join("\n\n")}
                     family={family}
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
                 />
-                <div
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: BLOCK_GAP,
-                    }}
-                >
-                    {hasText(p.decision1) && (
-                        <StoryBlock
-                            kicker="01"
-                            body={p.decision1}
-                            family={family}
-                            displayFamily={displayFamily}
-                            ink={ink}
-                            muted={muted}
-                        />
-                    )}
-                    {hasText(p.decision2) && (
-                        <StoryBlock
-                            kicker="02"
-                            body={p.decision2}
-                            family={family}
-                            displayFamily={displayFamily}
-                            ink={ink}
-                            muted={muted}
-                        />
-                    )}
-                    {hasText(p.decision3) && (
-                        <StoryBlock
-                            kicker="03"
-                            body={p.decision3}
-                            family={family}
-                            displayFamily={displayFamily}
-                            ink={ink}
-                            muted={muted}
-                        />
-                    )}
-                </div>
+                <MediaFrame src="" accent={a} label="Decision image" />
             </CaseSection>
 
             <CaseSection id="final" setSectionRef={setSectionRef}>
@@ -1160,12 +1105,10 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
-                <MediaFrame src={p.finalImage1} accent={a} label="Final 01" tall />
-                <MediaRow>
-                    <MediaFrame src={p.finalImage2} accent={a} label="Final 02" />
-                    <MediaFrame src={p.finalImage3} accent={a} label="Final 03" />
-                </MediaRow>
-                <MediaFrame src={p.finalImage4} accent={a} label="Final 04" />
+                <MediaFrame src={p.finalImage1} accent={a} label="Final image 01" tall />
+                <MediaFrame src={p.finalImage2} accent={a} label="Final image 02" tall />
+                <MediaFrame src={p.finalImage3} accent={a} label="Final image 03" />
+                <MediaFrame src={p.finalImage4} accent={a} label="Final image 04" />
                 <VideoFrame src={p.prototypeVideo} accent={a} label="Prototype video" />
             </CaseSection>
 
@@ -1178,7 +1121,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
-                <MediaFrame src={p.outcomeImage} accent={a} label="Outcome" tall />
+                <MediaFrame src={p.outcomeImage} accent={a} label="Outcome image" tall />
             </CaseSection>
 
             <CaseSection id="reflection" setSectionRef={setSectionRef}>
@@ -1339,29 +1282,60 @@ function MediaFrame({
                     aspectRatio: tall ? "16 / 10" : "16 / 9",
                     borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
-                    background: url
-                        ? `#1a1a1a url(${url}) center/cover no-repeat`
-                        : `linear-gradient(160deg, ${accent}33 0%, #1a1a1a 130%)`,
+                    background: url ? "#1a1a1a" : "#E8E2D6",
+                    border: url ? "none" : "1.5px solid rgba(17,17,17,0.14)",
                     boxSizing: "border-box",
                 }}
             >
-                {!url && (
+                {url ? (
+                    <img
+                        src={url}
+                        alt={label || ""}
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                        }}
+                    />
+                ) : (
                     <div
                         style={{
                             position: "absolute",
                             inset: 0,
-                            display: "grid",
-                            placeItems: "center",
-                            color: "rgba(255,255,255,0.5)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            color: MUTED,
                             fontFamily: SANS,
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: 400,
                             letterSpacing: "0.02em",
                             padding: 24,
                             textAlign: "center",
+                            boxSizing: "border-box",
                         }}
                     >
-                        {label || "Image"}
+                        <span
+                            aria-hidden
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 8,
+                                border: `1.5px dashed rgba(17,17,17,0.25)`,
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: 18,
+                                color: LABEL,
+                            }}
+                        >
+                            +
+                        </span>
+                        <span>{label || "Image"}</span>
                     </div>
                 )}
             </div>
@@ -1388,9 +1362,9 @@ function VideoFrame({
                     aspectRatio: "16 / 9",
                     borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
-                    background: url
-                        ? "#111"
-                        : `linear-gradient(160deg, ${accent}33 0%, #1a1a1a 130%)`,
+                    background: url ? "#111" : "#E8E2D6",
+                    border: url ? "none" : "1.5px solid rgba(17,17,17,0.14)",
+                    boxSizing: "border-box",
                 }}
             >
                 {url ? (
@@ -1413,18 +1387,37 @@ function VideoFrame({
                         style={{
                             position: "absolute",
                             inset: 0,
-                            display: "grid",
-                            placeItems: "center",
-                            color: "rgba(255,255,255,0.5)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: 8,
+                            color: MUTED,
                             fontFamily: SANS,
-                            fontSize: 13,
+                            fontSize: 14,
                             fontWeight: 400,
                             letterSpacing: "0.02em",
                             padding: 24,
                             textAlign: "center",
+                            boxSizing: "border-box",
                         }}
                     >
-                        {label || "Video"}
+                        <span
+                            aria-hidden
+                            style={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: 8,
+                                border: `1.5px dashed rgba(17,17,17,0.25)`,
+                                display: "grid",
+                                placeItems: "center",
+                                fontSize: 16,
+                                color: LABEL,
+                            }}
+                        >
+                            ▶
+                        </span>
+                        <span>{label || "Video"}</span>
                     </div>
                 )}
             </div>
