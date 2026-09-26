@@ -23,7 +23,12 @@ const MUTED = "#555555"
 const LABEL = "#888888"
 const PHONE_MQ = "(max-width: 809.98px)"
 const LEFT_COL = "max(240px, 28vw)"
-const FRAME_RADIUS = 20
+const FRAME_RADIUS = 12
+/** Shared case-study rhythm */
+const SECTION_GAP = 72
+const BLOCK_GAP = 28
+const BODY_SIZE = 16
+const BODY_LH = 1.65
 
 function resolveLink(value: unknown, fallback = ""): string {
     if (value == null || value === "") return fallback
@@ -131,46 +136,17 @@ function hasMedia(v: unknown) {
     return Boolean(String(v || "").trim())
 }
 
-function buildNav(p: ProjectRecord): CaseNavItem[] {
-    const items: CaseNavItem[] = []
-    if (hasMedia(p.heroImage) || hasText(p.overview) || hasText(p.context)) {
-        items.push({ id: "overview", label: "Overview" })
-    }
-    if (hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage)) {
-        items.push({ id: "challenge", label: "Challenge" })
-    }
-    if (
-        hasText(p.goals) ||
-        hasText(p.constraints) ||
-        hasText(p.process) ||
-        hasMedia(p.sketchImage) ||
-        hasMedia(p.wireframeImage) ||
-        hasMedia(p.flowImage) ||
-        hasMedia(p.processImage) ||
-        hasMedia(p.iterationImage)
-    ) {
-        items.push({ id: "approach", label: "Approach" })
-    }
-    if (hasText(p.decision1) || hasText(p.decision2) || hasText(p.decision3)) {
-        items.push({ id: "decisions", label: "Decisions" })
-    }
-    if (
-        hasMedia(p.finalImage1) ||
-        hasMedia(p.finalImage2) ||
-        hasMedia(p.finalImage3) ||
-        hasMedia(p.finalImage4) ||
-        hasMedia(p.prototypeVideo)
-    ) {
-        items.push({ id: "final", label: "Final" })
-    }
-    if (hasText(p.outcome) || hasMedia(p.outcomeImage)) {
-        items.push({ id: "outcome", label: "Outcome" })
-    }
-    if (hasText(p.reflection)) {
-        items.push({ id: "reflection", label: "Reflection" })
-    }
-    if (!items.length) items.push({ id: "overview", label: "Overview" })
-    return items
+function buildNav(_p: ProjectRecord): CaseNavItem[] {
+    // Fixed section order so type + media rhythm stay consistent across projects.
+    return [
+        { id: "overview", label: "Overview" },
+        { id: "challenge", label: "Challenge" },
+        { id: "approach", label: "Approach" },
+        { id: "decisions", label: "Decisions" },
+        { id: "final", label: "Final" },
+        { id: "outcome", label: "Outcome" },
+        { id: "reflection", label: "Reflection" },
+    ]
 }
 
 /**
@@ -633,13 +609,12 @@ function DesktopCase({
                 <div style={{ position: "relative", zIndex: 1, pointerEvents: "auto" }}>
                     <h1
                         style={{
-                            margin: "0 0 16px",
-                            fontFamily: family,
-                            fontSize: "clamp(28px, 3.2vw, 48px)",
-                            fontWeight: 700,
-                            letterSpacing: "-0.045em",
-                            lineHeight: 0.96,
-                            textTransform: "uppercase",
+                            margin: "0 0 18px",
+                            fontFamily: displayFamily,
+                            fontSize: "clamp(34px, 3.6vw, 52px)",
+                            fontWeight: 400,
+                            letterSpacing: "-0.01em",
+                            lineHeight: 1.05,
                             color: ink,
                         }}
                     >
@@ -648,18 +623,25 @@ function DesktopCase({
                     {project.overview ? (
                         <p
                             style={{
-                                margin: "0 0 22px",
+                                margin: "0 0 28px",
                                 fontFamily: family,
-                                fontSize: 15,
-                                lineHeight: 1.55,
-                                color: ink,
+                                fontSize: BODY_SIZE,
+                                fontWeight: 400,
+                                lineHeight: BODY_LH,
+                                color: muted,
                                 maxWidth: 340,
                             }}
                         >
                             {project.overview}
                         </p>
                     ) : null}
-                    <MetaChips project={project} family={family} muted={muted} ink={ink} />
+                    <MetaChips
+                        project={project}
+                        family={family}
+                        displayFamily={displayFamily}
+                        muted={muted}
+                        ink={ink}
+                    />
                 </div>
 
                 <nav
@@ -670,7 +652,7 @@ function DesktopCase({
                         pointerEvents: "auto",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 8,
+                        gap: 10,
                         paddingTop: 24,
                     }}
                 >
@@ -690,18 +672,18 @@ function DesktopCase({
                                     padding: 0,
                                     cursor: "pointer",
                                     fontFamily: family,
-                                    fontSize: 13,
-                                    fontWeight: active ? 700 : 500,
-                                    letterSpacing: "-0.01em",
-                                    color: active ? ink : muted,
+                                    fontSize: 14,
+                                    fontWeight: 400,
+                                    letterSpacing: "0",
+                                    color: active ? ink : LABEL,
                                     textAlign: "left",
                                 }}
                             >
                                 <span
                                     aria-hidden
                                     style={{
-                                        width: 7,
-                                        height: 7,
+                                        width: 6,
+                                        height: 6,
                                         background: active ? ink : "transparent",
                                         border: active ? "none" : `1px solid ${LABEL}`,
                                         flex: "none",
@@ -729,13 +711,13 @@ function DesktopCase({
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
-                    padding: "72px 18px 64px 12px",
+                    padding: "88px 28px 80px 20px",
                     boxSizing: "border-box",
                     background: CREAM,
                     backgroundColor: CREAM,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 64,
+                    gap: SECTION_GAP,
                 }}
             >
                 <CaseNarrative
@@ -814,13 +796,12 @@ function MobileCase({
         >
             <h1
                 style={{
-                    margin: "0 0 14px",
-                    fontFamily: family,
-                    fontSize: 34,
-                    fontWeight: 700,
-                    letterSpacing: "-0.04em",
-                    lineHeight: 0.98,
-                    textTransform: "uppercase",
+                    margin: "0 0 16px",
+                    fontFamily: displayFamily,
+                    fontSize: 36,
+                    fontWeight: 400,
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1.05,
                     color: ink,
                 }}
             >
@@ -829,17 +810,24 @@ function MobileCase({
             {project.overview ? (
                 <p
                     style={{
-                        margin: "0 0 20px",
+                        margin: "0 0 24px",
                         fontFamily: family,
-                        fontSize: 15,
-                        lineHeight: 1.55,
-                        color: ink,
+                        fontSize: BODY_SIZE,
+                        fontWeight: 400,
+                        lineHeight: BODY_LH,
+                        color: muted,
                     }}
                 >
                     {project.overview}
                 </p>
             ) : null}
-            <MetaChips project={project} family={family} muted={muted} ink={ink} />
+            <MetaChips
+                project={project}
+                family={family}
+                displayFamily={displayFamily}
+                muted={muted}
+                ink={ink}
+            />
 
             <nav
                 aria-label="Case sections"
@@ -847,7 +835,7 @@ function MobileCase({
                     display: "flex",
                     flexDirection: "column",
                     gap: 10,
-                    margin: "28px 0 40px",
+                    margin: "32px 0 48px",
                 }}
             >
                 {nav.map((item) => {
@@ -867,17 +855,16 @@ function MobileCase({
                                 cursor: "pointer",
                                 fontFamily: family,
                                 fontSize: 14,
-                                fontWeight: active ? 700 : 500,
-                                letterSpacing: "-0.01em",
-                                color: active ? ink : muted,
+                                fontWeight: 400,
+                                color: active ? ink : LABEL,
                                 textAlign: "left",
                             }}
                         >
                             <span
                                 aria-hidden
                                 style={{
-                                    width: 7,
-                                    height: 7,
+                                    width: 6,
+                                    height: 6,
                                     background: active ? ink : "transparent",
                                     border: active ? "none" : `1px solid ${LABEL}`,
                                     flex: "none",
@@ -889,7 +876,7 @@ function MobileCase({
                 })}
             </nav>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 48 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
                 <CaseNarrative
                     project={project}
                     setSectionRef={setSectionRef}
@@ -938,15 +925,16 @@ type FooterBits = {
 function MetaChips({
     project,
     family,
+    displayFamily,
     muted,
     ink,
 }: {
     project: ProjectRecord
     family: string
+    displayFamily: string
     muted: string
     ink: string
 }) {
-    // Nevermind-style left meta: Date + Duration first, then role.
     const bits = [
         project.year && { k: "Date", v: project.year },
         project.timeline && { k: "Duration", v: project.timeline },
@@ -954,18 +942,18 @@ function MetaChips({
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             {bits.map((b) => (
                 <div key={b.k}>
                     <div
                         style={{
-                            fontFamily: family,
-                            fontSize: 10,
-                            fontWeight: 600,
-                            letterSpacing: "0.08em",
-                            textTransform: "uppercase",
+                            fontFamily: displayFamily,
+                            fontSize: 18,
+                            fontWeight: 400,
+                            letterSpacing: "0",
                             color: LABEL,
-                            marginBottom: 3,
+                            marginBottom: 4,
+                            lineHeight: 1.2,
                         }}
                     >
                         {b.k}
@@ -973,8 +961,9 @@ function MetaChips({
                     <div
                         style={{
                             fontFamily: family,
-                            fontSize: 13,
-                            lineHeight: 1.4,
+                            fontSize: 14,
+                            fontWeight: 400,
+                            lineHeight: 1.45,
                             color: ink,
                         }}
                     >
@@ -983,6 +972,30 @@ function MetaChips({
                 </div>
             ))}
         </div>
+    )
+}
+
+function CaseSection({
+    id,
+    setSectionRef,
+    children,
+}: {
+    id: string
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    children: ReactNode
+}) {
+    return (
+        <section
+            ref={setSectionRef(id)}
+            id={id}
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: BLOCK_GAP,
+            }}
+        >
+            {children}
+        </section>
     )
 }
 
@@ -1010,223 +1023,190 @@ function CaseNarrative({
     displayFamily: string
 }) {
     const p = project
+    const a = p.accent || accent
+
     return (
         <>
-            <section ref={setSectionRef("overview")} id="overview" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                {hasMedia(p.heroImage) ? (
-                    <MediaFrame src={p.heroImage} accent={p.accent || accent} label="Hero" tall />
-                ) : (
-                    <MediaFrame src="" accent={p.accent || accent} label="Hero / key screen" tall />
-                )}
-                {(hasText(p.context) || hasText(p.overview)) && (
-                    <StoryBlock
-                        kicker="Overview"
-                        title={null}
-                        body={p.context || p.overview}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                        large
-                    />
-                )}
-                {hasMedia(p.contextImage) && (
-                    <MediaFrame src={p.contextImage} accent={p.accent || accent} label="Context" />
-                )}
-            </section>
+            <CaseSection id="overview" setSectionRef={setSectionRef}>
+                <MediaFrame src={p.heroImage} accent={a} label="Hero" tall />
+                <StoryBlock
+                    kicker="Overview"
+                    body={p.context || p.overview}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                <MediaFrame src={p.contextImage} accent={a} label="Context" />
+            </CaseSection>
 
-            {(hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage)) && (
-                <section ref={setSectionRef("challenge")} id="challenge" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                    <StoryBlock
-                        kicker="Challenge"
-                        title="The challenge"
-                        body={p.problem}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                        large
-                    />
-                    <MediaRow>
-                        {hasMedia(p.problemImage) && (
-                            <MediaFrame src={p.problemImage} accent={p.accent || accent} label="Problem" />
-                        )}
-                        {hasMedia(p.researchImage) && (
-                            <MediaFrame src={p.researchImage} accent={p.accent || accent} label="Research" />
-                        )}
-                    </MediaRow>
-                </section>
-            )}
+            <CaseSection id="challenge" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Challenge"
+                    body={p.problem}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                <MediaRow>
+                    <MediaFrame src={p.problemImage} accent={a} label="Problem" />
+                    <MediaFrame src={p.researchImage} accent={a} label="Research" />
+                </MediaRow>
+            </CaseSection>
 
-            {(hasText(p.goals) ||
-                hasText(p.constraints) ||
-                hasText(p.process) ||
-                hasMedia(p.sketchImage) ||
-                hasMedia(p.wireframeImage) ||
-                hasMedia(p.flowImage) ||
-                hasMedia(p.processImage) ||
-                hasMedia(p.iterationImage)) && (
-                <section ref={setSectionRef("approach")} id="approach" style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                    <StoryBlock
-                        kicker="Approach"
-                        title="How we got there"
-                        body={p.process}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                    />
-                    {(hasText(p.goals) || hasText(p.constraints)) && (
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                                gap: 14,
-                            }}
-                        >
-                            {hasText(p.goals) && (
-                                <TextCard title="Goals" body={p.goals} accent={accent} ink={ink} muted={muted} family={family} />
-                            )}
-                            {hasText(p.constraints) && (
-                                <TextCard title="Constraints" body={p.constraints} accent={accent} ink={ink} muted={muted} family={family} />
-                            )}
-                        </div>
-                    )}
-                    <MediaRow>
-                        {hasMedia(p.sketchImage) && (
-                            <MediaFrame src={p.sketchImage} accent={p.accent || accent} label="Sketches" />
-                        )}
-                        {hasMedia(p.wireframeImage) && (
-                            <MediaFrame src={p.wireframeImage} accent={p.accent || accent} label="Wireframes" />
-                        )}
-                        {hasMedia(p.flowImage) && (
-                            <MediaFrame src={p.flowImage} accent={p.accent || accent} label="Flow" />
-                        )}
-                    </MediaRow>
-                    <MediaRow>
-                        {hasMedia(p.processImage) && (
-                            <MediaFrame src={p.processImage} accent={p.accent || accent} label="Process" />
-                        )}
-                        {hasMedia(p.iterationImage) && (
-                            <MediaFrame src={p.iterationImage} accent={p.accent || accent} label="Iteration" />
-                        )}
-                    </MediaRow>
-                </section>
-            )}
-
-            {(hasText(p.decision1) || hasText(p.decision2) || hasText(p.decision3)) && (
-                <section ref={setSectionRef("decisions")} id="decisions" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                    <StoryBlock
-                        kicker="Decisions"
-                        title="Key decisions"
-                        body=""
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                    />
-                    <div
-                        style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                            gap: 14,
-                        }}
-                    >
-                        {hasText(p.decision1) && (
-                            <TextCard title="01" body={p.decision1} accent={accent} ink={ink} muted={muted} family={family} />
-                        )}
-                        {hasText(p.decision2) && (
-                            <TextCard title="02" body={p.decision2} accent={accent} ink={ink} muted={muted} family={family} />
-                        )}
-                        {hasText(p.decision3) && (
-                            <TextCard title="03" body={p.decision3} accent={accent} ink={ink} muted={muted} family={family} />
-                        )}
-                    </div>
-                </section>
-            )}
-
-            {(hasMedia(p.finalImage1) ||
-                hasMedia(p.finalImage2) ||
-                hasMedia(p.finalImage3) ||
-                hasMedia(p.finalImage4) ||
-                hasMedia(p.prototypeVideo)) && (
-                <section ref={setSectionRef("final")} id="final" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                    <StoryBlock
-                        kicker="Final"
-                        title="Final design"
-                        body=""
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                    />
+            <CaseSection id="approach" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Approach"
+                    body={p.process}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                {(hasText(p.goals) || hasText(p.constraints)) && (
                     <div
                         style={{
                             display: "grid",
                             gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                            gap: 14,
+                            gap: BLOCK_GAP,
                         }}
                     >
-                        {hasMedia(p.finalImage1) && (
-                            <MediaFrame src={p.finalImage1} accent={p.accent || accent} label="Final 01" />
+                        {hasText(p.goals) && (
+                            <StoryBlock
+                                kicker="Goals"
+                                body={p.goals}
+                                family={family}
+                                displayFamily={displayFamily}
+                                ink={ink}
+                                muted={muted}
+                            />
                         )}
-                        {hasMedia(p.finalImage2) && (
-                            <MediaFrame src={p.finalImage2} accent={p.accent || accent} label="Final 02" />
-                        )}
-                        {hasMedia(p.finalImage3) && (
-                            <MediaFrame src={p.finalImage3} accent={p.accent || accent} label="Final 03" />
-                        )}
-                        {hasMedia(p.finalImage4) && (
-                            <MediaFrame src={p.finalImage4} accent={p.accent || accent} label="Final 04" />
+                        {hasText(p.constraints) && (
+                            <StoryBlock
+                                kicker="Constraints"
+                                body={p.constraints}
+                                family={family}
+                                displayFamily={displayFamily}
+                                ink={ink}
+                                muted={muted}
+                            />
                         )}
                     </div>
-                    {hasMedia(p.prototypeVideo) && (
-                        <VideoFrame src={p.prototypeVideo} accent={p.accent || accent} label="Prototype" />
-                    )}
-                </section>
-            )}
+                )}
+                <MediaRow>
+                    <MediaFrame src={p.sketchImage} accent={a} label="Sketches" />
+                    <MediaFrame src={p.wireframeImage} accent={a} label="Wireframes" />
+                </MediaRow>
+                <MediaFrame src={p.flowImage || p.processImage} accent={a} label="Process" tall />
+                <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
+            </CaseSection>
 
-            {(hasText(p.outcome) || hasMedia(p.outcomeImage)) && (
-                <section ref={setSectionRef("outcome")} id="outcome" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                    <StoryBlock
-                        kicker="Outcome"
-                        title="What changed"
-                        body={p.outcome}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                        large
-                    />
-                    {hasMedia(p.outcomeImage) && (
-                        <MediaFrame src={p.outcomeImage} accent={p.accent || accent} label="Outcome" />
+            <CaseSection id="decisions" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Decisions"
+                    body=""
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: BLOCK_GAP,
+                    }}
+                >
+                    {hasText(p.decision1) && (
+                        <StoryBlock
+                            kicker="01"
+                            body={p.decision1}
+                            family={family}
+                            displayFamily={displayFamily}
+                            ink={ink}
+                            muted={muted}
+                        />
                     )}
-                </section>
-            )}
+                    {hasText(p.decision2) && (
+                        <StoryBlock
+                            kicker="02"
+                            body={p.decision2}
+                            family={family}
+                            displayFamily={displayFamily}
+                            ink={ink}
+                            muted={muted}
+                        />
+                    )}
+                    {hasText(p.decision3) && (
+                        <StoryBlock
+                            kicker="03"
+                            body={p.decision3}
+                            family={family}
+                            displayFamily={displayFamily}
+                            ink={ink}
+                            muted={muted}
+                        />
+                    )}
+                </div>
+            </CaseSection>
 
-            {hasText(p.reflection) && (
-                <section ref={setSectionRef("reflection")} id="reflection">
-                    <StoryBlock
-                        kicker="Reflection"
-                        title="What I'd do next"
-                        body={p.reflection}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                    />
-                </section>
-            )}
+            <CaseSection id="final" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Final"
+                    body=""
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                <MediaFrame src={p.finalImage1} accent={a} label="Final 01" tall />
+                <MediaRow>
+                    <MediaFrame src={p.finalImage2} accent={a} label="Final 02" />
+                    <MediaFrame src={p.finalImage3} accent={a} label="Final 03" />
+                </MediaRow>
+                <MediaFrame src={p.finalImage4} accent={a} label="Final 04" />
+                <VideoFrame src={p.prototypeVideo} accent={a} label="Prototype video" />
+            </CaseSection>
+
+            <CaseSection id="outcome" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Outcome"
+                    body={p.outcome}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+                <MediaFrame src={p.outcomeImage} accent={a} label="Outcome" tall />
+            </CaseSection>
+
+            <CaseSection id="reflection" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Reflection"
+                    body={p.reflection}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+            </CaseSection>
 
             {related.length > 0 && (
-                <section style={{ display: "flex", flexDirection: "column", gap: 18, paddingTop: 12 }}>
+                <section style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 8 }}>
                     <p
                         style={{
                             margin: 0,
-                            fontFamily: family,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            color: LABEL,
+                            fontFamily: displayFamily,
+                            fontSize: 22,
+                            fontWeight: 400,
+                            color: ink,
+                            lineHeight: 1.2,
                         }}
                     >
                         More work
                     </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                         {related.map((r) => (
                             <a
                                 key={r.slug}
@@ -1236,20 +1216,18 @@ function CaseNarrative({
                                     alignItems: "baseline",
                                     justifyContent: "space-between",
                                     gap: 16,
-                                    padding: "14px 0",
+                                    padding: "16px 0",
                                     textDecoration: "none",
                                     color: ink,
-                                    borderBottom: "1px solid rgba(17,17,17,0.12)",
+                                    borderBottom: "1px solid rgba(17,17,17,0.1)",
                                 }}
                             >
                                 <span
                                     style={{
-                                        fontFamily: family,
-                                        fontSize: 20,
-                                        fontWeight: 700,
-                                        letterSpacing: "-0.03em",
-                                        textTransform: "uppercase",
-                                        lineHeight: 1.1,
+                                        fontFamily: displayFamily,
+                                        fontSize: 24,
+                                        fontWeight: 400,
+                                        lineHeight: 1.15,
                                     }}
                                 >
                                     {r.title}
@@ -1257,10 +1235,8 @@ function CaseNarrative({
                                 <span
                                     style={{
                                         fontFamily: family,
-                                        fontSize: 12,
-                                        fontWeight: 500,
-                                        letterSpacing: "0.04em",
-                                        textTransform: "uppercase",
+                                        fontSize: 13,
+                                        fontWeight: 400,
                                         color: muted,
                                         flex: "none",
                                     }}
@@ -1278,63 +1254,44 @@ function CaseNarrative({
 
 function StoryBlock({
     kicker,
-    title,
     body,
     family,
+    displayFamily,
     ink,
     muted,
-    large,
 }: {
     kicker: string
-    title: string | null
     body: string
     family: string
+    displayFamily: string
     ink: string
     muted: string
-    large?: boolean
 }) {
-    // Nevermind-style: small section label, then a dominant narrative block.
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: large ? 18 : 12 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
                 style={{
-                    fontFamily: family,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: LABEL,
+                    fontFamily: displayFamily,
+                    fontSize: "clamp(22px, 2.2vw, 28px)",
+                    fontWeight: 400,
+                    letterSpacing: "0",
+                    lineHeight: 1.2,
+                    color: ink,
                 }}
             >
                 {kicker}
             </div>
-            {title ? (
-                <h2
-                    style={{
-                        margin: 0,
-                        fontFamily: family,
-                        fontSize: large ? "clamp(24px, 2.6vw, 36px)" : 22,
-                        fontWeight: 700,
-                        letterSpacing: "-0.03em",
-                        lineHeight: 1.15,
-                        color: ink,
-                        maxWidth: 720,
-                    }}
-                >
-                    {title}
-                </h2>
-            ) : null}
             {hasText(body) ? (
                 <p
                     style={{
                         margin: 0,
                         fontFamily: family,
-                        fontSize: large ? "clamp(18px, 1.7vw, 26px)" : 15,
-                        fontWeight: large ? 600 : 400,
-                        letterSpacing: large ? "-0.02em" : "0",
-                        lineHeight: large ? 1.35 : 1.55,
-                        color: large ? ink : muted,
-                        maxWidth: large ? 760 : 640,
+                        fontSize: BODY_SIZE,
+                        fontWeight: 400,
+                        letterSpacing: "0",
+                        lineHeight: BODY_LH,
+                        color: muted,
+                        maxWidth: 680,
                         whiteSpace: "pre-wrap",
                     }}
                 >
@@ -1345,60 +1302,15 @@ function StoryBlock({
     )
 }
 
-function TextCard({
-    title,
-    body,
-    accent,
-    ink,
-    muted,
-    family,
-}: {
-    title: string
-    body: string
-    accent: string
-    ink: string
-    muted: string
-    family: string
-}) {
-    return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div
-                style={{
-                    fontFamily: family,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    color: accent || ink,
-                }}
-            >
-                {title}
-            </div>
-            <p
-                style={{
-                    margin: 0,
-                    fontFamily: family,
-                    fontSize: 15,
-                    lineHeight: 1.5,
-                    color: muted,
-                    whiteSpace: "pre-wrap",
-                }}
-            >
-                {body}
-            </p>
-        </div>
-    )
-}
-
 function MediaRow({ children }: { children: ReactNode }) {
-    const kids = Array.isArray(children) ? children.filter(Boolean) : [children]
+    const kids = (Array.isArray(children) ? children : [children]).filter(Boolean)
     if (!kids.length) return null
     return (
         <div
             style={{
                 display: "grid",
-                gridTemplateColumns: kids.length > 1 ? "repeat(auto-fit, minmax(240px, 1fr))" : "1fr",
-                gap: 14,
+                gridTemplateColumns: kids.length > 1 ? "1fr 1fr" : "1fr",
+                gap: 16,
             }}
         >
             {children}
@@ -1419,7 +1331,7 @@ function MediaFrame({
 }) {
     const url = String(src || "").trim()
     return (
-        <figure style={{ margin: 0 }}>
+        <figure style={{ margin: 0, width: "100%" }}>
             <div
                 style={{
                     position: "relative",
@@ -1428,8 +1340,8 @@ function MediaFrame({
                     borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
                     background: url
-                        ? `#111 url(${url}) center/cover no-repeat`
-                        : `linear-gradient(160deg, ${accent} 0%, #1a1a1a 125%)`,
+                        ? `#1a1a1a url(${url}) center/cover no-repeat`
+                        : `linear-gradient(160deg, ${accent}33 0%, #1a1a1a 130%)`,
                     boxSizing: "border-box",
                 }}
             >
@@ -1440,17 +1352,16 @@ function MediaFrame({
                             inset: 0,
                             display: "grid",
                             placeItems: "center",
-                            color: "rgba(255,255,255,0.55)",
+                            color: "rgba(255,255,255,0.5)",
                             fontFamily: SANS,
                             fontSize: 13,
-                            fontWeight: 600,
-                            letterSpacing: "0.04em",
-                            textTransform: "uppercase",
+                            fontWeight: 400,
+                            letterSpacing: "0.02em",
                             padding: 24,
                             textAlign: "center",
                         }}
                     >
-                        Drop {label || "imagery"} here
+                        {label || "Image"}
                     </div>
                 )}
             </div>
@@ -1468,9 +1379,8 @@ function VideoFrame({
     label?: string
 }) {
     const url = String(src || "").trim()
-    if (!url) return null
     return (
-        <figure style={{ margin: 0 }}>
+        <figure style={{ margin: 0, width: "100%" }}>
             <div
                 style={{
                     position: "relative",
@@ -1478,23 +1388,45 @@ function VideoFrame({
                     aspectRatio: "16 / 9",
                     borderRadius: FRAME_RADIUS,
                     overflow: "hidden",
-                    background: "#111",
+                    background: url
+                        ? "#111"
+                        : `linear-gradient(160deg, ${accent}33 0%, #1a1a1a 130%)`,
                 }}
             >
-                <video
-                    src={url}
-                    muted
-                    playsInline
-                    loop
-                    autoPlay
-                    controls
-                    style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        display: "block",
-                    }}
-                />
+                {url ? (
+                    <video
+                        src={url}
+                        muted
+                        playsInline
+                        loop
+                        autoPlay
+                        controls
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            display: "block",
+                        }}
+                    />
+                ) : (
+                    <div
+                        style={{
+                            position: "absolute",
+                            inset: 0,
+                            display: "grid",
+                            placeItems: "center",
+                            color: "rgba(255,255,255,0.5)",
+                            fontFamily: SANS,
+                            fontSize: 13,
+                            fontWeight: 400,
+                            letterSpacing: "0.02em",
+                            padding: 24,
+                            textAlign: "center",
+                        }}
+                    >
+                        {label || "Video"}
+                    </div>
+                )}
             </div>
         </figure>
     )
