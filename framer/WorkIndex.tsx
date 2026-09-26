@@ -619,7 +619,6 @@ function DesktopBrowser({
                     width: "max(220px, 26vw)",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
                     padding: "108px 2.5vw 48px 3.5vw",
                     boxSizing: "border-box",
                     overflow: "hidden",
@@ -701,6 +700,8 @@ function DesktopBrowser({
                         display: "flex",
                         flexDirection: "column",
                         gap: 24,
+                        marginTop: "auto",
+                        paddingBottom: 28,
                         animation:
                             "nabia-work-fade 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both",
                     }}
@@ -744,14 +745,6 @@ function DesktopBrowser({
                         {ctaLabel}
                         <span aria-hidden>→</span>
                     </a>
-
-                    <ProjectMeta
-                        project={active}
-                        family={family}
-                        ink={ink}
-                        muted={muted}
-                        cream={cream}
-                    />
                 </div>
             </aside>
 
@@ -1109,93 +1102,6 @@ function ProjectVisual({
                     {item.title}
                 </div>
             )}
-        </div>
-    )
-}
-
-function ProjectMeta({
-    project,
-    family,
-    ink,
-    muted,
-    cream,
-}: {
-    project: WorkProject
-    family: string
-    ink: string
-    muted: string
-    cream: string
-}) {
-    return (
-        <div
-            style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-            }}
-        >
-            <div
-                style={{
-                    width: 44,
-                    height: 44,
-                    borderRadius: 10,
-                    overflow: "hidden",
-                    flex: "none",
-                    background: cream,
-                    border: "1px solid rgba(17,17,17,0.1)",
-                }}
-            >
-                {project.coverUrl || project.videoUrl ? (
-                    project.coverUrl ? (
-                        <img
-                            src={project.coverUrl}
-                            alt=""
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                objectFit: "cover",
-                            }}
-                        />
-                    ) : (
-                        <div
-                            style={{
-                                width: "100%",
-                                height: "100%",
-                                background: project.accent || ACCENT,
-                                opacity: 0.35,
-                            }}
-                        />
-                    )
-                ) : null}
-            </div>
-            <div style={{ minWidth: 0 }}>
-                <div
-                    style={{
-                        fontFamily: family,
-                        fontSize: 13,
-                        fontWeight: 700,
-                        color: ink,
-                        letterSpacing: "-0.02em",
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                    }}
-                >
-                    {project.title}
-                </div>
-                {project.year ? (
-                    <div
-                        style={{
-                            fontFamily: family,
-                            fontSize: 12,
-                            color: muted,
-                            marginTop: 2,
-                        }}
-                    >
-                        {project.year}
-                    </div>
-                ) : null}
-            </div>
         </div>
     )
 }
