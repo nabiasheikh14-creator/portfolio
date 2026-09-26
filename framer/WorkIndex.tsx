@@ -168,7 +168,10 @@ export default function WorkIndex(props: WorkIndexProps) {
     const backHref = resolveLink(backLink, "/")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
-    const gridAlpha = Math.max(0, Math.min(0.3, Number(gridOpacity) || 0))
+    const gridAlpha = Math.max(
+        0,
+        Math.min(0.045, Number(gridOpacity) || GRID_OPACITY_DEFAULT),
+    )
 
     const list = useMemo(
         () => normalizeProjects(items, accent, basePath),
@@ -1352,7 +1355,7 @@ addPropertyControls(WorkIndex, {
         title: "Grid Opacity",
         defaultValue: GRID_OPACITY_DEFAULT,
         min: 0,
-        max: 0.3,
+        max: 0.045,
         step: 0.005,
     },
 })
