@@ -20,10 +20,14 @@ const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
 const PHONE_MQ = "(max-width: 809.98px)"
-const VISUAL_RADIUS = 24
+const VISUAL_RADIUS = 12
 const ACCENT = "#2C6BE0"
 const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
 const LEFT_COL = "max(220px, 26vw)"
+const GRID_BG =
+    "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
+/** Whisper-soft desk grid — same art as home/archive, barely there. */
+const GRID_OPACITY_DEFAULT = 0.028
 
 export interface WorkProject {
     title: string
@@ -154,6 +158,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         cream = CREAM,
         ink = INK,
         muted = MUTED,
+        gridOpacity = GRID_OPACITY_DEFAULT,
         backLink = "/",
         projectBasePath = "/work",
     } = props
@@ -163,6 +168,7 @@ export default function WorkIndex(props: WorkIndexProps) {
     const backHref = resolveLink(backLink, "/")
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
+    const gridAlpha = Math.max(0, Math.min(0.3, Number(gridOpacity) || 0))
 
     const list = useMemo(
         () => normalizeProjects(items, accent, basePath),
@@ -256,10 +262,9 @@ export default function WorkIndex(props: WorkIndexProps) {
                 max-height: none !important;
                 overflow: visible !important;
               }
-              /* Kill any Framer page-level grid behind mobile typography */
+              /* Hide Framer page-level grid duplicates — we paint our own soft grid */
               [data-framer-name="Grid"],
-              [data-framer-name="grid"],
-              [style*="uTiMeYZo7Cgq17Mt2w60JYMnptc"] {
+              [data-framer-name="grid"] {
                 opacity: 0 !important;
                 visibility: hidden !important;
               }
@@ -298,13 +303,10 @@ export default function WorkIndex(props: WorkIndexProps) {
                 background: #F3EFE6 !important;
                 background-color: #F3EFE6 !important;
               }
-              /* Typography column = solid OUR offwhite (same as home), no grid */
+              /* Left + right sit over cream + soft grid (no opaque cream wash) */
               [data-work-info-col] {
-                background: #F3EFE6 !important;
-                background-color: #F3EFE6 !important;
-              }
-              [data-work-info-col] [data-nabia-left-grid] {
-                display: none !important;
+                background: transparent !important;
+                background-color: transparent !important;
               }
               [data-nabia-cream-strip] {
                 position: fixed !important;
@@ -318,8 +320,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 -webkit-overflow-scrolling: touch;
                 overscroll-behavior-y: contain;
                 scrollbar-width: none;
-                background: #F3EFE6 !important;
-                background-color: #F3EFE6 !important;
+                background: transparent !important;
+                background-color: transparent !important;
               }
               [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
               @keyframes nabia-work-fade {
@@ -509,6 +511,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 rel="stylesheet"
             />
 
+            <SoftDeskGrid opacity={gridAlpha} />
+
             <DeskBack
                 href={backHref}
                 label="Back"
@@ -550,19 +554,23 @@ export default function WorkIndex(props: WorkIndexProps) {
     )
 }
 
-/** Solid OUR offwhite plate — matches home `#F3EFE6`, no grid wash. */
-function TypographyOffwhite() {
+/** Same desk grid art as home / archive — whisper opacity over OUR cream. */
+function SoftDeskGrid({ opacity }: { opacity: number }) {
+    if (opacity <= 0) return null
     return (
         <div
             aria-hidden
-            data-nabia-type-offwhite="true"
+            data-nabia-work-grid="true"
             style={{
                 position: "absolute",
                 inset: 0,
-                zIndex: 0,
+                zIndex: 1,
                 pointerEvents: "none",
-                backgroundColor: CREAM,
-                background: CREAM,
+                backgroundImage: `url(${GRID_BG})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity,
+                filter: "grayscale(1) brightness(1.05) contrast(0.92)",
             }}
         />
     )
@@ -607,7 +615,7 @@ function DesktopBrowser({
                 boxSizing: "border-box",
             }}
         >
-            {/* Left typography — solid OUR offwhite (#F3EFE6), same as home */}
+            {/* Left typography — transparent so soft desk grid reads through */}
             <aside
                 data-work-info-col="true"
                 style={{
@@ -622,13 +630,11 @@ function DesktopBrowser({
                     padding: "108px 2.5vw 48px 3.5vw",
                     boxSizing: "border-box",
                     overflow: "hidden",
-                    backgroundColor: CREAM,
-                    background: CREAM,
+                    backgroundColor: "transparent",
+                    background: "transparent",
                     pointerEvents: "none",
                 }}
             >
-                <TypographyOffwhite />
-
                 <div
                     key={`top-${active.slug}`}
                     style={{
@@ -767,8 +773,8 @@ function DesktopBrowser({
                     msOverflowStyle: "none",
                     padding: "72px 16px 120px 16px",
                     boxSizing: "border-box",
-                    background: CREAM,
-                    backgroundColor: CREAM,
+                    background: "transparent",
+                    backgroundColor: "transparent",
                     display: "flex",
                     flexDirection: "column",
                     gap: 14,
@@ -1344,9 +1350,9 @@ addPropertyControls(WorkIndex, {
     gridOpacity: {
         type: ControlType.Number,
         title: "Grid Opacity",
-        defaultValue: 0.05,
+        defaultValue: GRID_OPACITY_DEFAULT,
         min: 0,
         max: 0.3,
-        step: 0.01,
+        step: 0.005,
     },
 })
