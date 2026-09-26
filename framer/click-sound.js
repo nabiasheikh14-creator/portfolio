@@ -1,7 +1,7 @@
 /**
  * Sitewide UI click sound — bodyStart custom code.
- * Always uses a short Web Audio synth tick so every page sounds the same
- * and navigation never cuts off a longer sample mid-play.
+ * Short mechanical mouse-button click via Web Audio
+ * (same on every page; never cuts off mid-sample on navigation).
  */
 (function () {
     if (window.__nabiaClickSound) return
@@ -24,59 +24,82 @@
         if (c.state === "suspended") c.resume().catch(function () {})
     }
 
-    function playSynthTick() {
+    /** Plastic mouse-button: soft body thump + sharp tip click. */
+    function playMouseClick() {
         var c = getCtx()
         if (!c) return
         if (c.state === "suspended") {
-            c.resume().then(function () { playSynthTick() }).catch(function () {})
+            c.resume().then(function () { playMouseClick() }).catch(function () {})
             return
         }
+
         var t = c.currentTime
-        var bufferSize = Math.floor(c.sampleRate * 0.028)
-        var buffer = c.createBuffer(1, bufferSize, c.sampleRate)
-        var data = buffer.getChannelData(0)
-        for (var i = 0; i < bufferSize; i++) {
-            var env = 1 - i / bufferSize
-            data[i] = (Math.random() * 2 - 1) * env * env
+        var master = c.createGain()
+        master.gain.value = 0.55
+        master.connect(c.destination)
+
+        // 1) Soft body thump (button travel)
+        var thump = c.createOscillator()
+        var thumpGain = c.createGain()
+        thump.type = "sine"
+        thump.frequency.setValueAtTime(180, t)
+        thump.frequency.exponentialRampToValueAtTime(70, t + 0.03)
+        thumpGain.gain.setValueAtTime(0.0001, t)
+        thumpGain.gain.exponentialRampToValueAtTime(0.35, t + 0.004)
+        thumpGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.045)
+        thump.connect(thumpGain)
+        thumpGain.connect(master)
+        thump.start(t)
+        thump.stop(t + 0.05)
+
+        // 2) Sharp tip — brief filtered noise (plastic contact)
+        var nLen = Math.floor(c.sampleRate * 0.018)
+        var nBuf = c.createBuffer(1, nLen, c.sampleRate)
+        var nData = nBuf.getChannelData(0)
+        for (var i = 0; i < nLen; i++) {
+            var env = Math.pow(1 - i / nLen, 3.2)
+            nData[i] = (Math.random() * 2 - 1) * env
         }
         var noise = c.createBufferSource()
-        noise.buffer = buffer
-        var nFilter = c.createBiquadFilter()
-        nFilter.type = "bandpass"
-        nFilter.frequency.value = 2200
-        nFilter.Q.value = 0.9
+        noise.buffer = nBuf
+        var hp = c.createBiquadFilter()
+        hp.type = "bandpass"
+        hp.frequency.value = 2800
+        hp.Q.value = 1.4
         var nGain = c.createGain()
-        nGain.gain.setValueAtTime(0.22, t)
-        nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.035)
-        noise.connect(nFilter)
-        nFilter.connect(nGain)
-        nGain.connect(c.destination)
+        nGain.gain.setValueAtTime(0.0001, t)
+        nGain.gain.exponentialRampToValueAtTime(0.55, t + 0.0015)
+        nGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.022)
+        noise.connect(hp)
+        hp.connect(nGain)
+        nGain.connect(master)
         noise.start(t)
-        noise.stop(t + 0.035)
+        noise.stop(t + 0.025)
 
-        var osc = c.createOscillator()
-        var oGain = c.createGain()
-        osc.type = "triangle"
-        osc.frequency.setValueAtTime(1600, t)
-        osc.frequency.exponentialRampToValueAtTime(520, t + 0.05)
-        oGain.gain.setValueAtTime(0.18, t)
-        oGain.gain.exponentialRampToValueAtTime(0.001, t + 0.055)
-        osc.connect(oGain)
-        oGain.connect(c.destination)
-        osc.start(t)
-        osc.stop(t + 0.055)
+        // 3) Tiny mid click transient (switch latch)
+        var tip = c.createOscillator()
+        var tipGain = c.createGain()
+        tip.type = "triangle"
+        tip.frequency.setValueAtTime(2400, t)
+        tip.frequency.exponentialRampToValueAtTime(900, t + 0.012)
+        tipGain.gain.setValueAtTime(0.0001, t)
+        tipGain.gain.exponentialRampToValueAtTime(0.22, t + 0.001)
+        tipGain.gain.exponentialRampToValueAtTime(0.0001, t + 0.018)
+        tip.connect(tipGain)
+        tipGain.connect(master)
+        tip.start(t)
+        tip.stop(t + 0.02)
     }
 
     function playClick() {
         var now = performance.now()
-        if (now - last < 40) return
+        if (now - last < 45) return
         last = now
         unlock()
-        playSynthTick()
+        playMouseClick()
     }
 
     window.__nabiaPlayClick = playClick
-    // Kept for DeskWorkspace compatibility; sitewide clicks always use synth.
     window.__nabiaSetTickSoundUrl = function () {
         window.__nabiaTickSoundUrl = ""
         try { sessionStorage.removeItem("__nabiaTickSoundUrl") } catch (_) {}
