@@ -1,15 +1,15 @@
 /**
- * Sitewide pixel cursors — blue arrow default, blue hand on clickables.
- * Injected via bodyStart custom code.
+ * Sitewide pixel cursors (Kenney Cursor Pixel Pack, CC0).
+ * White fill + site-blue outline. Arrow default; hand on clickables.
  */
 (function () {
     if (window.__nabiaCursorReady) return
     window.__nabiaCursorReady = true
 
-    var ARROW = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAwCAYAAAACYxrZAAABNklEQVR4nOVXuw2DMBB9ROmo6TMAEzAJEiOwAiUrMEKkTJIJMgB96tSkiaMDzsYHZ8TntTY+vce7d3YEAGnZdvjh1dwiBMQl5OHbLJiWbZeWbfd4fjruA/WCobF6wQjou7QqEgBAfX//N2k6d3WGV9uCYQoANfT6dB+mWdIyVkkphvJSQ0mxHdNMgcqaZ7G3kcQFuT6VQEVSiYmsSSOBYVsVyaS8qqbx+ZeqBY20LolVJDXwCfz99CEHn8DfR3gvgaqkFJy8VZGEZ0idm2dxtE9JJUG+TYaUgSuJfC5YJ+5DWxDTnpqDIOPJhdF4MqAM6GA1ezmGPuPJ6VLJbcwXIkk1HqkjhkaKvBlvpozpvJMY6CR9qPXC5Wbg8OzjS3q8gsPenT3xuUBn14t+weAMh/G4uKA07r5nT4jITOvr1AAAAABJRU5ErkJggg=='
-    var HAND = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACUAAAAwCAYAAACWhbMrAAABPklEQVR4nO2YsQ2DMBBFvyM66vQMkAmYBCkjZIWUrMAIkZiECRggfWpqUkSXGOSYMzmcE/IrjbE+3+c7c0AgbTeMoe+EYrgT224YqzI3AHC63CfC+qZgr8PhwJ1IgtQ5Vd8eAIDr+Th5RuNSjrGdikkSxSWJ4pJEcckkF3MlVkq6IYiKoiT6K/vfPlf5mRdvwleSREWFMI8/O/aiifpWxF3sP6bWQA7WeMVe3xQms+9JLqRvlRx0bl9V5oaOre9ISyVGliiJReYfszS+hFeUvai0Uz7BOmMK+JwwOpZrbZdCr1PEO5FZ8UNjMd2bOFWVuVlzKZNG5fYlUVycyZNShK+psSXqnGq7Yfz7fWreRqoahU4BCwXZ7t7FjC2VTiVRXILqnGRs+Zq3QU7FKtYqty+J4rK6zGz5H6jSKZU8AQ9FeKPOuv10AAAAAElFTkSuQmCC'
-    var AX = 1, AY = 0
-    var HX = 12, HY = 0
+    var ARROW = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADQAAABACAYAAABVy1Q8AAAAvUlEQVR42u3bsQ3CMBgFYRuxBwwAk8E4MBkMQCaB3gUIGZzf9vfKFBGn3IkoSnIqdjg9nqli9+s+pxW3SYMNUPTl2maiNUU5QNEaul12b09wPC+hmqIcoN4aitYU5QD13tDaTVEO0GgNtW6KcoBGb+jfTVEO0GwN/bopygGavaHapigHqPG20X9g2fCnpigHCBAgQP6Hau7FXCFAszfUuhnPFAD13pB3fSg3OZB3TikHqLKh8oBvHygH6Ku9ACv7SnaYuoaBAAAAAElFTkSuQmCC'
+    var HAND = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAABAklEQVR42u2bwQ3CMAxFE9Q9YACYrIwDk8EAdBI44wORZTtN8PvHVq3ap/wfO2lrMeq8vt6W65/3Uy076lCSCwDZAdTenh8tE7AAAJJr8b7h43b8ef5y3RgBAADAH2dAdG/hXSdgAQCQAXNJ24u0MgMLAIAM6Nvv9+4d5PvITMACAEiu6u35lqejpc0MLAAA6oB95+nouqL1fFgAAGTA3PM+IwAAAIjNADmPzu55RgAAAPC9HiAPaNcHRs8EegEsAABdBsyeCawJYgEA+PYCci+t996ht9gbxAIA0GWAdR6Orgus+xJYAAD0AjaNXhfwnSAWAEBsBoyWCdr/CbAAAJLrA4NxSe5JlFOYAAAAAElFTkSuQmCC'
+    var AX = 4, AY = 0
+    var HX = 23, HY = 0
 
     var css = ''
         + 'html, body {'
