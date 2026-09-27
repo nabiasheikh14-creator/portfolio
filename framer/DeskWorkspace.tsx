@@ -883,7 +883,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                         displayFamily={displayFamily}
                         ink={ink}
                         muted={muted}
-                        handwritten
                         onClose={() => setPopup(null)}
                     />
                 )}
@@ -1306,6 +1305,80 @@ function Hotspot({
     )
 }
 
+/** Shared popup type + spacing — every desk modal uses these tokens. */
+const POPUP = {
+    pad: "52px 36px 36px",
+    padCentered: "52px 40px 40px",
+    padSplit: "52px 36px 36px",
+    titleSize: 40,
+    titleLine: 1.1,
+    titleMb: 14,
+    bodySize: 16,
+    bodyLine: 1.55,
+    bodyMb: 28,
+    labelSize: 11,
+    labelTracking: "0.08em",
+} as const
+
+function PopupTitle({
+    children,
+    displayFamily,
+    ink = INK,
+    align = "left",
+}: {
+    children: ReactNode
+    displayFamily: string
+    ink?: string
+    align?: "left" | "center"
+}) {
+    return (
+        <div
+            style={{
+                fontFamily: displayFamily,
+                fontWeight: 400,
+                fontSize: POPUP.titleSize,
+                lineHeight: POPUP.titleLine,
+                marginBottom: POPUP.titleMb,
+                color: ink,
+                textAlign: align,
+            }}
+        >
+            {children}
+        </div>
+    )
+}
+
+function PopupBody({
+    children,
+    muted = MUTED,
+    align = "left",
+    maxWidth,
+    mb = POPUP.bodyMb,
+}: {
+    children: ReactNode
+    muted?: string
+    align?: "left" | "center"
+    maxWidth?: number | string
+    mb?: number
+}) {
+    return (
+        <p
+            style={{
+                margin: `0 ${align === "center" ? "auto" : 0} ${mb}px`,
+                maxWidth: maxWidth ?? (align === "center" ? 380 : undefined),
+                fontSize: POPUP.bodySize,
+                lineHeight: POPUP.bodyLine,
+                letterSpacing: "-0.01em",
+                color: muted,
+                textAlign: align,
+                whiteSpace: "pre-wrap",
+            }}
+        >
+            {children}
+        </p>
+    )
+}
+
 function ModalShell({
     onClose,
     family,
@@ -1368,6 +1441,7 @@ function ModalShell({
                         fontWeight: 700,
                         fontSize: 13,
                         letterSpacing: 1,
+                        textTransform: "uppercase",
                         background: INK,
                         color: "#fff",
                         border: "none",
@@ -1446,9 +1520,9 @@ function SectionLabel({ children, ink = MUTED }: { children: ReactNode; ink?: st
     return (
         <div
             style={{
-                fontSize: 11,
+                fontSize: POPUP.labelSize,
                 fontWeight: 600,
-                letterSpacing: "0.08em",
+                letterSpacing: POPUP.labelTracking,
                 textTransform: "uppercase",
                 color: ink,
                 marginBottom: 14,
@@ -1528,7 +1602,7 @@ function ExperiencePopup({
                 <aside
                     style={{
                         borderRight: `1.5px solid ${ink}`,
-                        padding: "52px 24px 36px",
+                        padding: POPUP.padSplit,
                         boxSizing: "border-box",
                         background: CREAM,
                         overflow: "auto",
@@ -1626,7 +1700,7 @@ function ExperiencePopup({
 
                 <div
                     style={{
-                        padding: "52px 40px 40px",
+                        padding: POPUP.padSplit,
                         boxSizing: "border-box",
                         display: "flex",
                         flexDirection: "column",
@@ -1634,9 +1708,9 @@ function ExperiencePopup({
                 >
                     <div
                         style={{
-                            fontSize: 11,
+                            fontSize: POPUP.labelSize,
                             fontWeight: 700,
-                            letterSpacing: "0.08em",
+                            letterSpacing: POPUP.labelTracking,
                             textTransform: "uppercase",
                             color: accent,
                             marginBottom: 10,
@@ -1648,31 +1722,23 @@ function ExperiencePopup({
                               ? "Education"
                               : "Past role"}
                     </div>
-                    <div
-                        style={{
-                            fontFamily: displayFamily,
-                            fontSize: "clamp(30px, 3.8vw, 40px)",
-                            lineHeight: 1.08,
-                            marginBottom: 10,
-                            color: ink,
-                        }}
-                    >
+                    <PopupTitle displayFamily={displayFamily} ink={ink}>
                         {selected?.role}
-                    </div>
+                    </PopupTitle>
                     <div
                         style={{
                             display: "flex",
                             flexWrap: "wrap",
                             alignItems: "baseline",
                             gap: "6px 14px",
-                            marginBottom: 28,
+                            marginBottom: POPUP.bodyMb,
                             paddingBottom: 22,
                             borderBottom: `1px solid rgba(17,17,17,0.12)`,
                         }}
                     >
                         <span
                             style={{
-                                fontSize: 16,
+                                fontSize: POPUP.bodySize,
                                 fontWeight: 600,
                                 letterSpacing: "-0.02em",
                                 color: ink,
@@ -1709,8 +1775,8 @@ function ExperiencePopup({
                                 <p
                                     style={{
                                         margin: 0,
-                                        fontSize: 16,
-                                        lineHeight: 1.55,
+                                        fontSize: POPUP.bodySize,
+                                        lineHeight: POPUP.bodyLine,
                                         color: muted,
                                         letterSpacing: "-0.01em",
                                     }}
@@ -1830,29 +1896,13 @@ function SchedulePopup({
     const mailto = `mailto:${email}?subject=${encodeURIComponent("Let's work together")}&body=${encodeURIComponent("Hi Nabia,\n\nI'd love to chat about a project.\n\n")}`
     return (
         <ModalShell onClose={onClose} family={family} width="min(560px, 94vw)">
-            <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
-                <div
-                    style={{
-                        fontFamily: displayFamily,
-                        fontSize: 42,
-                        lineHeight: 1.1,
-                        marginBottom: 14,
-                        color: ink,
-                    }}
-                >
+            <div style={{ padding: POPUP.padCentered, textAlign: "center", boxSizing: "border-box" }}>
+                <PopupTitle displayFamily={displayFamily} ink={ink} align="center">
                     Got a project?
-                </div>
-                <p
-                    style={{
-                        margin: "0 auto 28px",
-                        maxWidth: 380,
-                        fontSize: 16,
-                        lineHeight: 1.6,
-                        color: muted,
-                    }}
-                >
+                </PopupTitle>
+                <PopupBody muted={muted} align="center" maxWidth={380}>
                     {message}
-                </p>
+                </PopupBody>
                 <ShadowButton href={mailto} label="Email me" accent={accent} ink={ink} />
                 <div style={{ marginTop: 14, fontSize: 13, color: muted }}>{email}</div>
             </div>
@@ -1884,29 +1934,13 @@ function SocialsPopup({
 }) {
     return (
         <ModalShell onClose={onClose} family={family} width="min(520px, 94vw)">
-            <div style={{ padding: "56px 40px 40px", textAlign: "center" }}>
-                <div
-                    style={{
-                        fontFamily: displayFamily,
-                        fontSize: 40,
-                        lineHeight: 1.1,
-                        marginBottom: 12,
-                        color: ink,
-                    }}
-                >
+            <div style={{ padding: POPUP.padCentered, textAlign: "center", boxSizing: "border-box" }}>
+                <PopupTitle displayFamily={displayFamily} ink={ink} align="center">
                     Come say hi
-                </div>
-                <p
-                    style={{
-                        margin: "0 auto 28px",
-                        maxWidth: 340,
-                        fontSize: 16,
-                        lineHeight: 1.6,
-                        color: muted,
-                    }}
-                >
+                </PopupTitle>
+                <PopupBody muted={muted} align="center" maxWidth={340}>
                     {message}
-                </p>
+                </PopupBody>
                 <div
                     style={{
                         display: "flex",
@@ -1934,7 +1968,6 @@ function MediaCtaPopup({
     displayFamily = ANNIE,
     ink = INK,
     muted = MUTED,
-    handwritten,
     onClose,
 }: {
     heading: string
@@ -1947,7 +1980,6 @@ function MediaCtaPopup({
     displayFamily?: string
     ink?: string
     muted?: string
-    handwritten?: boolean
     onClose: () => void
 }) {
     const img = resolveImage(image)
@@ -1971,37 +2003,17 @@ function MediaCtaPopup({
                 />
                 <div
                     style={{
-                        padding: "56px 32px 36px",
+                        padding: POPUP.padSplit,
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "center",
                         boxSizing: "border-box",
                     }}
                 >
-                    <h3
-                        style={{
-                            margin: "0 0 14px",
-                            fontFamily: handwritten ? displayFamily : family,
-                            fontSize: handwritten ? 36 : 28,
-                            fontWeight: handwritten ? 400 : 700,
-                            letterSpacing: handwritten ? 0 : "-0.02em",
-                            lineHeight: 1.15,
-                            color: INK,
-                        }}
-                    >
+                    <PopupTitle displayFamily={displayFamily} ink={ink}>
                         {heading}
-                    </h3>
-                    <p
-                        style={{
-                            margin: "0 0 24px",
-                            fontFamily: handwritten ? displayFamily : family,
-                            fontSize: handwritten ? 24 : 16,
-                            lineHeight: 1.45,
-                            color: MUTED,
-                        }}
-                    >
-                        {text}
-                    </p>
+                    </PopupTitle>
+                    <PopupBody muted={muted}>{text}</PopupBody>
                     {link ? (
                         <div style={{ alignSelf: "flex-start" }}>
                             <ShadowButton href={link} label={linkLabel} accent={accent} ink={ink} />
@@ -2051,30 +2063,13 @@ function AboutPopup({
                         borderRight: `1.5px solid ${INK}`,
                     }}
                 />
-                <div style={{ padding: "56px 36px 36px", boxSizing: "border-box" }}>
-                    <div
-                        style={{
-                            fontFamily: displayFamily,
-                            fontSize: 38,
-                            lineHeight: 1.1,
-                            marginBottom: 18,
-                            color: ink,
-                        }}
-                    >
+                <div style={{ padding: POPUP.padSplit, boxSizing: "border-box" }}>
+                    <PopupTitle displayFamily={displayFamily} ink={ink}>
                         Get to know me
-                    </div>
-                    <p
-                        style={{
-                            margin: 0,
-                            fontFamily: displayFamily,
-                            fontSize: 26,
-                            lineHeight: 1.45,
-                            color: muted,
-                            whiteSpace: "pre-wrap",
-                        }}
-                    >
+                    </PopupTitle>
+                    <PopupBody muted={muted} mb={0}>
                         {message}
-                    </p>
+                    </PopupBody>
                 </div>
             </div>
         </ModalShell>
@@ -2118,29 +2113,13 @@ function TechStackPopup({
 
     return (
         <ModalShell onClose={onClose} family={family} width="min(720px, 94vw)">
-            <div style={{ padding: "52px 36px 36px", boxSizing: "border-box" }}>
-                <div
-                    style={{
-                        fontFamily: displayFamily,
-                        fontSize: 40,
-                        lineHeight: 1.1,
-                        marginBottom: 12,
-                        color: ink,
-                    }}
-                >
+            <div style={{ padding: POPUP.pad, boxSizing: "border-box" }}>
+                <PopupTitle displayFamily={displayFamily} ink={ink}>
                     Tech stack
-                </div>
-                <p
-                    style={{
-                        margin: "0 0 28px",
-                        maxWidth: 520,
-                        fontSize: 16,
-                        lineHeight: 1.55,
-                        color: muted,
-                    }}
-                >
+                </PopupTitle>
+                <PopupBody muted={muted} maxWidth={520}>
                     {message || DEFAULT_TECH_STACK_MESSAGE}
-                </p>
+                </PopupBody>
                 <div
                     style={{
                         display: "grid",
