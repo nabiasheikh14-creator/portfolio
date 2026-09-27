@@ -1458,7 +1458,7 @@ const FOOTER_HOTSPOTS: {
     },
     {
         key: "sticky",
-        box: [834, 368, 86, 142],
+        box: [836, 428, 82, 85],
         label: "Tech stack",
         href: "/?open=techstack",
     },

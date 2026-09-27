@@ -209,11 +209,13 @@ const CLICK_DEFS: Click[] = [
     },
     {
         key: "projects-books",
-        box: [560, 95, 190, 150],
+        // Shelf books only (~576–745 × 78–185) — tall box pushed EXPERIENCE way below.
+        box: [575, 78, 172, 112],
         label: "EXPERIENCE",
         action: "popup",
         popupKind: "experience",
         labelPos: "below",
+        labelGap: 8,
     },
     {
         key: "radiobox",
@@ -263,14 +265,14 @@ const CLICK_DEFS: Click[] = [
     },
     {
         key: "sticky",
-        // Tight to the white sticky note (~837–913 × 368–509).
-        box: [834, 368, 86, 142],
+        // Sticky note ink (~837–915 × 433–510) — previous tall box floated TECH STACK up onto the portrait.
+        box: [836, 428, 82, 85],
         label: "TECH STACK",
         action: "popup",
         popupKind: "techstack",
         jiggle: ["sticky"],
         labelPos: "above",
-        labelGap: 8,
+        labelGap: 6,
     },
 ]
 
@@ -1200,32 +1202,39 @@ function Hotspot({
     }
 
     const labelEl = (
-        <motion.span
-            initial={false}
-            animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
-            transition={{ duration: 0.25 }}
-            style={
-                {
-                    position: "absolute",
-                    left: "50%",
-                    [below ? "bottom" : "top"]: -labelGap,
-                    transform: "translateX(-50%)",
-                    background: accent,
-                    color: "#fff",
-                    fontFamily: family,
-                    fontWeight: 700,
-                    fontSize: labelSize || 12,
-                    letterSpacing: 0.6,
-                    padding: "3px 8px",
-                    borderRadius: 4,
-                    whiteSpace: "nowrap",
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
-                    pointerEvents: "none",
-                } as CSSProperties
-            }
+        <div
+            style={{
+                position: "absolute",
+                left: "50%",
+                [below ? "bottom" : "top"]: -labelGap,
+                transform: "translateX(-50%)",
+                pointerEvents: "none",
+            }}
         >
-            {label}
-        </motion.span>
+            <motion.span
+                initial={false}
+                animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 6 }}
+                transition={{ duration: 0.25 }}
+                style={
+                    {
+                        display: "block",
+                        background: accent,
+                        color: "#fff",
+                        fontFamily: family,
+                        fontWeight: 700,
+                        fontSize: labelSize || 12,
+                        letterSpacing: 0.6,
+                        padding: "3px 8px",
+                        borderRadius: 4,
+                        whiteSpace: "nowrap",
+                        boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                        pointerEvents: "none",
+                    } as CSSProperties
+                }
+            >
+                {label}
+            </motion.span>
+        </div>
     )
 
     // Archive stays a native link. Laptop → Work uses a button so Framer's
