@@ -36,10 +36,11 @@
     }
 
     function wantOn() {
+        // Default ON for new visitors. Only an explicit "0" (user muted) stays off.
         try {
-            return sessionStorage.getItem(WANT_KEY) === "1"
+            return sessionStorage.getItem(WANT_KEY) !== "0"
         } catch (_) {
-            return false
+            return true
         }
     }
 
@@ -207,7 +208,8 @@
     }
 
     function toggle() {
-        if (!audio.paused) pause()
+        // Prefer the stored intent so a blocked autoplay still toggles OFF on click.
+        if (wantOn()) pause()
         else return play()
     }
 
@@ -271,7 +273,7 @@
         try {
             phone = window.matchMedia("(max-width: 809.98px)").matches
         } catch (_) {}
-        var on = !audio.paused
+        var on = wantOn()
         var home = isHome()
         btn.textContent = on ? "MUSIC ON" : "MUSIC OFF"
         btn.setAttribute("aria-pressed", on ? "true" : "false")
@@ -339,6 +341,9 @@
     }
 
     function boot() {
+        // Seed default-on preference so it persists across pages until muted.
+        if (wantOn()) setWant(true)
+
         // Arm resume BEFORE any play() so early timeupdate can't wipe the stamp.
         if (wantOn()) armResumeFromStorage()
 
@@ -350,6 +355,7 @@
             if (!audio.paused) saveTime(false)
         }, 400)
 
+        // Auto-start (may be blocked until first gesture — retry below).
         if (wantOn()) play()
 
         document.addEventListener(
@@ -359,6 +365,16 @@
             },
             true,
         )
+        // Also unlock on keyboard / wheel — common first interactions.
+        ;["keydown", "wheel", "touchstart"].forEach(function (evt) {
+            document.addEventListener(
+                evt,
+                function () {
+                    if (wantOn() && audio.paused) play()
+                },
+                { capture: true, passive: true },
+            )
+        })
         window.addEventListener("popstate", syncBtn)
     }
 

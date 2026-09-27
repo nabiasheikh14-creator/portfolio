@@ -548,8 +548,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     // Sitewide radio lives on window (bodyStart custom code) so playback
     // survives Framer SPA navigations. Desk hotspot only toggles that singleton.
+    // Default ON — mirrors site-radio.js (off only after an explicit mute).
     const [playing, setPlaying] = useState(false)
-    const soundOn = playing
+    const [soundOn, setSoundOn] = useState(true)
 
     type NabiaRadioWindow = Window & {
         __nabiaRadioPlay?: () => Promise<boolean> | boolean
@@ -560,30 +561,13 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         __nabiaRadioSetTrack?: (url: string) => void
     }
 
-    useEffect(() => {
-        if (typeof window === "undefined" || isStatic) return
-        const w = window as NabiaRadioWindow
-        w.__nabiaRadioSetTrack?.(trackUrl)
-        const sync = () => {
-            setPlaying(Boolean(w.__nabiaRadioIsPlaying?.()))
-        }
-        sync()
-        window.addEventListener("nabia-radio", sync)
-        // Poll briefly in case custom code loads after this mount.
-        const id = window.setInterval(sync, 500)
-        return () => {
-            window.removeEventListener("nabia-radio", sync)
-            window.clearInterval(id)
-            // Do NOT pause — leaving the desk must keep the track going.
-        }
-    }, [trackUrl, isStatic])
-
     const startRadio = async () => {
         if (typeof window === "undefined") return false
         const w = window as NabiaRadioWindow
         w.__nabiaRadioSetTrack?.(trackUrl)
         const ok = await Promise.resolve(w.__nabiaRadioPlay?.())
         setPlaying(Boolean(w.__nabiaRadioIsPlaying?.() ?? ok))
+        setSoundOn(w.__nabiaRadioWantOn ? Boolean(w.__nabiaRadioWantOn()) : true)
         return Boolean(ok)
     }
 
@@ -592,6 +576,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         const w = window as NabiaRadioWindow
         w.__nabiaRadioPause?.()
         setPlaying(false)
+        setSoundOn(false)
     }
 
     function toggleSound() {
@@ -600,13 +585,33 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         if (w.__nabiaRadioToggle) {
             void Promise.resolve(w.__nabiaRadioToggle()).finally(() => {
                 setPlaying(Boolean(w.__nabiaRadioIsPlaying?.()))
+                setSoundOn(w.__nabiaRadioWantOn ? Boolean(w.__nabiaRadioWantOn()) : false)
             })
             return
         }
-        // Fallback if custom code hasn't loaded yet.
-        if (playing) stopRadio()
+        if (soundOn) stopRadio()
         else void startRadio()
     }
+
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        const w = window as NabiaRadioWindow
+        w.__nabiaRadioSetTrack?.(trackUrl)
+        const sync = () => {
+            setPlaying(Boolean(w.__nabiaRadioIsPlaying?.()))
+            setSoundOn(w.__nabiaRadioWantOn ? Boolean(w.__nabiaRadioWantOn()) : true)
+        }
+        sync()
+        // Kick autoplay as soon as the desk mounts (gesture unlock handled sitewide).
+        if (w.__nabiaRadioWantOn?.() !== false) void startRadio()
+        window.addEventListener("nabia-radio", sync)
+        const id = window.setInterval(sync, 500)
+        return () => {
+            window.removeEventListener("nabia-radio", sync)
+            window.clearInterval(id)
+            // Do NOT pause — leaving the desk must keep the track going.
+        }
+    }, [trackUrl, isStatic])
 
     function activate(c: Click) {
         playUiClick()
