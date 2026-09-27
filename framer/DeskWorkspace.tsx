@@ -32,8 +32,6 @@ const INTRO_VH_PHONE = 220
 const PHONE_MQ = "(max-width: 809.98px)"
 /** Session flag — scroll intro only on the first homepage visit in this tab. */
 const INTRO_SEEN_KEY = "__nabiaDeskIntroSeen"
-/** One-shot “click a blue label” tip after the desk first reveals. */
-const DESK_HINT_KEY = "__nabiaDeskHintSeen"
 /** Set before navigating home → /work so WorkIndex can settle the zoom. */
 const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
 const IMG = "https://framerusercontent.com/images/"
@@ -57,24 +55,6 @@ function markDeskIntroSeen() {
         /* private mode, etc. */
     }
     ;(window as Window & { __nabiaDeskIntroSeen?: boolean }).__nabiaDeskIntroSeen = true
-}
-
-function hasSeenDeskHint(): boolean {
-    if (typeof window === "undefined") return false
-    try {
-        return sessionStorage.getItem(DESK_HINT_KEY) === "1"
-    } catch {
-        return false
-    }
-}
-
-function markDeskHintSeen() {
-    if (typeof window === "undefined") return
-    try {
-        sessionStorage.setItem(DESK_HINT_KEY, "1")
-    } catch {
-        /* private mode, etc. */
-    }
 }
 
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
@@ -542,14 +522,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     // All desk interactions (page links, popups, hover jiggles) unlock together
     // once the welcome fades and the illustration starts revealing.
     const [deskReady, setDeskReady] = useState(!animated)
-    const [showDeskHint, setShowDeskHint] = useState(false)
-
-    const dismissDeskHint = () => {
-        if (!showDeskHint) return
-        setShowDeskHint(false)
-        markDeskHintSeen()
-    }
-
     useMotionValueEvent(p, "change", (v) => {
         startTransition(() => setDeskReady(v > REVEAL_START))
         // Once the desk has mostly assembled, future visits can skip the scroll.
@@ -558,17 +530,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     useEffect(() => {
         if (!animated) setDeskReady(true)
     }, [animated])
-
-    // One-shot tip after the desk first appears in this tab.
-    useEffect(() => {
-        if (isStatic || !deskReady || hasSeenDeskHint()) return
-        setShowDeskHint(true)
-        const id = window.setTimeout(() => {
-            setShowDeskHint(false)
-            markDeskHintSeen()
-        }, 4000)
-        return () => window.clearTimeout(id)
-    }, [deskReady, isStatic])
 
     // Deep links from footer desk hotspots: /?open=techstack|about|socials|…
     useEffect(() => {
@@ -658,7 +619,6 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
     function activate(c: Click) {
         playUiClick()
-        dismissDeskHint()
         if (c.action === "sound") return toggleSound()
         if (c.action === "page" && c.href) {
             // Page hotspots are real <a href> — native navigation handles routing.
@@ -798,10 +758,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                 labelSize={labelSize}
                                 soundOn={playing || soundOn}
                                 visible={deskReady || !animated}
-                                onEnter={() => {
-                                    dismissDeskHint()
-                                    setHovered(c.key)
-                                }}
+                                onEnter={() => setHovered(c.key)}
                                 onLeave={() =>
                                     setHovered((h) => (h === c.key ? null : h))
                                 }
@@ -866,88 +823,19 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                         delay: 1.1,
                                     }}
                                     style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        gap: 10,
+                                        fontFamily: family,
+                                        fontSize: isPhone ? 13 : 14,
+                                        fontWeight: 500,
+                                        letterSpacing: "0.04em",
+                                        textTransform: "uppercase",
+                                        color: muted,
+                                        textAlign: "center",
                                     }}
                                 >
-                                    <div
-                                        style={{
-                                            fontFamily: family,
-                                            fontSize: isPhone ? 13 : 14,
-                                            fontWeight: 500,
-                                            letterSpacing: "0.04em",
-                                            textTransform: "uppercase",
-                                            color: muted,
-                                            textAlign: "center",
-                                        }}
-                                    >
-                                        {welcomeHint}
-                                    </div>
-                                    <motion.div
-                                        aria-hidden
-                                        animate={{ y: [0, 7, 0] }}
-                                        transition={{
-                                            duration: 1.4,
-                                            repeat: Infinity,
-                                            ease: "easeInOut",
-                                        }}
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            width: 20,
-                                            height: 20,
-                                            opacity: 0.85,
-                                        }}
-                                    >
-                                        <span
-                                            style={{
-                                                display: "block",
-                                                width: 10,
-                                                height: 10,
-                                                borderRight: `1.5px solid ${muted}`,
-                                                borderBottom: `1.5px solid ${muted}`,
-                                                transform: "rotate(45deg)",
-                                            }}
-                                        />
-                                    </motion.div>
+                                    {welcomeHint}
                                 </motion.div>
                             </motion.div>
                         </>
-                    )}
-                </AnimatePresence>
-
-                <AnimatePresence>
-                    {showDeskHint && deskReady && (
-                        <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 6 }}
-                            transition={{ duration: 0.35 }}
-                            style={{
-                                position: "absolute",
-                                left: "50%",
-                                bottom: isPhone ? 28 : 36,
-                                transform: "translateX(-50%)",
-                                zIndex: 35,
-                                pointerEvents: "none",
-                                fontFamily: family,
-                                fontSize: isPhone ? 12 : 13,
-                                fontWeight: 500,
-                                letterSpacing: "0.03em",
-                                textTransform: "uppercase",
-                                color: ink,
-                                background: "rgba(255,255,255,0.92)",
-                                border: `1.5px solid ${ink}`,
-                                padding: "8px 14px",
-                                whiteSpace: "nowrap",
-                                boxShadow: `3px 3px 0 ${accent}`,
-                            }}
-                        >
-                            click a blue label to explore
-                        </motion.div>
                     )}
                 </AnimatePresence>
             </div>
