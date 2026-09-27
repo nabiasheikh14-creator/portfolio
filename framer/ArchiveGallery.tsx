@@ -171,7 +171,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
     const scrollTimeout = useRef<number | null>(null)
 
     const sourceItems = useMemo(() => {
-        const normalized = (items || [])
+        const authored = (items || [])
             .map((it: any) => {
                 const imageUrl =
                     it?.imageUrl ||
@@ -179,6 +179,10 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                     (typeof it?.image === "string" ? it.image : "") ||
                     ""
                 if (!imageUrl) return null
+                const description = String(it.description || "")
+                // Framer ships stock placeholder rows on the canvas instance;
+                // skip them so real projects from DEFAULT_ITEMS can show.
+                if (/placeholder description/i.test(description)) return null
                 const popupImageUrl =
                     it?.popupImageUrl ||
                     it?.popupImage?.src ||
@@ -186,13 +190,21 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                     imageUrl
                 return {
                     title: it.title || "Untitled",
-                    description: it.description || "",
+                    description,
                     imageUrl: String(imageUrl),
                     popupImageUrl: String(popupImageUrl),
                 } as GalleryItem
             })
             .filter(Boolean) as GalleryItem[]
-        return normalized.length ? normalized : DEFAULT_ITEMS
+
+        const defaultTitles = new Set(DEFAULT_ITEMS.map((d) => d.title))
+        const replacedDefaults = authored.some((it) =>
+            defaultTitles.has(it.title),
+        )
+        if (replacedDefaults) return authored
+
+        const extras = authored.filter((it) => !defaultTitles.has(it.title))
+        return [...DEFAULT_ITEMS, ...extras]
     }, [items])
 
     const colItems = useMemo(() => {
@@ -659,40 +671,58 @@ function Lightbox({
 
 const DEFAULT_ITEMS: GalleryItem[] = [
     {
-        title: "Broken Hearts Crux",
-        description:
-            "Branding for a themed coffee pop-up with punk-hearted energy.",
-        imageUrl:
-            "https://framerusercontent.com/images/Un3gv23Abjx2sxAXxmWzbbiRoA.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/8NVeowU29foyOIpNXI9JXw4afA.webp",
-    },
-    {
-        title: "Travel Geithorn",
-        description:
-            "A travel site for Giethoorn — canals, thatched roofs, and boat-only streets.",
-        imageUrl:
-            "https://framerusercontent.com/images/fzKbAhil7uy4TYs6Vzq6TdSA.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/fzKbAhil7uy4TYs6Vzq6TdSA.png",
-    },
-    {
-        title: "Readings.pk",
-        description:
-            "A bookish mobile shop for Pakistan’s bookstore — discover, save, and buy.",
-        imageUrl:
-            "https://framerusercontent.com/images/q6831i4WSF25pHQgKITXoBNOc1M.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/q6831i4WSF25pHQgKITXoBNOc1M.png",
-    },
-    {
         title: "Kodoto",
         description:
             "A playful video-sharing webapp where creators and viewers pick their desert path.",
         imageUrl:
-            "https://framerusercontent.com/images/ajrLl6n56kdBWJ6fQuUoK8pTsE.png",
+            "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
         popupImageUrl:
-            "https://framerusercontent.com/images/ajrLl6n56kdBWJ6fQuUoK8pTsE.png",
+            "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
+    },
+    {
+        title: "The Broken Hearts Crux",
+        description:
+            "Branding for a themed coffee pop-up with punk-hearted energy.",
+        imageUrl:
+            "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
+    },
+    {
+        title: "Cher's Closet",
+        description:
+            "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
+        imageUrl:
+            "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
+    },
+    {
+        title: "Paanshah",
+        description:
+            "Brand identity for a paan shop — bilingual manuals, stickers, and calligraphic mark.",
+        imageUrl:
+            "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
+    },
+    {
+        title: "Travel Giethoorn",
+        description:
+            "A travel site for Giethoorn — canals, thatched roofs, and boat-only streets.",
+        imageUrl:
+            "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
+    },
+    {
+        title: "Wave",
+        description:
+            "Mobile e-commerce for Wave Apparel — product grids, cart, and checkout.",
+        imageUrl:
+            "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
+        popupImageUrl:
+            "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
     },
 ]
 
