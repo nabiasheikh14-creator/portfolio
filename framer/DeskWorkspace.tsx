@@ -824,8 +824,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                     }}
                                     style={{
                                         fontFamily: family,
-                                        fontSize: isPhone ? 13 : 14,
-                                        fontWeight: 500,
+                                        fontSize: isPhone ? 11 : 12,
+                                        fontWeight: 300,
                                         letterSpacing: "0.04em",
                                         textTransform: "uppercase",
                                         color: muted,
