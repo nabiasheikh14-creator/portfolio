@@ -395,8 +395,8 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         linkedinUrl = "https://linkedin.com/",
         workLink = "/work",
         archiveLink = "/archive",
-        scheduleMessage = "My calendar fills with client work and content days — but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building.",
-        socialsMessage = "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
+        scheduleMessage = DEFAULT_SCHEDULE_MESSAGE,
+        socialsMessage = DEFAULT_SOCIALS_MESSAGE,
         chutneyHeading = "Chutney Studios",
         chutneyText = "My after-hours studio — branding and sites for small, good-taste brands.",
         chutneyImage = "",
@@ -405,7 +405,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         substackText = "Hey, naming side quests I have a substack too! Follow my writing",
         substackImage = "",
         substackUrl = "https://substack.com/",
-        aboutMessage = "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
+        aboutMessage = DEFAULT_ABOUT_MESSAGE,
         aboutImage = "",
         techStackMessage = DEFAULT_TECH_STACK_MESSAGE,
         techStackTools = DEFAULT_TECH_STACK_TOOLS,
@@ -423,6 +423,26 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const liHref = resolveLink(linkedinUrl, "https://linkedin.com/")
     const chutneyHref = resolveLink(chutneyLink, "")
     const substackHref = resolveLink(substackUrl, "https://substack.com/")
+    const aboutCopy = resolveMessage(
+        aboutMessage,
+        DEFAULT_ABOUT_MESSAGE,
+        STALE_ABOUT,
+    )
+    const scheduleCopy = resolveMessage(
+        scheduleMessage,
+        DEFAULT_SCHEDULE_MESSAGE,
+        STALE_SCHEDULE,
+    )
+    const socialsCopy = resolveMessage(
+        socialsMessage,
+        DEFAULT_SOCIALS_MESSAGE,
+        STALE_SOCIALS,
+    )
+    const techStackCopy = resolveMessage(
+        techStackMessage,
+        DEFAULT_TECH_STACK_MESSAGE,
+        STALE_TECH,
+    )
 
     const clicks = useMemo(
         () => buildClicks(workHref, archiveHref),
@@ -856,7 +876,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 {popup?.popupKind === "schedule" && (
                     <SchedulePopup
                         email={email}
-                        message={scheduleMessage}
+                        message={scheduleCopy}
                         accent={accent}
                         family={family}
                         displayFamily={displayFamily}
@@ -870,7 +890,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                     <SocialsPopup
                         instagramUrl={igHref}
                         linkedinUrl={liHref}
-                        message={socialsMessage}
+                        message={socialsCopy}
                         accent={accent}
                         family={family}
                         displayFamily={displayFamily}
@@ -912,7 +932,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 )}
                 {popup?.popupKind === "about" && (
                     <AboutPopup
-                        message={aboutMessage}
+                        message={aboutCopy}
                         image={aboutImage}
                         accent={accent}
                         family={family}
@@ -924,7 +944,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                 )}
                 {popup?.popupKind === "techstack" && (
                     <TechStackPopup
-                        message={techStackMessage}
+                        message={techStackCopy}
                         tools={techStackTools}
                         accent={accent}
                         family={family}
@@ -967,7 +987,14 @@ function normalizeExperience(list: ExperienceJob[]): ExperienceJob[] {
             slug: String(j?.slug || `job-${i}`),
         }))
         .sort((a, b) => a.order - b.order)
-    return rows.length ? rows : DEFAULT_EXPERIENCE
+    if (!rows.length) return DEFAULT_EXPERIENCE
+    // Canvas instances often keep stale placeholder jobs; prefer defaults
+    // until the Experience CMS is filled with the real companies.
+    const real = new Set(
+        DEFAULT_EXPERIENCE.map((d) => d.company.toLowerCase()),
+    )
+    const hasReal = rows.some((r) => real.has(r.company.toLowerCase()))
+    return hasReal ? rows : DEFAULT_EXPERIENCE
 }
 
 const layerImgStyle: CSSProperties = {
@@ -1609,9 +1636,7 @@ function ExperiencePopup({
             selected?.role === j.role &&
             selected?.duration === j.duration)
 
-    const detailKicker = /educat|school|grad/i.test(selected?.status || "")
-        ? "Highlights"
-        : "What I learned"
+    const detailKicker = "What I learned"
 
     return (
         <ModalShell onClose={onClose} family={family} width="min(920px, 95vw)">
@@ -2263,8 +2288,37 @@ function resolveRadioUrl(value: unknown): string {
 
 const DEFAULT_CLIENTS = ["Lemme", "Adobe", "Wellness Co.", "Atelier"]
 
+const DEFAULT_ABOUT_MESSAGE =
+    "Hi, I'm Nabia. I love music, reading, gilmore girls and juggling 60 things at a time. I've fallen in love with speculating better futures and designing for them. Pull up a chair, we have much to discuss."
+
+const DEFAULT_SCHEDULE_MESSAGE =
+    "My calendar's filled with client work and content days, but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building."
+
+const DEFAULT_SOCIALS_MESSAGE =
+    "Bits of process, finished pieces, and the occasional desk snack, find me on the apps I actually check."
+
 const DEFAULT_TECH_STACK_MESSAGE =
-    "These are the softwares I reach for to design, prototype, and publish — from first frames in Figma to live sites, illustration, motion, and a little AI help along the way."
+    "These are the softwares I reach for to design, prototype, and publish, from first frames in Figma to live sites, illustration, motion, and a little AI help along the way."
+
+const STALE_ABOUT =
+    /calm, considered interfaces|wellness and lifestyle teams/i
+const STALE_SCHEDULE =
+    /My calendar fills with client work and content days —/i
+const STALE_SOCIALS =
+    /desk snack — find me on the apps/i
+const STALE_TECH =
+    /publish — from first frames/i
+
+function resolveMessage(
+    value: string | undefined,
+    fallback: string,
+    stale?: RegExp,
+): string {
+    const v = String(value || "").trim()
+    if (!v) return fallback
+    if (stale && stale.test(v)) return fallback
+    return v
+}
 
 const DEFAULT_TECH_STACK_TOOLS: TechTool[] = [
     { name: "Figma", logoUrl: 'data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Cpath%20fill%3D%22%230acf83%22%20d%3D%22M45.5%20129c11.9%200%2021.5-9.6%2021.5-21.5V86H45.5C33.6%2086%2024%2095.6%2024%20107.5S33.6%20129%2045.5%20129zm0%200%22/%3E%3Cpath%20fill%3D%22%23a259ff%22%20d%3D%22M24%2064.5C24%2052.6%2033.6%2043%2045.5%2043H67v43H45.5C33.6%2086%2024%2076.4%2024%2064.5zm0%200%22/%3E%3Cpath%20fill%3D%22%23f24e1e%22%20d%3D%22M24%2021.5C24%209.6%2033.6%200%2045.5%200H67v43H45.5C33.6%2043%2024%2033.4%2024%2021.5zm0%200%22/%3E%3Cpath%20fill%3D%22%23ff7262%22%20d%3D%22M67%200h21.5C100.4%200%20110%209.6%20110%2021.5S100.4%2043%2088.5%2043H67zm0%200%22/%3E%3Cpath%20fill%3D%22%231abcfe%22%20d%3D%22M110%2064.5c0%2011.9-9.6%2021.5-21.5%2021.5S67%2076.4%2067%2064.5%2076.6%2043%2088.5%2043%20110%2052.6%20110%2064.5zm0%200%22/%3E%3C/svg%3E' },
@@ -2283,76 +2337,68 @@ const DEFAULT_TECH_STACK_TOOLS: TechTool[] = [
 
 const DEFAULT_EXPERIENCE: ExperienceJob[] = [
     {
-        company: "Studio North",
-        role: "Product Designer",
-        duration: "2024 — Present",
-        status: "Currently",
-        learning1: "Shipping calm product UI under real sprint pressure.",
-        learning2: "Pairing tightly with eng so polish survives handoff.",
-        learning3: "Keeping brand voice intact inside functional flows.",
-        learning4: "Defending focus time when every surface wants a redesign.",
-        order: 1,
-        slug: "role-one",
-    },
-    {
-        company: "Independent",
-        role: "Freelance Designer",
-        duration: "2023 — Present",
+        company: "Chutney Studios",
+        role: "Founder",
+        duration: "Present",
         status: "Currently",
         learning1: "Scoping projects so both sides stay sane.",
-        learning2: "Taste is a deliverable — not just pixels.",
+        learning2: "Taste is the real deliverable, not just pixels.",
         learning3: "Clear async updates beat long meetings.",
-        learning4: "Saying no early protects the work.",
-        order: 2,
-        slug: "role-two",
+        learning4:
+            "Being a founder is different from being an employee. You have to juggle a million things at the same time, and you have to do it well.",
+        order: 1,
+        slug: "chutney-studios",
     },
     {
-        company: "Wellness Studio Co.",
+        company: "10Pearls",
         role: "Product Designer",
-        duration: "2022 — 2023",
+        duration: "Present",
+        status: "Currently",
+        learning1: "Shipping calm product UI under real sprint pressure.",
+        learning2: "The handoff is just as important as the design process.",
+        learning3: "Keeping brand voice intact inside functional flows.",
+        learning4: "Defending focus time when every vertical needs a redesign.",
+        order: 2,
+        slug: "10pearls",
+    },
+    {
+        company: "Wondertech",
+        role: "Product Designer",
+        duration: "Past",
         status: "Past",
-        learning1: "Calm UI still needs decisive hierarchy.",
+        learning1: "Good UI still needs decisive hierarchy.",
         learning2: "Research without synthesis is just notes.",
-        learning3: "Design systems only work if squads adopt them.",
+        learning3: "Design systems only work if the team adopts them.",
         learning4: "Ship the thin wedge first.",
         order: 3,
-        slug: "past-one",
+        slug: "wondertech",
     },
     {
-        company: "Brand Lab",
+        company: "Zenices",
         role: "Visual Designer",
-        duration: "2021 — 2022",
+        duration: "Past",
         status: "Past",
-        learning1: "Brand systems need room to bend.",
+        learning1: "Brands need systems.",
         learning2: "Photography direction changes everything.",
         learning3: "Type pairing is half the personality.",
         learning4: "Clients feel cared for when you show process.",
         order: 4,
-        slug: "past-two",
+        slug: "zenices",
     },
     {
-        company: "Campus Creatives",
-        role: "Design Intern",
-        duration: "2020 — 2021",
-        status: "Past",
-        learning1: "Speed without taste is just noise.",
-        learning2: "Feedback is a craft — ask better questions.",
-        learning3: "Small briefs still deserve a point of view.",
-        learning4: "Documenting decisions saves future-you.",
-        order: 5,
-        slug: "past-three",
-    },
-    {
-        company: "Your University",
-        role: "BFA / Design",
-        duration: "Class of 20XX",
+        company: "Indus Valley School Of Art and Architecture",
+        role: "BFA / Communication Design",
+        duration: "Class of 2025",
         status: "Education",
-        learning1: "Replace with your concentration, thesis, or honors.",
-        learning2: "Add coursework, labs, or exhibitions that shaped your taste.",
-        learning3: "Note any leadership, clubs, or teaching-assistant work.",
-        learning4: "Keep it short — hiring managers skim education.",
-        order: 6,
-        slug: "graduation",
+        learning1:
+            "Majored in interaction design, learned UI/UX but fell in love with experience design and speculative futures.",
+        learning2:
+            'With my thesis project, Sooraj nagar (check it out in work) I set out to answer a simple question, "can we use design to imagine better climate futures, and how?"',
+        learning3:
+            "Overall distinction with 3.52 CGPA when I graduated!",
+        learning4: "",
+        order: 5,
+        slug: "indus-valley",
     },
 ]
 
@@ -2464,13 +2510,13 @@ addPropertyControls(DeskWorkspace, {
         type: ControlType.String,
         title: "Schedule Message",
         displayTextArea: true,
-        defaultValue: "My calendar fills with client work and content days — but I always make room for thoughtful collaborations. Drop me a note and tell me what you're building.",
+        defaultValue: DEFAULT_SCHEDULE_MESSAGE,
     },
     socialsMessage: {
         type: ControlType.String,
         title: "Socials Message",
         displayTextArea: true,
-        defaultValue: "Bits of process, finished pieces, and the occasional desk snack — find me on the apps I actually check.",
+        defaultValue: DEFAULT_SOCIALS_MESSAGE,
     },
     instagramUrl: {
         type: ControlType.Link,
@@ -2528,8 +2574,7 @@ addPropertyControls(DeskWorkspace, {
         type: ControlType.String,
         title: "Get to Know Me",
         displayTextArea: true,
-        defaultValue:
-            "Hi — I'm Nabia. I design calm, considered interfaces and brand moments for wellness and lifestyle teams. Pull up a chair.",
+        defaultValue: DEFAULT_ABOUT_MESSAGE,
     },
     aboutImage: {
         type: ControlType.Image,
