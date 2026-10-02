@@ -984,10 +984,9 @@ function normalizeExperience(list: ExperienceJob[]): ExperienceJob[] {
             const learning2 = String(j?.learning2 || "")
             const learning3 = String(j?.learning3 || "")
             const learning4 = String(j?.learning4 || "")
-            const staleLearnings = [learning1, learning2, learning3, learning4]
-                .filter(Boolean)
-                .some((t) => STALE_LEARNING.test(t))
-            const useDefaultLearnings = Boolean(def) && (staleLearnings || !learning1)
+            // Always overlay known companies from DEFAULT_EXPERIENCE so publish
+            // picks up copy fixes even when the canvas CMS still has old bullets.
+            const applyDefaults = Boolean(def)
             return {
                 company,
                 // Keep roles / dates / status from the canvas CMS when present.
@@ -997,18 +996,10 @@ function normalizeExperience(list: ExperienceJob[]): ExperienceJob[] {
                     def?.status === "Education"
                         ? "Education"
                         : String(j?.status || def?.status || "Past"),
-                learning1: useDefaultLearnings
-                    ? def!.learning1
-                    : learning1 || def?.learning1 || "",
-                learning2: useDefaultLearnings
-                    ? def!.learning2
-                    : learning2 || def?.learning2 || "",
-                learning3: useDefaultLearnings
-                    ? def!.learning3
-                    : learning3 || def?.learning3 || "",
-                learning4: useDefaultLearnings
-                    ? def!.learning4
-                    : learning4 || def?.learning4 || "",
+                learning1: applyDefaults ? def!.learning1 : learning1,
+                learning2: applyDefaults ? def!.learning2 : learning2,
+                learning3: applyDefaults ? def!.learning3 : learning3,
+                learning4: applyDefaults ? def!.learning4 : learning4,
                 order: Number(j?.order ?? def?.order ?? i + 1),
                 slug: String(j?.slug || def?.slug || `job-${i}`),
             }
@@ -2331,10 +2322,6 @@ const STALE_SOCIALS =
 const STALE_TECH =
     /publish — from first frames/i
 
-/** Placeholder / pre-rewrite learnings still sitting on the canvas CMS. */
-const STALE_LEARNING =
-    /Pairing tightly with eng|every surface wants a redesign|Taste is a deliverable —|Saying no early protects|Calm UI still needs|squads adopt them|Ship the thin wedge first|Brand systems need room to bend|Replace with your concentration|Add coursework, labs|Keep it short — hiring managers/i
-
 function resolveMessage(
     value: string | undefined,
     fallback: string,
@@ -2401,7 +2388,7 @@ const DEFAULT_EXPERIENCE: ExperienceJob[] = [
         learning1: "Good UI still needs decisive hierarchy.",
         learning2: "Research without synthesis is just notes.",
         learning3: "Design systems only work if the team adopts them.",
-        learning4: "",
+        learning4: "Ship the thin wedge first.",
         order: 3,
         slug: "wondertech",
     },
