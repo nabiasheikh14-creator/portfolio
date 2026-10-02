@@ -973,27 +973,49 @@ function stripSize(style?: CSSProperties): CSSProperties {
 }
 
 function normalizeExperience(list: ExperienceJob[]): ExperienceJob[] {
+    const defaultsByCompany = new Map(
+        DEFAULT_EXPERIENCE.map((d) => [companyKey(d.company), d]),
+    )
     const rows = (list || [])
-        .map((j, i) => ({
-            company: String(j?.company || "Company"),
-            role: String(j?.role || "Role"),
-            duration: String(j?.duration || ""),
-            status: String(j?.status || "Past"),
-            learning1: String(j?.learning1 || ""),
-            learning2: String(j?.learning2 || ""),
-            learning3: String(j?.learning3 || ""),
-            learning4: String(j?.learning4 || ""),
-            order: Number(j?.order ?? i + 1),
-            slug: String(j?.slug || `job-${i}`),
-        }))
+        .map((j, i) => {
+            const company = String(j?.company || "Company")
+            const def = defaultsByCompany.get(companyKey(company))
+            const learning1 = String(j?.learning1 || "")
+            const learning2 = String(j?.learning2 || "")
+            const learning3 = String(j?.learning3 || "")
+            const learning4 = String(j?.learning4 || "")
+            const staleLearnings = [learning1, learning2, learning3, learning4]
+                .filter(Boolean)
+                .some((t) => STALE_LEARNING.test(t))
+            const useDefaultLearnings = Boolean(def) && (staleLearnings || !learning1)
+            return {
+                company,
+                // Keep roles / dates / status from the canvas CMS when present.
+                role: String(j?.role || def?.role || "Role"),
+                duration: String(j?.duration || def?.duration || ""),
+                status:
+                    def?.status === "Education"
+                        ? "Education"
+                        : String(j?.status || def?.status || "Past"),
+                learning1: useDefaultLearnings
+                    ? def!.learning1
+                    : learning1 || def?.learning1 || "",
+                learning2: useDefaultLearnings
+                    ? def!.learning2
+                    : learning2 || def?.learning2 || "",
+                learning3: useDefaultLearnings
+                    ? def!.learning3
+                    : learning3 || def?.learning3 || "",
+                learning4: useDefaultLearnings
+                    ? def!.learning4
+                    : learning4 || def?.learning4 || "",
+                order: Number(j?.order ?? def?.order ?? i + 1),
+                slug: String(j?.slug || def?.slug || `job-${i}`),
+            }
+        })
         .sort((a, b) => a.order - b.order)
     if (!rows.length) return DEFAULT_EXPERIENCE
-    // Canvas instances often keep stale placeholder jobs; prefer defaults
-    // until the Experience CMS is filled with the real companies.
-    const real = new Set(
-        DEFAULT_EXPERIENCE.map((d) => d.company.toLowerCase()),
-    )
-    const hasReal = rows.some((r) => real.has(r.company.toLowerCase()))
+    const hasReal = rows.some((r) => defaultsByCompany.has(companyKey(r.company)))
     return hasReal ? rows : DEFAULT_EXPERIENCE
 }
 
@@ -2301,13 +2323,17 @@ const DEFAULT_TECH_STACK_MESSAGE =
     "These are the softwares I reach for to design, prototype, and publish, from first frames in Figma to live sites, illustration, motion, and a little AI help along the way."
 
 const STALE_ABOUT =
-    /calm, considered interfaces|wellness and lifestyle teams/i
+    /calm, considered interfaces|wellness and lifestyle teams|design with the user in mind|imaginign better futures/i
 const STALE_SCHEDULE =
     /My calendar fills with client work and content days —/i
 const STALE_SOCIALS =
     /desk snack — find me on the apps/i
 const STALE_TECH =
     /publish — from first frames/i
+
+/** Placeholder / pre-rewrite learnings still sitting on the canvas CMS. */
+const STALE_LEARNING =
+    /Pairing tightly with eng|every surface wants a redesign|Taste is a deliverable —|Saying no early protects|Calm UI still needs|squads adopt them|Ship the thin wedge first|Brand systems need room to bend|Replace with your concentration|Add coursework, labs|Keep it short — hiring managers/i
 
 function resolveMessage(
     value: string | undefined,
@@ -2318,6 +2344,12 @@ function resolveMessage(
     if (!v) return fallback
     if (stale && stale.test(v)) return fallback
     return v
+}
+
+function companyKey(name: string): string {
+    return String(name || "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "")
 }
 
 const DEFAULT_TECH_STACK_TOOLS: TechTool[] = [
@@ -2337,46 +2369,46 @@ const DEFAULT_TECH_STACK_TOOLS: TechTool[] = [
 
 const DEFAULT_EXPERIENCE: ExperienceJob[] = [
     {
-        company: "Chutney Studios",
-        role: "Founder",
-        duration: "Present",
-        status: "Currently",
-        learning1: "Scoping projects so both sides stay sane.",
-        learning2: "Taste is the real deliverable, not just pixels.",
-        learning3: "Clear async updates beat long meetings.",
-        learning4:
-            "Being a founder is different from being an employee. You have to juggle a million things at the same time, and you have to do it well.",
-        order: 1,
-        slug: "chutney-studios",
-    },
-    {
         company: "10Pearls",
-        role: "Product Designer",
+        role: "UI/UX Designer",
         duration: "Present",
         status: "Currently",
         learning1: "Shipping calm product UI under real sprint pressure.",
         learning2: "The handoff is just as important as the design process.",
         learning3: "Keeping brand voice intact inside functional flows.",
         learning4: "Defending focus time when every vertical needs a redesign.",
-        order: 2,
+        order: 1,
         slug: "10pearls",
     },
     {
-        company: "Wondertech",
-        role: "Product Designer",
-        duration: "Past",
+        company: "Chutney Studios",
+        role: "Co-founder",
+        duration: "2025 - Present",
+        status: "Currently",
+        learning1: "Scoping projects so both sides stay sane.",
+        learning2: "Taste is the real deliverable, not just pixels.",
+        learning3: "Clear async updates beat long meetings.",
+        learning4:
+            "Being a founder is different from being an employee. You have to juggle a million things at the same time, and you have to do it well.",
+        order: 2,
+        slug: "chutney-studios",
+    },
+    {
+        company: "WonderTech",
+        role: "Lead Product Designer",
+        duration: "2024-2025",
         status: "Past",
         learning1: "Good UI still needs decisive hierarchy.",
         learning2: "Research without synthesis is just notes.",
         learning3: "Design systems only work if the team adopts them.",
-        learning4: "Ship the thin wedge first.",
+        learning4: "",
         order: 3,
         slug: "wondertech",
     },
     {
         company: "Zenices",
         role: "Visual Designer",
-        duration: "Past",
+        duration: "2025 — 2026",
         status: "Past",
         learning1: "Brands need systems.",
         learning2: "Photography direction changes everything.",
@@ -2397,7 +2429,7 @@ const DEFAULT_EXPERIENCE: ExperienceJob[] = [
         learning3:
             "Overall distinction with 3.52 CGPA when I graduated!",
         learning4: "",
-        order: 5,
+        order: 6,
         slug: "indus-valley",
     },
 ]
