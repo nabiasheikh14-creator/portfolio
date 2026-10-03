@@ -761,6 +761,9 @@ function Lightbox({
                                     opacity: i === index ? 1 : 0,
                                     zIndex: i === index ? 1 : 0,
                                     pointerEvents: "none",
+                                    // Force hard cut — kill any inherited fade/transition.
+                                    transition: "none",
+                                    animation: "none",
                                 }}
                             />
                         ))
