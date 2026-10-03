@@ -24,9 +24,12 @@ const GRID_BG =
 interface GalleryItem {
     title: string
     description: string
+    /** Grid/tile image. */
     imageUrl: string
-    /** Optional larger/alternate image for the lightbox. */
+    /** Optional first (or only) lightbox image — falls back to imageUrl. */
     popupImageUrl?: string
+    /** Extra lightbox slides. One image → static; 2+ → auto slideshow. */
+    galleryImages?: string[]
 }
 
 interface ArchiveGalleryProps {
@@ -37,6 +40,37 @@ interface ArchiveGalleryProps {
     /** Editable Back pill destination. */
     backLink: string
     style?: CSSProperties
+}
+
+/** Delay before the popup slideshow begins advancing. */
+const SLIDESHOW_START_DELAY_MS = 1200
+/** Time each slide stays visible once the slideshow is running. */
+const SLIDESHOW_INTERVAL_MS = 2800
+
+function resolveImageSrc(value: unknown): string {
+    if (value == null || value === "") return ""
+    if (typeof value === "string") return value.trim()
+    if (typeof value === "object" && value && "src" in (value as object)) {
+        return String((value as { src?: unknown }).src || "").trim()
+    }
+    return ""
+}
+
+/** Deduped slide list for the lightbox (popup image first, then gallery). */
+function collectSlides(item: GalleryItem): string[] {
+    const primary =
+        resolveImageSrc(item.popupImageUrl) || resolveImageSrc(item.imageUrl)
+    const extras = (item.galleryImages || [])
+        .map((g) => resolveImageSrc(g))
+        .filter(Boolean)
+    const out: string[] = []
+    const seen = new Set<string>()
+    for (const url of [primary, ...extras]) {
+        if (!url || seen.has(url)) continue
+        seen.add(url)
+        out.push(url)
+    }
+    return out
 }
 
 function resolveLink(value: unknown, fallback = ""): string {
@@ -174,9 +208,8 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         const authored = (items || [])
             .map((it: any) => {
                 const imageUrl =
-                    it?.imageUrl ||
-                    it?.image?.src ||
-                    (typeof it?.image === "string" ? it.image : "") ||
+                    resolveImageSrc(it?.imageUrl) ||
+                    resolveImageSrc(it?.image) ||
                     ""
                 if (!imageUrl) return null
                 const description = String(it.description || "")
@@ -184,26 +217,54 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                 // skip them so real projects from DEFAULT_ITEMS can show.
                 if (/placeholder description/i.test(description)) return null
                 const popupImageUrl =
-                    it?.popupImageUrl ||
-                    it?.popupImage?.src ||
-                    (typeof it?.popupImage === "string" ? it.popupImage : "") ||
+                    resolveImageSrc(it?.popupImageUrl) ||
+                    resolveImageSrc(it?.popupImage) ||
                     imageUrl
+                const galleryImages = (
+                    Array.isArray(it?.galleryImages) ? it.galleryImages : []
+                )
+                    .map((g: unknown) => resolveImageSrc(g))
+                    .filter(Boolean) as string[]
                 return {
                     title: it.title || "Untitled",
                     description,
                     imageUrl: String(imageUrl),
                     popupImageUrl: String(popupImageUrl),
+                    galleryImages,
                 } as GalleryItem
             })
             .filter(Boolean) as GalleryItem[]
 
+        const defaultByTitle = new Map(
+            DEFAULT_ITEMS.map((d) => [d.title, d] as const),
+        )
+
+        // Merge authored CMS rows with defaults: keep user copy/images,
+        // but fall back to default gallery slides when none are set yet.
+        const mergedAuthored = authored.map((it) => {
+            const fallback = defaultByTitle.get(it.title)
+            if (!fallback) return it
+            const hasGallery = (it.galleryImages || []).length > 0
+            return {
+                ...fallback,
+                ...it,
+                galleryImages: hasGallery
+                    ? it.galleryImages
+                    : fallback.galleryImages || [],
+                popupImageUrl:
+                    it.popupImageUrl ||
+                    fallback.popupImageUrl ||
+                    it.imageUrl,
+            } as GalleryItem
+        })
+
         const defaultTitles = new Set(DEFAULT_ITEMS.map((d) => d.title))
-        const replacedDefaults = authored.some((it) =>
+        const replacedDefaults = mergedAuthored.some((it) =>
             defaultTitles.has(it.title),
         )
-        if (replacedDefaults) return authored
+        if (replacedDefaults) return mergedAuthored
 
-        const extras = authored.filter((it) => !defaultTitles.has(it.title))
+        const extras = mergedAuthored.filter((it) => !defaultTitles.has(it.title))
         return [...DEFAULT_ITEMS, ...extras]
     }, [items])
 
@@ -562,6 +623,10 @@ function Lightbox({
     accent: string
     onClose: () => void
 }) {
+    const slides = useMemo(() => collectSlides(item), [item])
+    const multi = slides.length > 1
+    const [index, setIndex] = useState(0)
+
     useEffect(() => {
         if (typeof window === "undefined") return
         const onKey = (e: KeyboardEvent) => {
@@ -570,6 +635,25 @@ function Lightbox({
         window.addEventListener("keydown", onKey)
         return () => window.removeEventListener("keydown", onKey)
     }, [onClose])
+
+    // Auto slideshow — starts after a delay, only when 2+ images exist.
+    // Contained entirely inside this popup (does not affect page scroll).
+    useEffect(() => {
+        if (!multi || typeof window === "undefined") return
+        setIndex(0)
+        let intervalId: number | null = null
+        const startId = window.setTimeout(() => {
+            intervalId = window.setInterval(() => {
+                setIndex((i) => (i + 1) % slides.length)
+            }, SLIDESHOW_INTERVAL_MS)
+        }, SLIDESHOW_START_DELAY_MS)
+        return () => {
+            window.clearTimeout(startId)
+            if (intervalId != null) window.clearInterval(intervalId)
+        }
+    }, [multi, slides.length, item.title])
+
+    const current = slides[index] || slides[0] || item.imageUrl
 
     return (
         <motion.div
@@ -613,7 +697,7 @@ function Lightbox({
                         position: "absolute",
                         top: 14,
                         right: 14,
-                        zIndex: 2,
+                        zIndex: 3,
                         fontFamily: SANS,
                         fontWeight: 600,
                         fontSize: 12,
@@ -628,17 +712,53 @@ function Lightbox({
                 >
                     Close
                 </button>
-                <img
-                    src={item.popupImageUrl || item.imageUrl}
-                    alt={item.title}
+
+                <div
                     style={{
+                        position: "relative",
                         width: "100%",
-                        maxHeight: "68vh",
-                        objectFit: "contain",
-                        display: "block",
+                        height: "min(68vh, 620px)",
                         background: CREAM,
+                        overflow: "hidden",
                     }}
-                />
+                >
+                    {multi ? (
+                        <AnimatePresence mode="sync" initial={false}>
+                            <motion.img
+                                key={current}
+                                src={current}
+                                alt={`${item.title} — ${index + 1} of ${slides.length}`}
+                                initial={{ opacity: 0, scale: 1.03 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.99 }}
+                                transition={{
+                                    duration: 0.7,
+                                    ease: [0.22, 1, 0.36, 1],
+                                }}
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    width: "100%",
+                                    height: "100%",
+                                    objectFit: "contain",
+                                    display: "block",
+                                }}
+                            />
+                        </AnimatePresence>
+                    ) : (
+                        <img
+                            src={current}
+                            alt={item.title}
+                            style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                display: "block",
+                            }}
+                        />
+                    )}
+                </div>
+
                 <div style={{ padding: "22px 24px 28px" }}>
                     <h3
                         style={{
@@ -678,6 +798,10 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
         popupImageUrl:
             "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/jqcRtA5oQbvVvJc24gIRBLxhP3I.png",
+            "https://framerusercontent.com/images/ojUNwY43hBf6a90PXPNddHP6JkQ.png",
+        ],
     },
     {
         title: "The Broken Hearts Crux",
@@ -687,6 +811,11 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
         popupImageUrl:
             "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/cpxWOBeGfC0r7mkijj0rMkyRJq8.png",
+            "https://framerusercontent.com/images/gBMnCVPHV0J6u5Q0tRx8PslI.png",
+            "https://framerusercontent.com/images/vLyUWfMDVhhlY9J9NxTPa2lKWk.png",
+        ],
     },
     {
         title: "Cher's Closet",
@@ -696,6 +825,11 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
         popupImageUrl:
             "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/YY0Yq4iiNgBGmKOdprLis0wmY8.png",
+            "https://framerusercontent.com/images/vRyItVCUBfQiZ5TNkuHSFTYc9u8.png",
+            "https://framerusercontent.com/images/waAOmDklpQafvsglPwGXm5Fhzmk.png",
+        ],
     },
     {
         title: "Paanshah",
@@ -705,6 +839,11 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
         popupImageUrl:
             "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/IfgDlmQOUmJWmqr412UvJLR53xU.png",
+            "https://framerusercontent.com/images/Y4Ey9MYHxnh51s83YDMyO10NS0.png",
+            "https://framerusercontent.com/images/NrSW54w1qY4GaBXoHxxwCN2fzM.png",
+        ],
     },
     {
         title: "Travel Giethoorn",
@@ -714,6 +853,11 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
         popupImageUrl:
             "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/eJDSDK2OMuL2bze7wtpQFvU0oX4.png",
+            "https://framerusercontent.com/images/HuSxn6Ennc76zLnqVsylqUSMUo.png",
+            "https://framerusercontent.com/images/95I7xoJD0YeZ0NIWYbRzL8vkwU.png",
+        ],
     },
     {
         title: "Wave",
@@ -723,6 +867,11 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
         popupImageUrl:
             "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/XSpUsoNwNBsdLkAOQy9YGknsqUI.png",
+            "https://framerusercontent.com/images/J0fMbOfcmArbBzxDKuO3du8t54.png",
+            "https://framerusercontent.com/images/DiJp3kKqHZB5Y3710xf0GySnk.png",
+        ],
     },
 ]
 
@@ -751,6 +900,15 @@ addPropertyControls(ArchiveGallery, {
                 popupImageUrl: {
                     type: ControlType.Image,
                     title: "Popup Image",
+                },
+                galleryImages: {
+                    type: ControlType.Array,
+                    title: "Popup Gallery",
+                    control: {
+                        type: ControlType.Image,
+                        title: "Slide",
+                    },
+                    defaultValue: [],
                 },
             },
         },
