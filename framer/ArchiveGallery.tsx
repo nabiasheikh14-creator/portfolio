@@ -636,8 +636,23 @@ function Lightbox({
         return () => window.removeEventListener("keydown", onKey)
     }, [onClose])
 
+    // Preload every slide so instant cuts never flash blank/cream.
+    useEffect(() => {
+        if (!multi || typeof window === "undefined") return
+        const loaders = slides.map((src) => {
+            const img = new window.Image()
+            img.src = src
+            return img
+        })
+        return () => {
+            loaders.forEach((img) => {
+                img.src = ""
+            })
+        }
+    }, [multi, slides])
+
     // Auto slideshow — starts after a delay, only when 2+ images exist.
-    // Contained entirely inside this popup (does not affect page scroll).
+    // Hard cut between frames (no fade / dissolve). Popup-only.
     useEffect(() => {
         if (!multi || typeof window === "undefined") return
         setIndex(0)
@@ -718,23 +733,24 @@ function Lightbox({
                         position: "relative",
                         width: "100%",
                         height: "min(68vh, 620px)",
-                        background: CREAM,
+                        background: "#111",
                         overflow: "hidden",
                     }}
                 >
                     {multi ? (
-                        <AnimatePresence mode="sync" initial={false}>
-                            <motion.img
-                                key={current}
-                                src={current}
-                                alt={`${item.title} — ${index + 1} of ${slides.length}`}
-                                initial={{ opacity: 0, scale: 1.03 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.99 }}
-                                transition={{
-                                    duration: 0.7,
-                                    ease: [0.22, 1, 0.36, 1],
-                                }}
+                        // Stack all slides; toggle with no transition so
+                        // each advance is an instant hard cut (no dissolve).
+                        slides.map((src, i) => (
+                            <img
+                                key={src}
+                                src={src}
+                                alt={
+                                    i === index
+                                        ? `${item.title} — ${i + 1} of ${slides.length}`
+                                        : ""
+                                }
+                                aria-hidden={i !== index}
+                                draggable={false}
                                 style={{
                                     position: "absolute",
                                     inset: 0,
@@ -742,13 +758,17 @@ function Lightbox({
                                     height: "100%",
                                     objectFit: "contain",
                                     display: "block",
+                                    opacity: i === index ? 1 : 0,
+                                    zIndex: i === index ? 1 : 0,
+                                    pointerEvents: "none",
                                 }}
                             />
-                        </AnimatePresence>
+                        ))
                     ) : (
                         <img
                             src={current}
                             alt={item.title}
+                            draggable={false}
                             style={{
                                 width: "100%",
                                 height: "100%",
