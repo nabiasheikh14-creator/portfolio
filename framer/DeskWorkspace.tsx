@@ -380,7 +380,7 @@ function playUiClick() {
 export default function DeskWorkspace(props: DeskWorkspaceProps) {
     const {
         welcomeText = "hey, welcome to my workspace",
-        welcomeHint = "scroll to enter",
+        welcomeHint = "Scroll to enter. Wear headphones for the best experience",
         accent = "#2C6BE0",
         cream = "#F3EFE6",
         ink = "#111111",
@@ -542,10 +542,26 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
     // All desk interactions (page links, popups, hover jiggles) unlock together
     // once the welcome fades and the illustration starts revealing.
     const [deskReady, setDeskReady] = useState(!animated)
+    const radioStartedRef = useRef(false)
     useMotionValueEvent(p, "change", (v) => {
         startTransition(() => setDeskReady(v > REVEAL_START))
         // Once the desk has mostly assembled, future visits can skip the scroll.
         if (v > 0.85) markDeskIntroSeen()
+        // First scroll movement kicks the radio (welcome stays silent until then).
+        if (animated && v > 0.002 && !radioStartedRef.current) {
+            radioStartedRef.current = true
+            if (typeof window !== "undefined") {
+                const w = window as Window & {
+                    __nabiaRadioPlay?: () => void
+                    __nabiaRadioWantOn?: () => boolean
+                    __nabiaRadioSetTrack?: (url: string) => void
+                }
+                if (w.__nabiaRadioWantOn?.() !== false) {
+                    w.__nabiaRadioSetTrack?.(trackUrl)
+                    void Promise.resolve(w.__nabiaRadioPlay?.())
+                }
+            }
+        }
     })
     useEffect(() => {
         if (!animated) setDeskReady(true)
@@ -626,8 +642,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             setSoundOn(w.__nabiaRadioWantOn ? Boolean(w.__nabiaRadioWantOn()) : true)
         }
         sync()
-        // Kick autoplay as soon as the desk mounts (gesture unlock handled sitewide).
-        if (w.__nabiaRadioWantOn?.() !== false) void startRadio()
+        // Welcome scroll intro: stay silent until the user scrolls.
+        // Return trips / skipIntro: resume as usual.
+        if (!animated && w.__nabiaRadioWantOn?.() !== false) void startRadio()
         window.addEventListener("nabia-radio", sync)
         const id = window.setInterval(sync, 500)
         return () => {
@@ -635,7 +652,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             window.clearInterval(id)
             // Do NOT pause — leaving the desk must keep the track going.
         }
-    }, [trackUrl, isStatic])
+    }, [trackUrl, isStatic, animated])
 
     function activate(c: Click) {
         playUiClick()
@@ -673,6 +690,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         <div
             ref={rootRef}
             onPointerDown={() => {
+                // Don't unlock music from a click on the welcome screen —
+                // wait until the user scrolls (or the desk is already ready).
+                if (animated && !deskReady) return
                 if (typeof window === "undefined") return
                 const w = window as NabiaRadioWindow
                 if (w.__nabiaRadioWantOn?.() && !w.__nabiaRadioIsPlaying?.()) {
@@ -850,6 +870,9 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                                         textTransform: "uppercase",
                                         color: muted,
                                         textAlign: "center",
+                                        lineHeight: 1.45,
+                                        maxWidth: isPhone ? "28ch" : "42ch",
+                                        padding: isPhone ? "0 16px" : undefined,
                                     }}
                                 >
                                     {welcomeHint}
@@ -2430,7 +2453,7 @@ addPropertyControls(DeskWorkspace, {
     welcomeHint: {
         type: ControlType.String,
         title: "Welcome Hint",
-        defaultValue: "scroll to enter",
+        defaultValue: "Scroll to enter. Wear headphones for the best experience",
     },
     cream: { type: ControlType.Color, title: "Background", defaultValue: "#F3EFE6" },
     ink: { type: ControlType.Color, title: "Ink", defaultValue: "#111111" },

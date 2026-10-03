@@ -268,6 +268,16 @@
         return p === "/"
     }
 
+    /** Welcome screen still showing — don't start music until the user scrolls. */
+    function introPending() {
+        if (!isHome()) return false
+        try {
+            return sessionStorage.getItem("__nabiaDeskIntroSeen") !== "1"
+        } catch (_) {
+            return true
+        }
+    }
+
     function applyChrome(btn) {
         var phone = false
         try {
@@ -340,6 +350,10 @@
         ensureBtn()
     }
 
+    function tryPlay() {
+        if (wantOn() && audio.paused) play()
+    }
+
     function boot() {
         // Seed default-on preference so it persists across pages until muted.
         if (wantOn()) setWant(true)
@@ -355,26 +369,37 @@
             if (!audio.paused) saveTime(false)
         }, 400)
 
-        // Auto-start (may be blocked until first gesture — retry below).
-        if (wantOn()) play()
+        // Welcome screen: wait for scroll. Elsewhere (or after intro): auto-start.
+        if (wantOn() && !introPending()) play()
 
-        document.addEventListener(
-            "pointerdown",
-            function () {
-                if (wantOn() && audio.paused) play()
-            },
-            true,
-        )
-        // Also unlock on keyboard / wheel — common first interactions.
-        ;["keydown", "wheel", "touchstart"].forEach(function (evt) {
+        // Scroll / touch-drag is the intended start on the welcome screen.
+        ;["wheel", "touchmove"].forEach(function (evt) {
             document.addEventListener(
                 evt,
                 function () {
-                    if (wantOn() && audio.paused) play()
+                    tryPlay()
                 },
                 { capture: true, passive: true },
             )
         })
+
+        // Pointer / keyboard unlock for later pages — not during welcome silence.
+        document.addEventListener(
+            "pointerdown",
+            function () {
+                if (introPending()) return
+                tryPlay()
+            },
+            true,
+        )
+        document.addEventListener(
+            "keydown",
+            function () {
+                if (introPending()) return
+                tryPlay()
+            },
+            { capture: true, passive: true },
+        )
         window.addEventListener("popstate", syncBtn)
     }
 
