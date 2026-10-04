@@ -39,13 +39,17 @@ interface ArchiveGalleryProps {
     gridOpacity: number
     /** Editable Back pill destination. */
     backLink: string
+    /** Seconds each popup slide stays visible before the next hard cut. */
+    slideshowInterval: number
+    /** Seconds to wait after opening before the first slide change. */
+    slideshowDelay: number
     style?: CSSProperties
 }
 
-/** Delay before the popup slideshow begins advancing. */
-const SLIDESHOW_START_DELAY_MS = 1200
-/** Time each slide stays visible once the slideshow is running. */
-const SLIDESHOW_INTERVAL_MS = 2800
+/** Default: faster cut between frames (was 2.8s). Overridable in Framer. */
+const DEFAULT_SLIDESHOW_INTERVAL_S = 1.4
+/** Default pause after open before first advance. Overridable in Framer. */
+const DEFAULT_SLIDESHOW_DELAY_S = 0.6
 
 function resolveImageSrc(value: unknown): string {
     if (value == null || value === "") return ""
@@ -174,7 +178,17 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
         columns = 4,
         gridOpacity = 0.06,
         backLink = "/",
+        slideshowInterval = DEFAULT_SLIDESHOW_INTERVAL_S,
+        slideshowDelay = DEFAULT_SLIDESHOW_DELAY_S,
     } = props
+
+    const intervalMs = Math.round(
+        Math.max(0.3, Number(slideshowInterval) || DEFAULT_SLIDESHOW_INTERVAL_S) *
+            1000,
+    )
+    const delayMs = Math.round(
+        Math.max(0, Number(slideshowDelay) || DEFAULT_SLIDESHOW_DELAY_S) * 1000,
+    )
 
     const isStatic = useIsStaticRenderer()
     const [open, setOpen] = useState<GalleryItem | null>(null)
@@ -421,6 +435,8 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
                             <Lightbox
                                 item={open}
                                 accent={accent}
+                                intervalMs={intervalMs}
+                                delayMs={delayMs}
                                 onClose={() => setOpen(null)}
                             />
                         )}
@@ -617,10 +633,14 @@ function Tile({
 function Lightbox({
     item,
     accent,
+    intervalMs,
+    delayMs,
     onClose,
 }: {
     item: GalleryItem
     accent: string
+    intervalMs: number
+    delayMs: number
     onClose: () => void
 }) {
     const slides = useMemo(() => collectSlides(item), [item])
@@ -660,13 +680,13 @@ function Lightbox({
         const startId = window.setTimeout(() => {
             intervalId = window.setInterval(() => {
                 setIndex((i) => (i + 1) % slides.length)
-            }, SLIDESHOW_INTERVAL_MS)
-        }, SLIDESHOW_START_DELAY_MS)
+            }, intervalMs)
+        }, delayMs)
         return () => {
             window.clearTimeout(startId)
             if (intervalId != null) window.clearInterval(intervalId)
         }
-    }, [multi, slides.length, item.title])
+    }, [multi, slides.length, item.title, intervalMs, delayMs])
 
     const current = slides[index] || slides[0] || item.imageUrl
 
@@ -922,6 +942,24 @@ addPropertyControls(ArchiveGallery, {
         defaultValue: DEFAULT_ITEMS,
     },
     accent: { type: ControlType.Color, title: "Accent", defaultValue: "#2C6BE0" },
+    slideshowInterval: {
+        type: ControlType.Number,
+        title: "Slideshow Interval (sec)",
+        defaultValue: DEFAULT_SLIDESHOW_INTERVAL_S,
+        min: 0.4,
+        max: 6,
+        step: 0.1,
+        displayStepper: true,
+    },
+    slideshowDelay: {
+        type: ControlType.Number,
+        title: "Slideshow Start Delay (sec)",
+        defaultValue: DEFAULT_SLIDESHOW_DELAY_S,
+        min: 0,
+        max: 4,
+        step: 0.1,
+        displayStepper: true,
+    },
     backLink: {
         type: ControlType.Link,
         title: "Link — Back Button",
