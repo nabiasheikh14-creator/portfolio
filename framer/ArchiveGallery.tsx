@@ -35,6 +35,8 @@ interface GalleryItem {
      * Matched to the card itself (Cher’s pink, Aagahi black, and so on).
      */
     tileColor?: string
+    /** Popup fit. Portrait photos use contain so the frame does not slice them. */
+    popupFit?: "cover" | "contain"
 }
 
 interface ArchiveGalleryProps {
@@ -796,7 +798,11 @@ function Lightbox({
                             style={{
                                 width: "100%",
                                 height: "100%",
-                                objectFit: "cover",
+                                objectFit:
+                                    item.popupFit === "contain"
+                                        ? "contain"
+                                        : "cover",
+                                objectPosition: "center",
                                 display: "block",
                             }}
                         />
@@ -870,6 +876,15 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/IkHDE6ZZV9sjmFRwQIlyQ2aj0.png",
             "https://framerusercontent.com/images/SOVSQZi0bQgzYZivQYgLZXBq0.png",
         ],
+    },
+    {
+        title: "Friends of Figma Karachi",
+        description:
+            "Chutney Studios has been a part of the friends of figma community for it's Karachi chapter for the past two years. With every meetup, watchparty, and event, best believe that team chutney has the design side handled.",
+        imageUrl:
+            "https://framerusercontent.com/images/A4rorcJflWymhHNKivqdF31jbMQ.jpg",
+        tileColor: "#56A3EB",
+        popupFit: "contain",
     },
     {
         title: "Cher's Closet",
