@@ -37,6 +37,11 @@ interface GalleryItem {
     tileColor?: string
     /** Popup fit. Portrait photos use contain so the frame does not slice them. */
     popupFit?: "cover" | "contain"
+    /**
+     * Lock the tile to the tall archive ratio. Used when the display artwork
+     * was made for that frame (Cher’s poster is exactly 3 / 4.2).
+     */
+    tall?: boolean
 }
 
 interface ArchiveGalleryProps {
@@ -560,8 +565,9 @@ function Column({
                                     item={item}
                                     accent={accent}
                                     tall={
-                                        (index + slot) % 5 === 0 ||
-                                        (index + slot) % 3 === 0
+                                        item.tall ??
+                                        ((index + slot) % 5 === 0 ||
+                                            (index + slot) % 3 === 0)
                                     }
                                     onOpen={() => onOpen(item)}
                                 />
@@ -933,8 +939,9 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
         imageUrl:
-            "https://framerusercontent.com/images/rfKVr5VpvPVcLGmThavdFg.jpg",
-        tileColor: "#E294C2",
+            "https://framerusercontent.com/images/jGLbOvqUNVSniVYVJDoE4HvhsrE.jpg",
+        tileColor: "#E295C3",
+        tall: true,
         galleryImages: [
             "https://framerusercontent.com/images/vRyItVCUBfQiZ5TNkuHSFTYc9u8.png",
             "https://framerusercontent.com/images/waAOmDklpQafvsglPwGXm5Fhzmk.png",
