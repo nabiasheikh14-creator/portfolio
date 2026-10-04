@@ -56,10 +56,10 @@ function resolveImageSrc(value: unknown): string {
     return ""
 }
 
-/** Deduped slide list for the lightbox (popup image first, then gallery). */
+/** Deduped slide list for the lightbox: display image first, then optional popup extras. */
 function collectSlides(item: GalleryItem): string[] {
     const primary =
-        resolveImageSrc(item.popupImageUrl) || resolveImageSrc(item.imageUrl)
+        resolveImageSrc(item.imageUrl) || resolveImageSrc(item.popupImageUrl)
     const extras = (item.galleryImages || [])
         .map((g) => resolveImageSrc(g))
         .filter(Boolean)
@@ -814,86 +814,74 @@ function Lightbox({
 
 const DEFAULT_ITEMS: GalleryItem[] = [
     {
-        title: "Kodoto",
-        description:
-            "A playful video-sharing webapp where creators and viewers pick their desert path.",
-        imageUrl:
-            "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/hbTvRL8Rd7TYL6u7FQ3Ie4OgJFg.png",
-        galleryImages: [
-            "https://framerusercontent.com/images/jqcRtA5oQbvVvJc24gIRBLxhP3I.png",
-            "https://framerusercontent.com/images/ojUNwY43hBf6a90PXPNddHP6JkQ.png",
-        ],
-    },
-    {
         title: "The Broken Hearts Crux",
         description:
             "Branding for a themed coffee pop-up with punk-hearted energy.",
         imageUrl:
-            "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/sQb8igtYUhDlnjTSCP216AewKg.png",
+            "https://framerusercontent.com/images/h3T0upaX92bNQQGFxMkqEvEYodU.png",
         galleryImages: [
-            "https://framerusercontent.com/images/cpxWOBeGfC0r7mkijj0rMkyRJq8.png",
-            "https://framerusercontent.com/images/gBMnCVPHV0J6u5Q0tRx8PslI.png",
-            "https://framerusercontent.com/images/vLyUWfMDVhhlY9J9NxTPa2lKWk.png",
-        ],
-    },
-    {
-        title: "Cher's Closet",
-        description:
-            "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
-        imageUrl:
-            "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
-        galleryImages: [
-            "https://framerusercontent.com/images/YY0Yq4iiNgBGmKOdprLis0wmY8.png",
-            "https://framerusercontent.com/images/vRyItVCUBfQiZ5TNkuHSFTYc9u8.png",
-            "https://framerusercontent.com/images/waAOmDklpQafvsglPwGXm5Fhzmk.png",
-        ],
-    },
-    {
-        title: "Paanshah",
-        description:
-            "Brand identity for a paan shop — bilingual manuals, stickers, and calligraphic mark.",
-        imageUrl:
-            "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
-        galleryImages: [
-            "https://framerusercontent.com/images/IfgDlmQOUmJWmqr412UvJLR53xU.png",
-            "https://framerusercontent.com/images/Y4Ey9MYHxnh51s83YDMyO10NS0.png",
-            "https://framerusercontent.com/images/NrSW54w1qY4GaBXoHxxwCN2fzM.png",
+            "https://framerusercontent.com/images/bKSQevFsQO51UOgqkMdof3NcR4U.png",
+            "https://framerusercontent.com/images/KRflkkvSGi0mwlB4qqqDLBKA.png",
+            "https://framerusercontent.com/images/WYkfkReD6dCBqQjZAJHsAwIqZY.png",
         ],
     },
     {
         title: "Travel Giethoorn",
         description:
-            "A travel site for Giethoorn — canals, thatched roofs, and boat-only streets.",
+            "A travel site for Giethoorn \u2014 canals, thatched roofs, and boat-only streets.",
         imageUrl:
-            "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/FlNMPOOq1eTLMA9D4NjQVyNn6E.png",
+            "https://framerusercontent.com/images/HnrGEbd33mb9W1OUpMOeGzfO58.png",
         galleryImages: [
-            "https://framerusercontent.com/images/eJDSDK2OMuL2bze7wtpQFvU0oX4.png",
-            "https://framerusercontent.com/images/HuSxn6Ennc76zLnqVsylqUSMUo.png",
-            "https://framerusercontent.com/images/95I7xoJD0YeZ0NIWYbRzL8vkwU.png",
+            "https://framerusercontent.com/images/cSIZcLr04BqWkMAeKr2SjBNJJQ.png",
+            "https://framerusercontent.com/images/8RkuOA9vMwlRMBwfzmX7w0qkZlQ.png",
+            "https://framerusercontent.com/images/gBx6Bad9EIXLKkNHMoyK6VF40.png",
+        ],
+    },
+    {
+        title: "Kodoto",
+        description:
+            "A playful video-sharing webapp where creators and viewers pick their desert path.",
+        imageUrl:
+            "https://framerusercontent.com/images/CPF5bHX66cfF90rEb0wMSVTCHE.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/SrbFVxXvXsZPa1VOoTl9kjq0DVk.png",
+            "https://framerusercontent.com/images/vOfnaKTsJrCT1nGyiQ6vj06Dtro.png",
+        ],
+    },
+    {
+        title: "Cher's Closet",
+        description:
+            "A fashion wardrobe app \u2014 one-step styling for outfits, mood boards, and personal fit.",
+        imageUrl:
+            "https://framerusercontent.com/images/z4tYbse9PXU899xu3sGJtzWoog.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/di5WF5dMVtVqzDFMhycew3tbXGw.png",
+            "https://framerusercontent.com/images/WgpYIOuUmRf5LFh71J699Vys3M.png",
+            "https://framerusercontent.com/images/kQEXveNzigvX4HCgYVKR7SqUcA0.png",
+        ],
+    },
+    {
+        title: "Paanshah",
+        description:
+            "Brand identity for a paan shop \u2014 bilingual manuals, stickers, and calligraphic mark.",
+        imageUrl:
+            "https://framerusercontent.com/images/n1owDntfT253lwsxLQ5bCRXoxi0.png",
+        galleryImages: [
+            "https://framerusercontent.com/images/sLEuLdq3lfYCASPcLLKobYCrsI8.png",
+            "https://framerusercontent.com/images/z4281oaoiUieDIeG9bAqAdzBus.png",
+            "https://framerusercontent.com/images/wat3N3wVdd1sxli12QtG44hU0.png",
         ],
     },
     {
         title: "Wave",
         description:
-            "Mobile e-commerce for Wave Apparel — product grids, cart, and checkout.",
+            "Mobile e-commerce for Wave Apparel \u2014 product grids, cart, and checkout.",
         imageUrl:
-            "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
-        popupImageUrl:
-            "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
+            "https://framerusercontent.com/images/tU2wxxbZf2dhEQKp7rOX2FKslc.png",
         galleryImages: [
-            "https://framerusercontent.com/images/XSpUsoNwNBsdLkAOQy9YGknsqUI.png",
-            "https://framerusercontent.com/images/J0fMbOfcmArbBzxDKuO3du8t54.png",
-            "https://framerusercontent.com/images/DiJp3kKqHZB5Y3710xf0GySnk.png",
+            "https://framerusercontent.com/images/7q57pP9PbBGucSuPZs80y3xikBo.png",
+            "https://framerusercontent.com/images/JAk6XUSKXGvUsZ9Wsw9ZjK4D70.png",
+            "https://framerusercontent.com/images/BesGMtB8qStaffayQWJ1u3mNYh0.png",
         ],
     },
 ]
@@ -901,7 +889,7 @@ const DEFAULT_ITEMS: GalleryItem[] = [
 addPropertyControls(ArchiveGallery, {
     items: {
         type: ControlType.Array,
-        title: "Items (Archive CMS)",
+        title: "Archive Items",
         control: {
             type: ControlType.Object,
             controls: {
@@ -920,16 +908,12 @@ addPropertyControls(ArchiveGallery, {
                     type: ControlType.Image,
                     title: "Display Image",
                 },
-                popupImageUrl: {
-                    type: ControlType.Image,
-                    title: "Popup Image",
-                },
                 galleryImages: {
                     type: ControlType.Array,
-                    title: "Popup Gallery",
+                    title: "Popup Images (optional)",
                     control: {
                         type: ControlType.Image,
-                        title: "Slide",
+                        title: "Image",
                     },
                     defaultValue: [],
                 },
