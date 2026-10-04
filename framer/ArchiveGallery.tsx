@@ -974,6 +974,14 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
         ],
     },
+    {
+        title: "Nowa Atelier",
+        description: "Brand and visual work for Nowa Atelier.",
+        imageUrl:
+            "https://framerusercontent.com/images/tZB1o5FmFeG85QaGZXn7OQ3fayo.jpg",
+        tileColor: "#5A4630",
+        tall: true,
+    },
 ]
 
 addPropertyControls(ArchiveGallery, {
