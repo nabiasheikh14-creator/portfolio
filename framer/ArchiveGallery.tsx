@@ -885,6 +885,10 @@ const DEFAULT_ITEMS: GalleryItem[] = [
             "https://framerusercontent.com/images/A4rorcJflWymhHNKivqdF31jbMQ.jpg",
         tileColor: "#56A3EB",
         popupFit: "contain",
+        galleryImages: [
+            "https://framerusercontent.com/images/NIHetRF37gg7bJmwR6rWccSevQ.jpg",
+            "https://framerusercontent.com/images/RNYpDUOiQg49PaNuGzExeYPNU.jpg",
+        ],
     },
     {
         title: "Cher's Closet",
