@@ -30,6 +30,11 @@ interface GalleryItem {
     popupImageUrl?: string
     /** Extra lightbox slides. One image → static; 2+ → auto slideshow. */
     galleryImages?: string[]
+    /**
+     * Color behind the card when it is not as tall as the archive tile.
+     * Matched to the card itself (Cher’s pink, Aagahi black, and so on).
+     */
+    tileColor?: string
 }
 
 interface ArchiveGalleryProps {
@@ -60,16 +65,20 @@ function resolveImageSrc(value: unknown): string {
     return ""
 }
 
-/** Deduped slide list for the lightbox: display image first, then optional popup extras. */
+/**
+ * Popup slides. The grid card is a different shape from these horizontal
+ * frames, so it stays out of the slideshow whenever other images exist.
+ */
 function collectSlides(item: GalleryItem): string[] {
-    const primary =
-        resolveImageSrc(item.imageUrl) || resolveImageSrc(item.popupImageUrl)
     const extras = (item.galleryImages || [])
         .map((g) => resolveImageSrc(g))
         .filter(Boolean)
+    const primary =
+        resolveImageSrc(item.imageUrl) || resolveImageSrc(item.popupImageUrl)
+    const urls = extras.length > 0 ? extras : primary ? [primary] : []
     const out: string[] = []
     const seen = new Set<string>()
-    for (const url of [primary, ...extras]) {
+    for (const url of urls) {
         if (!url || seen.has(url)) continue
         seen.add(url)
         out.push(url)
@@ -546,6 +555,10 @@ function Tile({
     onOpen: () => void
 }) {
     const [hover, setHover] = useState(false)
+    const tileBg = item.tileColor || "#e8e2d6"
+    // Prepared cards already include their own field color. Cover keeps
+    // that color edge-to-edge on both tile shapes without cropping the art.
+    const fit = item.tileColor ? "cover" : "contain"
     return (
         <button
             type="button"
@@ -559,7 +572,7 @@ function Tile({
                 width: "100%",
                 padding: 0,
                 border: "none",
-                background: "#e8e2d6",
+                background: tileBg,
                 cursor: "pointer",
                 overflow: "hidden",
                 borderRadius: 8,
@@ -575,12 +588,10 @@ function Tile({
                 style={{
                     width: "100%",
                     height: "100%",
-                    // Fit the whole image inside the frame — fills the box
-                    // on one axis, never crops.
-                    objectFit: "contain",
+                    objectFit: fit,
                     objectPosition: "center",
                     display: "block",
-                    background: "#e8e2d6",
+                    background: tileBg,
                 }}
             />
             <div
@@ -737,9 +748,13 @@ function Lightbox({
                 <div
                     style={{
                         position: "relative",
-                        width: "100%",
-                        height: "min(68vh, 620px)",
-                        background: CREAM,
+                        // Locked to the campaign frames (3588×2355) and capped
+                        // so the picture fills the well with no cream bar.
+                        width: "min(100%, calc(min(68vh, 620px) * 1.524))",
+                        aspectRatio: "3588 / 2355",
+                        marginLeft: "auto",
+                        marginRight: "auto",
+                        background: "#111",
                         overflow: "hidden",
                     }}
                 >
@@ -762,7 +777,7 @@ function Lightbox({
                                     inset: 0,
                                     width: "100%",
                                     height: "100%",
-                                    objectFit: "contain",
+                                    objectFit: "cover",
                                     display: "block",
                                     opacity: i === index ? 1 : 0,
                                     zIndex: i === index ? 1 : 0,
@@ -781,7 +796,7 @@ function Lightbox({
                             style={{
                                 width: "100%",
                                 height: "100%",
-                                objectFit: "contain",
+                                objectFit: "cover",
                                 display: "block",
                             }}
                         />
@@ -848,11 +863,12 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         title: "Aagahi",
         description: "Social media campaign.",
         imageUrl:
-            "https://framerusercontent.com/images/aHXeJGTPskg9dLW9VPDvBuRfWA.jpg",
+            "https://framerusercontent.com/images/2GV6n7qSiyaXmNM5OFQP6xdDMo.jpg",
+        tileColor: "#000000",
         galleryImages: [
-            "https://framerusercontent.com/images/HJBsqBoNkfx9k6w9n2uz30UXtNQ.png",
-            "https://framerusercontent.com/images/NJqsqop9EnfxHwVwGMU1ijEpyt0.png",
-            "https://framerusercontent.com/images/xvruXnef14DvKJqHR7MhHwn4nVg.png",
+            "https://framerusercontent.com/images/jgzzpmDWkJYh6lbtZO2hbwks.png",
+            "https://framerusercontent.com/images/IkHDE6ZZV9sjmFRwQIlyQ2aj0.png",
+            "https://framerusercontent.com/images/SOVSQZi0bQgzYZivQYgLZXBq0.png",
         ],
     },
     {
@@ -860,11 +876,12 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
         imageUrl:
-            "https://framerusercontent.com/images/z4tYbse9PXU899xu3sGJtzWoog.png",
+            "https://framerusercontent.com/images/rfKVr5VpvPVcLGmThavdFg.jpg",
+        tileColor: "#E294C2",
         galleryImages: [
-            "https://framerusercontent.com/images/di5WF5dMVtVqzDFMhycew3tbXGw.png",
-            "https://framerusercontent.com/images/WgpYIOuUmRf5LFh71J699Vys3M.png",
-            "https://framerusercontent.com/images/kQEXveNzigvX4HCgYVKR7SqUcA0.png",
+            "https://framerusercontent.com/images/vRyItVCUBfQiZ5TNkuHSFTYc9u8.png",
+            "https://framerusercontent.com/images/waAOmDklpQafvsglPwGXm5Fhzmk.png",
+            "https://framerusercontent.com/images/b9X6XfccTpBGnAayUlmBP22sf4.png",
         ],
     },
     {
@@ -872,11 +889,12 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "Brand identity for a paan shop — bilingual manuals, stickers, and calligraphic mark.",
         imageUrl:
-            "https://framerusercontent.com/images/n1owDntfT253lwsxLQ5bCRXoxi0.png",
+            "https://framerusercontent.com/images/XEFWIjGgzJdYg7KQAirzIZymAo.jpg",
+        tileColor: "#F7F7F7",
         galleryImages: [
-            "https://framerusercontent.com/images/sLEuLdq3lfYCASPcLLKobYCrsI8.png",
-            "https://framerusercontent.com/images/z4281oaoiUieDIeG9bAqAdzBus.png",
-            "https://framerusercontent.com/images/wat3N3wVdd1sxli12QtG44hU0.png",
+            "https://framerusercontent.com/images/Y4Ey9MYHxnh51s83YDMyO10NS0.png",
+            "https://framerusercontent.com/images/NrSW54w1qY4GaBXoHxxwCN2fzM.png",
+            "https://framerusercontent.com/images/e1HED0acPUyBbRN3zIDLgCA5rRc.png",
         ],
     },
     {
@@ -884,11 +902,12 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "Mobile e-commerce for Wave Apparel — product grids, cart, and checkout.",
         imageUrl:
-            "https://framerusercontent.com/images/tU2wxxbZf2dhEQKp7rOX2FKslc.png",
+            "https://framerusercontent.com/images/w7oKQ4d106sGi9e5QcIDRM3GmM.jpg",
+        tileColor: "#FDFBF7",
         galleryImages: [
-            "https://framerusercontent.com/images/7q57pP9PbBGucSuPZs80y3xikBo.png",
-            "https://framerusercontent.com/images/JAk6XUSKXGvUsZ9Wsw9ZjK4D70.png",
-            "https://framerusercontent.com/images/BesGMtB8qStaffayQWJ1u3mNYh0.png",
+            "https://framerusercontent.com/images/J0fMbOfcmArbBzxDKuO3du8t54.png",
+            "https://framerusercontent.com/images/DiJp3kKqHZB5Y3710xf0GySnk.png",
+            "https://framerusercontent.com/images/zdILYmkHktzG68JSEYeBwP6Y.png",
         ],
     },
 ]
@@ -923,6 +942,11 @@ addPropertyControls(ArchiveGallery, {
                         title: "Image",
                     },
                     defaultValue: [],
+                },
+                tileColor: {
+                    type: ControlType.Color,
+                    title: "Tile Background",
+                    optional: true,
                 },
             },
         },
