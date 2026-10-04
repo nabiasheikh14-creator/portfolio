@@ -845,6 +845,17 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         ],
     },
     {
+        title: "Aagahi",
+        description: "Social media campaign.",
+        imageUrl:
+            "https://framerusercontent.com/images/aHXeJGTPskg9dLW9VPDvBuRfWA.jpg",
+        galleryImages: [
+            "https://framerusercontent.com/images/HJBsqBoNkfx9k6w9n2uz30UXtNQ.png",
+            "https://framerusercontent.com/images/NJqsqop9EnfxHwVwGMU1ijEpyt0.png",
+            "https://framerusercontent.com/images/xvruXnef14DvKJqHR7MhHwn4nVg.png",
+        ],
+    },
+    {
         title: "Cher's Closet",
         description:
             "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
