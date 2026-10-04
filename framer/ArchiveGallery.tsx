@@ -750,12 +750,10 @@ function Lightbox({
                 <div
                     style={{
                         position: "relative",
-                        // Locked to the campaign frames (3588×2355) and capped
-                        // so the picture fills the well with no cream bar.
-                        width: "min(100%, calc(min(68vh, 620px) * 1.524))",
+                        // Full width of the dialog, same proportion as the
+                        // campaign frames, so cover meets every edge.
+                        width: "100%",
                         aspectRatio: "3588 / 2355",
-                        marginLeft: "auto",
-                        marginRight: "auto",
                         background: "#111",
                         overflow: "hidden",
                     }}
@@ -858,11 +856,12 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "Home redesign for Readings.pk, Pakistan’s online bookstore.",
         imageUrl:
-            "https://framerusercontent.com/images/bUfTQdL4Z6rb3LRTBajlQfQIHys.jpg",
+            "https://framerusercontent.com/images/e4MUzlSYmjvY3kY9Sn9e4FCkmU.jpg",
+        tileColor: "#3E5FAC",
         galleryImages: [
-            "https://framerusercontent.com/images/io5Xd88dSVJFN6TUHjFT1cFF1tg.jpg",
-            "https://framerusercontent.com/images/50f6BjJKfEqxbp4Ax05YfwXVKx0.jpg",
-            "https://framerusercontent.com/images/c7s49tp47BikaPP1qMG3OAM4bZQ.jpg",
+            "https://framerusercontent.com/images/xcsmDwgXswKqkG2iATX1imKWPM4.png",
+            "https://framerusercontent.com/images/CRMzkccnukfnUKjcPzQF2HG1LwI.png",
+            "https://framerusercontent.com/images/OAwKQcQ4VFrbezsIL3xUddcMm4s.png",
         ],
     },
     {
