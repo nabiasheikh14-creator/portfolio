@@ -833,6 +833,18 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         ],
     },
     {
+        title: "readings.pk",
+        description:
+            "Home redesign for Readings.pk, Pakistan’s online bookstore.",
+        imageUrl:
+            "https://framerusercontent.com/images/bUfTQdL4Z6rb3LRTBajlQfQIHys.jpg",
+        galleryImages: [
+            "https://framerusercontent.com/images/io5Xd88dSVJFN6TUHjFT1cFF1tg.jpg",
+            "https://framerusercontent.com/images/50f6BjJKfEqxbp4Ax05YfwXVKx0.jpg",
+            "https://framerusercontent.com/images/c7s49tp47BikaPP1qMG3OAM4bZQ.jpg",
+        ],
+    },
+    {
         title: "Cher's Closet",
         description:
             "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
