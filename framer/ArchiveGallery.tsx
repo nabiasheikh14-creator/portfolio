@@ -887,6 +887,19 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         ],
     },
     {
+        title: "Sindbad App",
+        description:
+            "While I was the designer at WonderTech, I got the change to design Sindbad's mobile application for Pakistan. This was my first real world experience and I was so proud of my work being used by people to date!",
+        imageUrl:
+            "https://framerusercontent.com/images/wYjUv5M7i82OeT0bXJu8DhO6Y.jpg",
+        tileColor: "#F3EEE5",
+        galleryImages: [
+            "https://framerusercontent.com/images/mIN8fjFYbCS6HvrQP0PvlWVuQk4.jpg",
+            "https://framerusercontent.com/images/ZfEo0GBvGRiOi0ADA1oClWA0g.jpg",
+            "https://framerusercontent.com/images/BRJL8HCiiNeLl3Im5Go0bt38PHM.jpg",
+        ],
+    },
+    {
         title: "Cher's Closet",
         description:
             "A fashion wardrobe app — one-step styling for outfits, mood boards, and personal fit.",
