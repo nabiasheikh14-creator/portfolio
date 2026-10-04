@@ -458,12 +458,21 @@ function Column({
     onOpen: (item: GalleryItem) => void
 }) {
     const trackRef = useRef<HTMLDivElement>(null)
+    const loopRef = useRef<HTMLDivElement>(null)
     const offsetRef = useRef(0)
     const loopH = useRef(1)
 
     // Even cols → up (−), odd cols → down (+)
     const direction = index % 2 === 0 ? -1 : 1
     const idlePxPerSec = 16
+    const gap = 14
+    const copies = 4
+    // The list is the same column repeated. Height must follow the slot in
+    // that column, not the copy, or a card grows and shrinks as it loops.
+    const baseLen =
+        items.length > 0 && items.length % copies === 0
+            ? items.length / copies
+            : Math.max(1, items.length)
 
     useEffect(() => {
         if (!animated || typeof window === "undefined") return
@@ -472,9 +481,10 @@ function Column({
         let last = performance.now()
 
         const measure = () => {
-            const el = trackRef.current
-            if (!el) return
-            loopH.current = Math.max(1, el.scrollHeight / 4)
+            const block = loopRef.current
+            if (!block) return
+            // Stride is one repeated block plus the gap before the next one.
+            loopH.current = Math.max(1, block.offsetHeight + gap)
         }
 
         const ro =
@@ -509,7 +519,7 @@ function Column({
             cancelAnimationFrame(raf)
             ro?.disconnect()
         }
-    }, [animated, direction, speedRef])
+    }, [animated, direction, speedRef, items.length])
 
     return (
         <div
@@ -526,20 +536,39 @@ function Column({
                 style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 14,
+                    gap,
                     willChange: animated ? "transform" : undefined,
                     paddingTop: index % 2 === 0 ? 0 : 40,
                 }}
             >
-                {items.map((item, ii) => (
-                    <Tile
-                        key={`${index}-${ii}-${item.title}`}
-                        item={item}
-                        accent={accent}
-                        tall={((index + ii) % 5) === 0 || ((index + ii) % 3) === 0}
-                        onOpen={() => onOpen(item)}
-                    />
-                ))}
+                {Array.from({ length: copies }, (_, copy) => {
+                    const block = items.slice(copy * baseLen, (copy + 1) * baseLen)
+                    if (!block.length) return null
+                    return (
+                        <div
+                            key={copy}
+                            ref={copy === 0 ? loopRef : undefined}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap,
+                            }}
+                        >
+                            {block.map((item, slot) => (
+                                <Tile
+                                    key={`${index}-${copy}-${slot}-${item.title}`}
+                                    item={item}
+                                    accent={accent}
+                                    tall={
+                                        (index + slot) % 5 === 0 ||
+                                        (index + slot) % 3 === 0
+                                    }
+                                    onOpen={() => onOpen(item)}
+                                />
+                            ))}
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
