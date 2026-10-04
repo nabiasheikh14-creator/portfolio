@@ -1184,42 +1184,15 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     gridWrap.appendChild(grid)
     overlay.appendChild(gridWrap)
 
-    // Soft folder silhouettes so the expanding frame reads as the Work desktop.
-    const folders = document.createElement("div")
-    Object.assign(folders.style, {
-        position: "absolute",
-        inset: "0",
-        pointerEvents: "none",
-    } as CSSStyleDeclaration)
-    ;[
-        { left: "9%", top: "14%", w: 280, h: 360 },
-        { right: "10%", top: "42%", w: 300, h: 380 },
-    ].forEach((f, i) => {
-        const card = document.createElement("div")
-        Object.assign(card.style, {
-            position: "absolute",
-            left: f.left || "auto",
-            right: (f as { right?: string }).right || "auto",
-            top: f.top,
-            width: `${f.w}px`,
-            height: `${f.h}px`,
-            borderRadius: "26px",
-            background: "rgba(255,255,255,0.55)",
-            border: "2px solid rgba(255,255,255,0.9)",
-            boxShadow:
-                "0 18px 40px rgba(17,17,17,0.1), 0 0 40px rgba(44,107,224,0.22)",
-            opacity: String(0.55 + i * 0.12),
-        } as CSSStyleDeclaration)
-        folders.appendChild(card)
-    })
-    overlay.appendChild(folders)
+    // No placeholder “folder” cards — the expanding cream frame is only a
+    // portal. The real Work page paints as soon as navigation lands.
 
     document.body.appendChild(overlay)
     // Force layout so the starting transform paints before we enable transition.
     void overlay.getBoundingClientRect()
     requestAnimationFrame(() => {
         overlay.style.transition =
-            "transform 1.15s cubic-bezier(0.16, 1, 0.3, 1), border-radius 1.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 1s ease"
+            "transform 1.05s cubic-bezier(0.16, 1, 0.3, 1), border-radius 1.05s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.9s ease"
         requestAnimationFrame(() => {
             overlay.style.transform = "translate(0px, 0px) scale(1)"
             overlay.style.borderRadius = "0px"
@@ -1230,11 +1203,13 @@ function runLaptopZoom(fromEl: HTMLElement, href: string, cream: string) {
     window.setTimeout(() => {
         document.getElementById("nabia-laptop-zoom")?.remove()
         laptopZoomBusy = false
-    }, 6000)
+    }, 5000)
 
+    // Navigate a beat before the zoom finishes so WorkIndex (real content)
+    // mounts and removes this portal — no intermediate empty-card screen.
     window.setTimeout(() => {
         window.location.assign(href)
-    }, 1180)
+    }, 780)
 }
 
 function Hotspot({

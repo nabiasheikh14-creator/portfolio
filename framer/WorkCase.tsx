@@ -184,7 +184,56 @@ export default function WorkCase(props: WorkCaseProps) {
     const basePath =
         resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
 
-    const list = Array.isArray(catalog) && catalog.length ? catalog : DEFAULT_CATALOG
+    const list = useMemo(() => {
+        const authored =
+            Array.isArray(catalog) && catalog.length ? catalog : []
+        if (!authored.length) return DEFAULT_CATALOG
+        const bySlug = new Map(DEFAULT_CATALOG.map((d) => [d.slug, d]))
+        return authored.map((it: any) => {
+            const fb = bySlug.get(String(it?.slug || ""))
+            if (!fb) return it as ProjectRecord
+            // Framer Projects CMS (in DEFAULT_CATALOG) wins for copy; keep
+            // authored media when present.
+            return {
+                ...fb,
+                ...it,
+                title: fb.title,
+                subtitle: fb.subtitle,
+                role: fb.role,
+                year: fb.year,
+                timeline: fb.timeline,
+                tools: fb.tools,
+                overview: fb.overview,
+                context: fb.context,
+                problem: fb.problem,
+                goals: fb.goals,
+                constraints: fb.constraints,
+                process: fb.process,
+                decision1: fb.decision1,
+                decision2: fb.decision2,
+                decision3: fb.decision3,
+                outcome: fb.outcome,
+                reflection: fb.reflection,
+                accent: it.accent || fb.accent,
+                slug: fb.slug,
+                heroImage: it.heroImage || fb.heroImage,
+                contextImage: it.contextImage || fb.contextImage,
+                problemImage: it.problemImage || fb.problemImage,
+                researchImage: it.researchImage || fb.researchImage,
+                sketchImage: it.sketchImage || fb.sketchImage,
+                wireframeImage: it.wireframeImage || fb.wireframeImage,
+                flowImage: it.flowImage || fb.flowImage,
+                processImage: it.processImage || fb.processImage,
+                iterationImage: it.iterationImage || fb.iterationImage,
+                finalImage1: it.finalImage1 || fb.finalImage1,
+                finalImage2: it.finalImage2 || fb.finalImage2,
+                finalImage3: it.finalImage3 || fb.finalImage3,
+                finalImage4: it.finalImage4 || fb.finalImage4,
+                outcomeImage: it.outcomeImage || fb.outcomeImage,
+                prototypeVideo: it.prototypeVideo || fb.prototypeVideo,
+            } as ProjectRecord
+        })
+    }, [catalog])
     const [slug, setSlug] = useState(() =>
         isStatic ? String(list[0]?.slug || "") : slugFromPath(),
     )
@@ -1940,12 +1989,18 @@ const EMPTY_MEDIA = {
 
 const DEFAULT_CATALOG: ProjectRecord[] = [
     {
-        title: "Fintech App",
-        subtitle: "Onboarding redesign",
-        role: "Lead Product Designer",
-        year: "2025",
-        timeline: "8 weeks",
-        tools: "Figma, User interviews, Prototyping",
+        title:
+            "Sooraj Nagar",
+        subtitle:
+            "Onboarding redesign",
+        role:
+            "Lead Product Designer",
+        year:
+            "2025",
+        timeline:
+            "8 weeks · 2025",
+        tools:
+            "Figma, User interviews, Prototyping",
         overview:
             "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
         context:
@@ -1973,12 +2028,18 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         ...EMPTY_MEDIA,
     },
     {
-        title: "Health Platform",
-        subtitle: "Design system",
-        role: "Senior Product Designer",
-        year: "2024",
-        timeline: "4 months",
-        tools: "Figma, Tokens, Storybook",
+        title:
+            "Bridge",
+        subtitle:
+            "Design system",
+        role:
+            "Senior Product Designer",
+        year:
+            "2024",
+        timeline:
+            "4 months · 2024",
+        tools:
+            "Figma, Tokens, Storybook",
         overview:
             "A growing health platform had drifting UI across teams. I led the creation of a shared system.",
         context:
@@ -2006,12 +2067,18 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         ...EMPTY_MEDIA,
     },
     {
-        title: "Chutney Studios",
-        subtitle: "Brand + site",
-        role: "Founder & Designer",
-        year: "2025",
-        timeline: "6 weeks",
-        tools: "Figma, Framer, Brand",
+        title:
+            "CRM and sales management with AI agent",
+        subtitle:
+            "Brand + site",
+        role:
+            "Founder & Designer",
+        year:
+            "2025",
+        timeline:
+            "6 weeks · 2025",
+        tools:
+            "Figma, Framer, Brand",
         overview:
             "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
         context:
@@ -2039,12 +2106,18 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         ...EMPTY_MEDIA,
     },
     {
-        title: "Travel App",
-        subtitle: "0→1 product",
-        role: "Product Designer",
-        year: "2023",
-        timeline: "10 weeks",
-        tools: "Figma, Prototyping, Field tests",
+        title:
+            "Safar-e-Asaan",
+        subtitle:
+            "0→1 product",
+        role:
+            "Product Designer",
+        year:
+            "2023",
+        timeline:
+            "10 weeks · 2023",
+        tools:
+            "Figma, Prototyping, Field tests",
         overview:
             "A 0→1 travel app that needed to feel effortless for people planning trips on the move.",
         context:

@@ -113,12 +113,19 @@ function normalizeProjects(
                         d.slug === slug ||
                         d.title.toLowerCase() === title.toLowerCase(),
                 ) || null
+            // Prefer DEFAULT_ITEMS (synced from Framer Projects CMS) for known slugs
+            // so canvas instance props can't keep stale titles/copy.
             return {
-                title,
-                subtitle: String(it?.subtitle || matchedDefault?.subtitle || ""),
-                description: description || matchedDefault?.description || "",
+                title: matchedDefault?.title || title,
+                subtitle: String(
+                    matchedDefault?.subtitle || it?.subtitle || "",
+                ),
+                description:
+                    matchedDefault?.description ||
+                    description ||
+                    "",
                 slug,
-                year: String(it?.year || matchedDefault?.year || ""),
+                year: String(matchedDefault?.year || it?.year || ""),
                 accent: String(it?.accent || accent || ACCENT),
                 coverUrl: it?.coverUrl
                     ? String(it.coverUrl)
@@ -1191,10 +1198,10 @@ function DeskBack({
 
 const DEFAULT_ITEMS: WorkProject[] = [
     {
-        title: "Fintech App",
+        title: "Sooraj Nagar",
         subtitle: "Onboarding redesign",
         description:
-            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. Reworked the first-run experience end to end.",
+            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
         slug: "fintech-app",
         year: "2025",
         accent: ACCENT,
@@ -1202,10 +1209,10 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
     },
     {
-        title: "Health Platform",
+        title: "Bridge",
         subtitle: "Design system",
         description:
-            "A growing health platform had drifting UI across teams. Led the creation of a shared system.",
+            "A growing health platform had drifting UI across teams. I led the creation of a shared system.",
         slug: "health-platform",
         year: "2024",
         accent: ACCENT,
@@ -1213,10 +1220,10 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://framerusercontent.com/assets/BNCHHO0RxeNVJXt0bV6lIpxZeo.mp4",
     },
     {
-        title: "Chutney Studios",
+        title: "CRM and sales management with AI agent",
         subtitle: "Brand + site",
         description:
-            "Chutney Studios is my after-hours practice — brand and site built to feel warm and clear, not agency-slick.",
+            "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
         slug: "chutney-studios",
         year: "2025",
         accent: ACCENT,
@@ -1224,7 +1231,7 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://framerusercontent.com/assets/1l5FmP2EGRoLJ5xUbGoAAne5sg.mp4",
     },
     {
-        title: "Travel App",
+        title: "Safar-e-Asaan",
         subtitle: "0→1 product",
         description:
             "A 0→1 travel app that needed to feel effortless for people planning trips on the move.",
