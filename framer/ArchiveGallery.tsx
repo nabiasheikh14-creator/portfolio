@@ -558,9 +558,6 @@ function Tile({
 }) {
     const [hover, setHover] = useState(false)
     const tileBg = item.tileColor || "#e8e2d6"
-    // Prepared cards already include their own field color. Cover keeps
-    // that color edge-to-edge on both tile shapes without cropping the art.
-    const fit = item.tileColor ? "cover" : "contain"
     return (
         <button
             type="button"
@@ -590,7 +587,7 @@ function Tile({
                 style={{
                     width: "100%",
                     height: "100%",
-                    objectFit: fit,
+                    objectFit: "cover",
                     objectPosition: "center",
                     display: "block",
                     background: tileBg,
@@ -907,7 +904,7 @@ const DEFAULT_ITEMS: GalleryItem[] = [
         description:
             "Brand identity for a paan shop — bilingual manuals, stickers, and calligraphic mark.",
         imageUrl:
-            "https://framerusercontent.com/images/XEFWIjGgzJdYg7KQAirzIZymAo.jpg",
+            "https://framerusercontent.com/images/XnOyAN2XugGMwfR1YvU0DWn3U.jpg",
         tileColor: "#F7F7F7",
         galleryImages: [
             "https://framerusercontent.com/images/Y4Ey9MYHxnh51s83YDMyO10NS0.png",
