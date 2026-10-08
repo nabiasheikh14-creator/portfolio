@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Journal · Nowa Atelier</title>
+    <meta name="description" content="A hand-bound Nowa journal. Rs 3,500." />
+    <meta name="theme-color" content="#fffae7" />
+    <link rel="stylesheet" href="css/site.css" />
+  </head>
+  <body>
+    <a class="sr-only" href="#main">Skip to content</a>
+    <div class="bar-wrap">
+      <header class="bar">
+        <a class="logo" href="index.html">nowa</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html#notebook">Shop</a>
+          <a href="custom.html">Custom</a>
+        </nav>
+        <button class="bag-open" type="button" data-open-bag>
+          <span>Bag</span>
+          <span class="count" data-bag-count>0</span>
+        </button>
+      </header>
+    </div>
+    <main id="main" class="product">
+      <article id="product"></article>
+    </main>
+    <footer class="site-footer">Handmade in Karachi · Free delivery in the city · PKR 200 outside</footer>
+    <div class="drawer" id="drawer" hidden>
+      <button class="backdrop" type="button" data-close-bag aria-label="Close bag"></button>
+      <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="bag-title">
+        <div class="drawer-head">
+          <h2 id="bag-title">Your bag</h2>
+          <button class="text-btn" type="button" data-close-bag>Close</button>
+        </div>
+        <div id="bag-body"></div>
+        <p class="fine">Checkout comes with the real source. This preview keeps your bag in this browser.</p>
+      </div>
+    </div>
+    <script src="js/catalog.js"></script>
+    <script src="js/site.js"></script>
+    <script src="js/journal.js"></script>
+  </body>
+</html>
