@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nowa Atelier</title>
+    <meta name="description" content="Hand-bound journals from Karachi. Eleven journals, Rs 3,500." />
+    <meta name="theme-color" content="#5f121d" />
+    <link rel="stylesheet" href="css/site.css" />
+  </head>
+  <body class="home">
+    <a class="sr-only" href="#main">Skip to content</a>
+    <div class="bar-wrap">
+      <header class="bar">
+        <a class="logo" href="index.html">nowa</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="#notebook">Shop</a>
+          <a href="custom.html">Custom</a>
+        </nav>
+        <button class="bag-open" type="button" data-open-bag>
+          <span>Bag</span>
+          <span class="count" data-bag-count>0</span>
+        </button>
+      </header>
+    </div>
+    <main id="main">
+      <section class="hero">
+        <div class="hero-inner">
+          <p class="eyebrow">Handmade in Karachi</p>
+          <h1>Stories,<br /><span class="bound">bound.</span></h1>
+          <p class="lede">Eleven journals · Rs 3,500</p>
+          <div class="hero-actions">
+            <a class="btn btn-cream" href="#notebook">Shop</a>
+            <a class="btn btn-ghost" href="custom.html">Custom</a>
+          </div>
+        </div>
+      </section>
+
+      <section class="letter-section" aria-label="A note from Nowa">
+        <div class="letter-stage" id="letter-stage">
+          <div class="envelope" id="envelope">
+            <div class="envelope-back"></div>
+            <div class="envelope-flap"></div>
+            <div class="envelope-pocket"></div>
+            <button class="seal" type="button" id="seal" aria-expanded="false" aria-controls="note">
+              <span class="sr-only">Open the note</span>
+              <svg viewBox="0 0 78 78" aria-hidden="true">
+                <path d="M39 58 V22" fill="none" stroke="#fffae7" stroke-width="1.4" />
+                <path d="M39 36 C30 31 24 26 21 18" fill="none" stroke="#fffae7" stroke-width="1.3" />
+                <path d="M39 40 C48 33 54 28 58 20" fill="none" stroke="#fffae7" stroke-width="1.3" />
+                <ellipse cx="28" cy="28" rx="5" ry="2.6" transform="rotate(-40 28 28)" fill="#fffae7" />
+                <ellipse cx="50" cy="30" rx="5" ry="2.6" transform="rotate(36 50 30)" fill="#fffae7" />
+              </svg>
+            </button>
+          </div>
+          <button class="letter-hint" type="button" id="letter-hint">Open the note</button>
+          <article class="note" id="note" hidden>
+            <h2>a quiet note for you</h2>
+            <p>somewhere between the noise and the notifications, you already know what you need to say. you just haven't written it down yet.</p>
+            <p>a phone remembers everything. that's not the same as you remembering it.</p>
+            <p class="sign">with love, <span class="script">Nowa</span></p>
+            <button class="text-btn" type="button" id="close-note">Close the note</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="notebook-section" id="notebook">
+        <div class="notebook-head">
+          <p class="eyebrow">The edit · Rs 3,500 each</p>
+          <h2>Find the one that feels like you.</h2>
+        </div>
+        <div class="book" id="book">
+          <div class="page page-left">
+            <p class="left-kicker">The edit</p>
+            <p class="watermark">nowa</p>
+            <div class="left-foot">
+              <p id="left-chapter">Chapter I</p>
+              <p id="left-count">01 / 11</p>
+            </div>
+          </div>
+          <div class="spine"></div>
+          <div class="page page-right" id="page-right">
+            <div class="sheet" id="sheet"></div>
+            <button class="dogear" type="button" data-turn="1" aria-label="Next journal"></button>
+          </div>
+        </div>
+        <div class="book-nav">
+          <button type="button" data-turn="-1">Previous</button>
+          <button type="button" data-turn="1">Next</button>
+        </div>
+        <noscript>
+          <ol class="text-index">
+            <li><a href="journal.html?id=chapter-1-manto">Manto, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-1-obsidian">Obsidian, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-1-jane">Jane, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-1-eden">Eden, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-1-ember">Ember, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-1-riptide">Riptide, Chapter I, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-2-manto">Manto, Chapter II, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-2-venom">Venom, Chapter II, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-2-nebula">Nebula, Chapter II, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-2-sylvia">Sylvia, Chapter II, Rs 3,500</a></li>
+            <li><a href="journal.html?id=chapter-2-katniss">Katniss, Chapter II, Rs 3,500</a></li>
+          </ol>
+        </noscript>
+      </section>
+    </main>
+    <footer class="site-footer">Handmade in Karachi · Free delivery in the city · PKR 200 outside</footer>
+    <div class="drawer" id="drawer" hidden>
+      <button class="backdrop" type="button" data-close-bag aria-label="Close bag"></button>
+      <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="bag-title">
+        <div class="drawer-head">
+          <h2 id="bag-title">Your bag</h2>
+          <button class="text-btn" type="button" data-close-bag>Close</button>
+        </div>
+        <div id="bag-body"></div>
+        <p class="fine">Checkout comes with the real source. This preview keeps your bag in this browser.</p>
+      </div>
+    </div>
+    <script src="js/catalog.js"></script>
+    <script src="js/site.js"></script>
+    <script src="js/home.js"></script>
+  </body>
+</html>

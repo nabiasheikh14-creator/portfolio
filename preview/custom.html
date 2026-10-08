@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Custom journal · Nowa Atelier</title>
+    <meta name="description" content="Choose leather, size, cord, detail, and a name. Bound by hand in Karachi." />
+    <meta name="theme-color" content="#fffae7" />
+    <link rel="stylesheet" href="css/site.css" />
+  </head>
+  <body>
+    <a class="sr-only" href="#main">Skip to content</a>
+    <div class="bar-wrap">
+      <header class="bar">
+        <a class="logo" href="index.html">nowa</a>
+        <nav class="nav" aria-label="Primary">
+          <a href="index.html#notebook">Shop</a>
+          <a href="custom.html">Custom</a>
+        </nav>
+        <button class="bag-open" type="button" data-open-bag>
+          <span>Bag</span>
+          <span class="count" data-bag-count>0</span>
+        </button>
+      </header>
+    </div>
+    <main id="main" class="custom">
+      <header class="custom-intro">
+        <p class="eyebrow">Custom journals · made in Karachi</p>
+        <h1>Made around you.</h1>
+        <p>Five choices. One journal, bound by hand. The atelier confirms the price before any payment.</p>
+      </header>
+      <form id="custom-form">
+        <div class="custom-grid">
+          <div>
+            <fieldset>
+              <legend><span>01</span> Begin with the leather.</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="leather" value="Chocolate" checked /><span><i class="dot" style="--dot:#5c3a2e"></i>Chocolate</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Obsidian" /><span><i class="dot" style="--dot:#1a1a1a"></i>Obsidian</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Plum" /><span><i class="dot" style="--dot:#6e4458"></i>Plum</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Leaf" /><span><i class="dot" style="--dot:#3d5c45"></i>Leaf</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Cocoa" /><span><i class="dot" style="--dot:#6a4634"></i>Cocoa</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Riptide" /><span><i class="dot" style="--dot:#1e3358"></i>Riptide</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Venom" /><span><i class="dot" style="--dot:#242424"></i>Venom</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Nebula" /><span><i class="dot" style="--dot:#3a4d6b"></i>Nebula</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Sylvia" /><span><i class="dot" style="--dot:#6b2433"></i>Sylvia</span></label>
+                <label class="choice"><input type="radio" name="leather" value="Katniss" /><span><i class="dot" style="--dot:#1e3d32"></i>Katniss</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend><span>02</span> Choose what it will hold.</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="size" value="A5" checked /><span>A5 · more room</span></label>
+                <label class="choice"><input type="radio" name="size" value="A6" /><span>A6 · for travel</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend><span>03</span> Tie it in your colour.</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="cord" value="Brown" checked /><span><i class="dot" style="--dot:#6b4a32"></i>Brown</span></label>
+                <label class="choice"><input type="radio" name="cord" value="Red" /><span><i class="dot" style="--dot:#9a2f2f"></i>Red</span></label>
+                <label class="choice"><input type="radio" name="cord" value="Pink" /><span><i class="dot" style="--dot:#d7a0b0"></i>Pink</span></label>
+                <label class="choice"><input type="radio" name="cord" value="Orange" /><span><i class="dot" style="--dot:#d06a2b"></i>Orange</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend><span>04</span> Add a small symbol.</legend>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="detail" value="Charms" checked /><span>Charms</span></label>
+                <label class="choice"><input type="radio" name="detail" value="Lace" /><span>Lace</span></label>
+                <label class="choice"><input type="radio" name="detail" value="Clips" /><span>Clips</span></label>
+              </div>
+            </fieldset>
+            <fieldset>
+              <legend><span>05</span> Leave your name.</legend>
+              <label class="name-field">Name or word
+                <input type="text" name="emboss" maxlength="24" autocomplete="off" placeholder="Optional" />
+              </label>
+              <div class="choice-row">
+                <label class="choice"><input type="radio" name="finish" value="Golden" checked /><span>Golden</span></label>
+                <label class="choice"><input type="radio" name="finish" value="Silver" /><span>Silver</span></label>
+              </div>
+            </fieldset>
+          </div>
+          <aside class="summary" aria-live="polite">
+            <p class="summary-kicker">Your journal</p>
+            <p class="summary-title">custom</p>
+            <dl>
+              <div><dt class="summary-label">Leather</dt><dd id="sum-leather">Chocolate</dd></div>
+              <div><dt class="summary-label">Size</dt><dd id="sum-size">A5</dd></div>
+              <div><dt class="summary-label">Cord</dt><dd id="sum-cord">Brown</dd></div>
+              <div><dt class="summary-label">Detail</dt><dd id="sum-detail">Charms</dd></div>
+              <div><dt class="summary-label">Embossing</dt><dd id="sum-finish">None</dd></div>
+            </dl>
+            <div class="send-row">
+              <p class="confirm" id="custom-confirm" hidden>Your choices are with the atelier. No payment is taken in this preview.</p>
+              <button class="btn btn-maroon" type="submit">Send to the atelier</button>
+            </div>
+          </aside>
+        </div>
+      </form>
+    </main>
+    <footer class="site-footer">Handmade in Karachi · Free delivery in the city · PKR 200 outside</footer>
+    <div class="drawer" id="drawer" hidden>
+      <button class="backdrop" type="button" data-close-bag aria-label="Close bag"></button>
+      <div class="drawer-panel" role="dialog" aria-modal="true" aria-labelledby="bag-title">
+        <div class="drawer-head">
+          <h2 id="bag-title">Your bag</h2>
+          <button class="text-btn" type="button" data-close-bag>Close</button>
+        </div>
+        <div id="bag-body"></div>
+        <p class="fine">Checkout comes with the real source. This preview keeps your bag in this browser.</p>
+      </div>
+    </div>
+    <script src="js/catalog.js"></script>
+    <script src="js/site.js"></script>
+    <script src="js/custom.js"></script>
+  </body>
+</html>
