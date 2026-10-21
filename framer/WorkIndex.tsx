@@ -127,12 +127,14 @@ function normalizeProjects(
                 slug,
                 year: String(matchedDefault?.year || it?.year || ""),
                 accent: String(it?.accent || accent || ACCENT),
-                coverUrl: it?.coverUrl
-                    ? String(it.coverUrl)
-                    : matchedDefault?.coverUrl || "",
-                videoUrl: it?.videoUrl
-                    ? String(it.videoUrl)
-                    : matchedDefault?.videoUrl || fallback?.videoUrl || "",
+                coverUrl:
+                    matchedDefault?.coverUrl ||
+                    (it?.coverUrl ? String(it.coverUrl) : ""),
+                videoUrl: matchedDefault
+                    ? matchedDefault.videoUrl || ""
+                    : (it?.videoUrl ? String(it.videoUrl) : "") ||
+                      fallback?.videoUrl ||
+                      "",
                 href: custom || `${basePath}/${slug}`,
             } satisfies WorkProject
         })
@@ -1210,14 +1212,16 @@ const DEFAULT_ITEMS: WorkProject[] = [
     },
     {
         title: "Bridge",
-        subtitle: "Design system",
+        subtitle: "Website & platform",
         description:
-            "A growing health platform had drifting UI across teams. I led the creation of a shared system.",
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
         slug: "health-platform",
         year: "2024",
-        accent: ACCENT,
+        accent: "#ED3B3F",
+        coverUrl:
+            "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
         videoUrl:
-            "https://framerusercontent.com/assets/BNCHHO0RxeNVJXt0bV6lIpxZeo.mp4",
+            "https://framerusercontent.com/assets/DvSF98RltVtGriM3BYegNjLWYws.mp4",
     },
     {
         title: "CRM and sales management with AI agent",

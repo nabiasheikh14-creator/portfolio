@@ -136,17 +136,50 @@ function hasMedia(v: unknown) {
     return Boolean(String(v || "").trim())
 }
 
-function buildNav(_p: ProjectRecord): CaseNavItem[] {
-    // Fixed section order so type + media rhythm stay consistent across projects.
-    return [
-        { id: "overview", label: "Overview" },
-        { id: "challenge", label: "Challenge" },
-        { id: "approach", label: "Approach" },
-        { id: "decisions", label: "Decisions" },
-        { id: "final", label: "Final" },
-        { id: "outcome", label: "Outcome" },
-        { id: "reflection", label: "Reflection" },
-    ]
+function buildNav(p: ProjectRecord): CaseNavItem[] {
+    const nav: CaseNavItem[] = []
+    const push = (id: string, label: string, on: boolean) => {
+        if (on) nav.push({ id, label })
+    }
+    push(
+        "overview",
+        "Overview",
+        hasText(p.context || p.overview) ||
+            hasMedia(p.heroImage) ||
+            hasMedia(p.contextImage),
+    )
+    push(
+        "challenge",
+        "Challenge",
+        hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage),
+    )
+    push(
+        "approach",
+        "Approach",
+        hasText(p.process) ||
+            hasText(p.goals) ||
+            hasText(p.constraints) ||
+            hasMedia(p.sketchImage) ||
+            hasMedia(p.wireframeImage) ||
+            hasMedia(p.flowImage) ||
+            hasMedia(p.processImage) ||
+            hasMedia(p.iterationImage),
+    )
+    push(
+        "decisions",
+        "Decisions",
+        [p.decision1, p.decision2, p.decision3].some((d) => hasText(d)),
+    )
+    push(
+        "final",
+        "Final",
+        [p.finalImage1, p.finalImage2, p.finalImage3, p.finalImage4, p.prototypeVideo].some(
+            (src) => hasMedia(src),
+        ),
+    )
+    push("outcome", "Outcome", hasText(p.outcome) || hasMedia(p.outcomeImage))
+    push("reflection", "Reflection", hasText(p.reflection))
+    return nav.length ? nav : [{ id: "overview", label: "Overview" }]
 }
 
 /**
@@ -1073,6 +1106,29 @@ function CaseNarrative({
 }) {
     const p = project
     const a = p.accent || accent
+    const showChallenge =
+        hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage)
+    const showApproach =
+        hasText(p.process) ||
+        hasText(p.goals) ||
+        hasText(p.constraints) ||
+        hasMedia(p.sketchImage) ||
+        hasMedia(p.wireframeImage) ||
+        hasMedia(p.flowImage) ||
+        hasMedia(p.processImage) ||
+        hasMedia(p.iterationImage)
+    const decisionBody = [p.decision1, p.decision2, p.decision3].filter((d) =>
+        hasText(d),
+    )
+    const showFinal = [
+        p.finalImage1,
+        p.finalImage2,
+        p.finalImage3,
+        p.finalImage4,
+        p.prototypeVideo,
+    ].some((src) => hasMedia(src))
+    const showOutcome = hasText(p.outcome) || hasMedia(p.outcomeImage)
+    const showReflection = hasText(p.reflection)
 
     return (
         <>
@@ -1089,6 +1145,7 @@ function CaseNarrative({
                 <MediaFrame src={p.contextImage} accent={a} label="Context image" tall />
             </CaseSection>
 
+            {showChallenge ? (
             <CaseSection id="challenge" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Challenge"
@@ -1101,7 +1158,9 @@ function CaseNarrative({
                 <MediaFrame src={p.problemImage} accent={a} label="Problem image" tall />
                 <MediaFrame src={p.researchImage} accent={a} label="Research image" />
             </CaseSection>
+            ) : null}
 
+            {showApproach ? (
             <CaseSection id="approach" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Approach"
@@ -1129,12 +1188,13 @@ function CaseNarrative({
                 />
                 <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
             </CaseSection>
+            ) : null}
 
+            {decisionBody.length ? (
             <CaseSection id="decisions" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Decisions"
-                    body={[p.decision1, p.decision2, p.decision3]
-                        .filter((d) => hasText(d))
+                    body={decisionBody
                         .map((d, i) => `${String(i + 1).padStart(2, "0")} — ${d}`)
                         .join("\n\n")}
                     family={family}
@@ -1142,9 +1202,10 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
-                <MediaFrame src="" accent={a} label="Decision image" />
             </CaseSection>
+            ) : null}
 
+            {showFinal ? (
             <CaseSection id="final" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Final"
@@ -1160,7 +1221,9 @@ function CaseNarrative({
                 <MediaFrame src={p.finalImage4} accent={a} label="Final image 04" />
                 <VideoFrame src={p.prototypeVideo} accent={a} label="Prototype video" />
             </CaseSection>
+            ) : null}
 
+            {showOutcome ? (
             <CaseSection id="outcome" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Outcome"
@@ -1172,7 +1235,9 @@ function CaseNarrative({
                 />
                 <MediaFrame src={p.outcomeImage} accent={a} label="Outcome image" tall />
             </CaseSection>
+            ) : null}
 
+            {showReflection ? (
             <CaseSection id="reflection" setSectionRef={setSectionRef}>
                 <StoryBlock
                     kicker="Reflection"
@@ -1183,6 +1248,7 @@ function CaseNarrative({
                     muted={muted}
                 />
             </CaseSection>
+            ) : null}
 
             {related.length > 0 && (
                 <section style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 8 }}>
@@ -1244,6 +1310,24 @@ function CaseNarrative({
     )
 }
 
+function linkify(text: string): ReactNode[] {
+    return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+        /^https?:\/\//.test(part) ? (
+            <a
+                key={i}
+                href={part}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "inherit", textDecoration: "underline" }}
+            >
+                website design
+            </a>
+        ) : (
+            part
+        ),
+    )
+}
+
 function StoryBlock({
     kicker,
     body,
@@ -1287,7 +1371,7 @@ function StoryBlock({
                         whiteSpace: "pre-wrap",
                     }}
                 >
-                    {body}
+                    {linkify(body)}
                 </p>
             ) : null}
         </div>
@@ -1322,6 +1406,7 @@ function MediaFrame({
     tall?: boolean
 }) {
     const url = String(src || "").trim()
+    if (!url) return null
     return (
         <figure style={{ margin: 0, width: "100%" }}>
             <div
@@ -1402,6 +1487,7 @@ function VideoFrame({
     label?: string
 }) {
     const url = String(src || "").trim()
+    if (!url) return null
     return (
         <figure style={{ margin: 0, width: "100%" }}>
             <div
@@ -2031,40 +2117,52 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         title:
             "Bridge",
         subtitle:
-            "Design system",
+            "Website & platform",
         role:
-            "Senior Product Designer",
+            "UI/UX, Service & Graphic Design",
         year:
             "2024",
         timeline:
-            "4 months · 2024",
+            "3 months",
         tools:
-            "Figma, Tokens, Storybook",
+            "Figma",
         overview:
-            "A growing health platform had drifting UI across teams. I led the creation of a shared system.",
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
         context:
-            "Multi-squad health platform spanning patient and clinician surfaces. Visual language had forked as teams shipped fast without a shared source of truth.",
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.\n\nCompany — Brown Noise Media.",
         problem:
-            "Inconsistent components slowed engineering, eroded trust in clinical UI, and made every new feature a redesign debate.",
+            "With the rise of Indie Filmmaking and non-unionised productions in North America, there is a gap between film makers and hiring talent, crew, locations and props making it an inefficient and time consuming process. Since it's difficult for independent filmmakers to join film unions, given the high costs and barriers to entry, all pre-production processes are handled by filmmakers themselves.",
         goals:
-            "One tokenized system, documented components, and adoption across squads without freezing product velocity.",
+            "",
         constraints:
-            "Live product (no greenfield), mixed React native web, limited design-eng pairing time, accessibility bar for clinical use.",
+            "",
         process:
-            "Audit → token proposal → core components → pilot with one squad → harden docs in Storybook → expand coverage → governance rituals.",
+            "To solve this, my team and I designed brand identity, strategy, social media presence, and the website for the platform, Bridge.\n\nClick to view https://www.figma.com/proto/l2ZT9Uzivb5Xrch3WTzhJN/Bridge-Website-and-Platform?node-id=1115-33934",
         decision1:
-            "Started with tokens + 8 primitives instead of 40 components — adoption needed a thin wedge, not a catalog.",
+            "",
         decision2:
-            "Favored semantic tokens (color.text.danger) over raw palettes so clinical meaning stayed portable across themes.",
+            "",
         decision3:
-            "Made “escape hatches” explicit rather than banning one-offs — squads needed a path for experiments without forking the system.",
+            "",
         outcome:
-            "Teams now build faster from one source of truth, and the product feels like a single product again.",
+            "Bridge is where the independent filmmaker, actor, crew member, and more, meets the rest of the industry. It's a one stop for all things production, so that the user does not have to go look for different resources in different places. It's available under one platform, Bridge.",
         reflection:
-            "I’d measure adoption weekly from day one — qualitative buy-in looked fine while two squads quietly kept local components.",
-        accent: "#28A06A",
+            "",
+        accent: "#ED3B3F",
         slug: "health-platform",
         ...EMPTY_MEDIA,
+        heroImage:
+            "https://framerusercontent.com/images/niA4BuNKihF3x0I5SNEfvIzeQ.png",
+        contextImage:
+            "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
+        flowImage:
+            "https://framerusercontent.com/images/ySY62RMkHS8GCaPiveQJoEjMI.png",
+        finalImage1:
+            "https://framerusercontent.com/images/LW98LXJUXre173gnGBbyk1H0Q.png",
+        finalImage2:
+            "https://framerusercontent.com/images/mTA1xLceIzElk7HNOxsCjPjFX0U.png",
+        finalImage3:
+            "https://framerusercontent.com/images/hJjJJphe37WqOQyA70MdZzOd8eI.jpeg",
     },
     {
         title:
