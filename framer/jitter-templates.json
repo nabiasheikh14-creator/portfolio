@@ -1,0 +1,61 @@
+{
+  "note": "The Jitter files to use for case-study films. Pick one that matches the frames a project actually has. Do not invent extra screens to fill a template.",
+  "templates": [
+    {
+      "id": "D8BN0xDFho1OTVG8FzOgcFdf",
+      "name": "Image Stretch Transition",
+      "url": "https://jitter.video/file/?id=D8BN0xDFho1OTVG8FzOgcFdf",
+      "needs": "A sequence of full-bleed stills.",
+      "motion": "Each still opens from a thin center slit, stretched tall, and settles into the frame. Then it holds."
+    },
+    {
+      "id": "AEf1lP67M2orNqScrctZeZAq",
+      "name": "Sliding Web Screens",
+      "url": "https://jitter.video/file/?id=AEf1lP67M2orNqScrctZeZAq",
+      "needs": "Several separate website screenshots, about 1280×800.",
+      "motion": "Browser frames sit in a grid. The row slides until the next screen is centered."
+    },
+    {
+      "id": "S6ZCuBsMc0b541RmkcwJ0vwT",
+      "name": "Project Teaser",
+      "url": "https://jitter.video/template/project-teaser/",
+      "needs": "A hero still plus a few supporting frames.",
+      "motion": "A slow opening hold on the hero, then a stretch through the rest of the work."
+    },
+    {
+      "id": "lXVUv0kcmQkzAGls2pacbwUG",
+      "name": "Animated Mobile Screens",
+      "url": "https://jitter.video/file/?id=lXVUv0kcmQkzAGls2pacbwUG",
+      "needs": "Several separate phone screens, about 1080×1920.",
+      "motion": "A fan of phone screens on black, front screens large, the rest stacked behind."
+    },
+    {
+      "id": "3-mobile-screens",
+      "name": "3 Mobile Screens",
+      "url": "https://jitter.video/template/3-mobile-screens/",
+      "needs": "Three separate phone screens.",
+      "motion": "Three phones arranged together and animated as one group."
+    },
+    {
+      "id": "orbit-social-media-showreel",
+      "name": "Orbit: Social Media Showreel",
+      "url": "https://jitter.video/template/orbit-social-media-showreel/",
+      "needs": "A set of square or portrait social frames.",
+      "motion": "Frames orbit a center point in a continuous loop."
+    },
+    {
+      "id": "showreels",
+      "name": "Showreels",
+      "url": "https://jitter.video/templates/showreels/",
+      "needs": "A set of finished frames.",
+      "motion": "The showreel family: a teaser open, then the work moving as one reel."
+    },
+    {
+      "id": "8DmlA4BdEsrsvBHouULkPWHZ",
+      "name": "Sliding Smartphones",
+      "url": "https://jitter.video/file/?id=8DmlA4BdEsrsvBHouULkPWHZ",
+      "needs": "Three or more separate phone screens, about 375×812.",
+      "motion": "Rounded phone frames slide sideways. The center phone is full; the sides are cropped."
+    }
+  ]
+}

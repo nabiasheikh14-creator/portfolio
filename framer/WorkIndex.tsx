@@ -1236,14 +1236,15 @@ const DEFAULT_ITEMS: WorkProject[] = [
     },
     {
         title: "Safar-e-Asaan",
-        subtitle: "0→1 product",
+        subtitle: "Making Karachi’s Bus System Legible",
         description:
-            "A 0→1 travel app that needed to feel effortless for people planning trips on the move.",
+            "A route-and-signage system for riders who currently have to ask strangers which bus to take.",
         slug: "travel-app",
-        year: "2023",
-        accent: ACCENT,
-        videoUrl:
-            "https://framerusercontent.com/assets/08VoVyi5fkN62AMjxKHCOQ84iI.mp4",
+        year: "2024",
+        accent: "#5E151C",
+        coverUrl:
+            "https://framerusercontent.com/images/Q5BxRRTHioPZGEZPzTYczijeEY.jpeg",
+        videoUrl: "",
     },
 ]
 
