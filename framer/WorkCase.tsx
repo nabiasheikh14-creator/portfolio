@@ -2163,6 +2163,8 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "https://framerusercontent.com/images/mTA1xLceIzElk7HNOxsCjPjFX0U.png",
         finalImage3:
             "https://framerusercontent.com/images/hJjJJphe37WqOQyA70MdZzOd8eI.jpeg",
+        prototypeVideo:
+            "https://framerusercontent.com/assets/wbgcrMiL0WgXOBz69jYf7LJa5Lg.mp4",
     },
     {
         title:

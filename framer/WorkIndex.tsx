@@ -1221,7 +1221,7 @@ const DEFAULT_ITEMS: WorkProject[] = [
         coverUrl:
             "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
         videoUrl:
-            "https://framerusercontent.com/assets/DvSF98RltVtGriM3BYegNjLWYws.mp4",
+            "https://framerusercontent.com/assets/aXOC788i48024F6WaK7ANZYjRcs.mp4",
     },
     {
         title: "CRM and sales management with AI agent",
