@@ -2351,6 +2351,8 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         slug: "fintech-app",
         longform: true,
         ...EMPTY_MEDIA,
+        storyVideo:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel.mp4",
     },
     {
         title:
