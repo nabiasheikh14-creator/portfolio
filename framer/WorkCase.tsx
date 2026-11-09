@@ -2894,12 +2894,6 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel.mp4",
         frames: [
             {
-                section: "challenge",
-                after: 4,
-                label: "Heat wall",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/heat.jpg",
-            },
-            {
                 section: "research",
                 after: 10,
                 label: "Research board",
