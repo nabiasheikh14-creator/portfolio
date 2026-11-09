@@ -1278,10 +1278,6 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro-poster.jpg",
         videoUrl:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro.mp4",
-        moreCoverUrl:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room-poster.jpg",
-        moreVideoUrl:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
     },
     {
         title: "FRED.AI",

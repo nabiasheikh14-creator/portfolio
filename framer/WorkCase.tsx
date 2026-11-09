@@ -88,6 +88,7 @@ interface ProjectRecord {
     beyond?: string
     decision4?: string
     longform?: boolean
+    frames?: { section: string; src: string; video?: boolean; label?: string }[]
 }
 
 const CaseMotion = createContext({
@@ -299,6 +300,7 @@ export default function WorkCase(props: WorkCaseProps) {
                 beyond: fb.beyond || "",
                 decision4: fb.decision4 || "",
                 longform: Boolean(fb.longform),
+                frames: fb.frames || [],
             } as ProjectRecord
         })
     }, [catalog])
@@ -1269,6 +1271,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
+                <SectionFrames frames={p.frames} section="research" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1299,6 +1302,7 @@ function CaseNarrative({
                     tall
                 />
                 <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
+                <SectionFrames frames={p.frames} section="approach" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1325,6 +1329,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
+                <SectionFrames frames={p.frames} section="experience" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1338,6 +1343,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
+                <SectionFrames frames={p.frames} section="beyond" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1688,6 +1694,41 @@ function MediaRow({ children }: { children: ReactNode }) {
         >
             {children}
         </div>
+    )
+}
+
+function SectionFrames({
+    frames,
+    section,
+    accent,
+}: {
+    frames?: { section: string; src: string; video?: boolean; label?: string }[]
+    section: string
+    accent: string
+}) {
+    const items = (frames || []).filter((f) => f.section === section && hasMedia(f.src))
+    if (!items.length) return null
+    return (
+        <>
+            {items.map((f, i) =>
+                f.video ? (
+                    <VideoFrame
+                        key={`${section}-${i}`}
+                        src={f.src}
+                        accent={accent}
+                        label={f.label || ""}
+                    />
+                ) : (
+                    <MediaFrame
+                        key={`${section}-${i}`}
+                        src={f.src}
+                        accent={accent}
+                        label={f.label || ""}
+                        tall
+                    />
+                ),
+            )}
+        </>
     )
 }
 
@@ -2353,6 +2394,50 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         ...EMPTY_MEDIA,
         storyVideo:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel.mp4",
+        frames: [
+            {
+                section: "research",
+                label: "Research board",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/research.jpg",
+            },
+            {
+                section: "approach",
+                label: "Project architecture",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/architecture.jpg",
+            },
+            {
+                section: "approach",
+                label: "Process film",
+                video: true,
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/films/sooraj-process.mp4",
+            },
+            {
+                section: "experience",
+                label: "Two futures",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/futures.jpg",
+            },
+            {
+                section: "experience",
+                label: "Room mockup",
+                video: true,
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
+            },
+            {
+                section: "experience",
+                label: "The room",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/room.jpg",
+            },
+            {
+                section: "experience",
+                label: "Heat wall",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/heat.jpg",
+            },
+            {
+                section: "beyond",
+                label: "Future's Archive website",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/website.jpg",
+            },
+        ],
     },
     {
         title:
