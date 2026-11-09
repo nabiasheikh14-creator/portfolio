@@ -2311,7 +2311,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         flowImage:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-onboarding.png",
         prototypeVideo:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/design-system.mp4",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@72eb47359c0f2ee37ca957db816338ca6bd4edc3/framer/films/fred-reel.mp4",
     },
     {
         title:
