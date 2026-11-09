@@ -223,10 +223,16 @@ export default function WorkCase(props: WorkCaseProps) {
         if (!authored.length) return DEFAULT_CATALOG
         const bySlug = new Map(DEFAULT_CATALOG.map((d) => [d.slug, d]))
         return authored.map((it: any) => {
-            const fb = bySlug.get(String(it?.slug || ""))
+            const rawSlug = String(it?.slug || "")
+            const slugKey = rawSlug === "chutney-studios" ? "voice-ai" : rawSlug
+            const fb = bySlug.get(slugKey)
             if (!fb) return it as ProjectRecord
+            const replaced = rawSlug === "chutney-studios"
             // Framer Projects CMS (in DEFAULT_CATALOG) wins for copy; keep
-            // authored media when present.
+            // authored media when present. The old Chutney slot is Fred now,
+            // so its leftover canvas media is not carried over.
+            const media = (authoredSrc: string, fallbackSrc: string) =>
+                replaced ? fallbackSrc : authoredSrc || fallbackSrc
             return {
                 ...fb,
                 ...it,
@@ -247,23 +253,23 @@ export default function WorkCase(props: WorkCaseProps) {
                 decision3: fb.decision3,
                 outcome: fb.outcome,
                 reflection: fb.reflection,
-                accent: it.accent || fb.accent,
+                accent: replaced ? fb.accent : it.accent || fb.accent,
                 slug: fb.slug,
-                heroImage: it.heroImage || fb.heroImage,
-                contextImage: it.contextImage || fb.contextImage,
-                problemImage: it.problemImage || fb.problemImage,
-                researchImage: it.researchImage || fb.researchImage,
-                sketchImage: it.sketchImage || fb.sketchImage,
-                wireframeImage: it.wireframeImage || fb.wireframeImage,
-                flowImage: it.flowImage || fb.flowImage,
-                processImage: it.processImage || fb.processImage,
-                iterationImage: it.iterationImage || fb.iterationImage,
-                finalImage1: it.finalImage1 || fb.finalImage1,
-                finalImage2: it.finalImage2 || fb.finalImage2,
-                finalImage3: it.finalImage3 || fb.finalImage3,
-                finalImage4: it.finalImage4 || fb.finalImage4,
-                outcomeImage: it.outcomeImage || fb.outcomeImage,
-                prototypeVideo: it.prototypeVideo || fb.prototypeVideo,
+                heroImage: media(it.heroImage, fb.heroImage),
+                contextImage: media(it.contextImage, fb.contextImage),
+                problemImage: media(it.problemImage, fb.problemImage),
+                researchImage: media(it.researchImage, fb.researchImage),
+                sketchImage: media(it.sketchImage, fb.sketchImage),
+                wireframeImage: media(it.wireframeImage, fb.wireframeImage),
+                flowImage: media(it.flowImage, fb.flowImage),
+                processImage: media(it.processImage, fb.processImage),
+                iterationImage: media(it.iterationImage, fb.iterationImage),
+                finalImage1: media(it.finalImage1, fb.finalImage1),
+                finalImage2: media(it.finalImage2, fb.finalImage2),
+                finalImage3: media(it.finalImage3, fb.finalImage3),
+                finalImage4: media(it.finalImage4, fb.finalImage4),
+                outcomeImage: media(it.outcomeImage, fb.outcomeImage),
+                prototypeVideo: media(it.prototypeVideo, fb.prototypeVideo),
             } as ProjectRecord
         })
     }, [catalog])
@@ -276,8 +282,8 @@ export default function WorkCase(props: WorkCaseProps) {
     }, [isStatic])
 
     const project =
-        list.find((p) => p.slug === slug) ||
-        list.find((p) => p.slug && slug && p.slug.includes(slug)) ||
+        list.find((p) => p.slug === (slug === "chutney-studios" ? "voice-ai" : slug)) ||
+        list.find((p) => p.slug && slug && p.slug.includes(slug) && slug !== "chutney-studios") ||
         list[0] ||
         DEFAULT_CATALOG[0]
 
@@ -1021,6 +1027,7 @@ function MetaChips({
         project.year && { k: "Date", v: project.year },
         project.timeline && { k: "Duration", v: project.timeline },
         project.role && { k: "Role", v: project.role },
+        project.tools && { k: "Tools", v: project.tools },
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
@@ -1195,7 +1202,16 @@ function CaseNarrative({
                 <StoryBlock
                     kicker="Decisions"
                     body={decisionBody
-                        .map((d, i) => `${String(i + 1).padStart(2, "0")}\n${d}`)
+                        .map((d, i) => {
+                            const first = d.split("\n")[0].trim()
+                            const labeled =
+                                d.includes("\n") &&
+                                first.length <= 42 &&
+                                !first.includes(".")
+                            return labeled
+                                ? d.trim()
+                                : `${String(i + 1).padStart(2, "0")}\n${d.trim()}`
+                        })
                         .join("\n\n")}
                     family={family}
                     displayFamily={displayFamily}
@@ -2185,41 +2201,41 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
     },
     {
         title:
-            "CRM and sales management with AI agent",
+            "Fred",
         subtitle:
-            "Brand + site",
+            "Designing how a real estate agent supervises an AI that calls their leads",
         role:
-            "Founder & Designer",
+            "UI/UX Designer",
         year:
-            "2025",
+            "June 2025",
         timeline:
-            "6 weeks · 2025",
+            "",
         tools:
-            "Figma, Framer, Brand",
+            "Figma, FigJam",
         overview:
-            "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
+            "A voice AI assistant for real estate agents. It sorts their leads, makes the calls and follows up, from a chat-first mobile app and a web version on the same system.",
         context:
-            "A personal studio for branding and sites for small, good-taste brands. Needed a presence that felt warm and clear, not agency-slick.",
+            "Fred is a voice AI assistant for real estate agents. It sorts their leads, makes the calls and follows up, all from a chat-first mobile app, with a web version built on the same system.\n\nClient project. I designed the wireframes, the design system, the high-fidelity UI, and the web version.",
         problem:
-            "Without a sharp site, inquiries were vague and mismatched. I needed a filter as much as a brochure.",
+            "The brief\nThe client wanted a CRM that real estate agents talk to instead of filling in. Chat is the home screen. You import your sheets and documents, and Fred sorts every lead into projects, queues tasks and shows where each lead stands.\n\nWhat the problem really was\nThe hard part wasn’t the chat, it was trust. An agent that calls twenty clients on your behalf can embarrass you at scale. Hence the real question became how Fred shows what it’s about to do, and how you step in when something goes wrong.",
         goals:
-            "Sound like me, show craft, and give freelancers/clients a low-pressure way to start a conversation.",
+            "",
         constraints:
-            "Evenings/weekends only, solo build, budget of time not money.",
+            "",
         process:
-            "Tone board\n\nType pairing tests\n\nLogo sketches\n\nSite IA\n\nBuild in Framer\n\nSoft launch to peers for feedback",
+            "Visual direction\nIn mid 2025, Claude, Replit and Manus were setting the patterns for mobile AI agents, so I studied how they handled chat, progress and long-running tasks. Most of those references were dark. I went the other way, with warm neutrals and slate blue, olive and burgundy accents, because this is a tool agents would live in all day and I wanted it to feel calm.\n\nThe system\nThe system runs on Satoshi and Urbanist. Its core pieces are step cards for multi-stage tasks, collapsible “AI-inferred facts” so the agent’s guesses can be checked, status tags and a shared icon set.\n\nKey screens\nThe home screen is the chat, with five tabs: Portfolio, Leads, Fred, Updates and Analytics. Onboarding is a 4 to 5 step setup covering your number, voice settings, lead import, WhatsApp and promo material, with an option to be guided by voice and a demo call to see Fred in action.\n\nFrom mobile to web\nThe web version carries the same system across eight flows, including pipeline and calendar, inbound and outbound email, replying and scheduling meetings with a lead, archive, portfolio and analytics. Desktop gave me room to run things side by side, which is why the calling progress and the chat can live in separate windows.",
         decision1:
-            "Picked a friendly type pairing over a colder “premium” stack. The studio’s edge is approachable taste, not intimidation.",
+            "Nothing goes out without a dry run\nWhen you type “Call hot leads in Dubai”, Fred finds the leads, shows their names, languages and risk flags like do-not-disturb and night hours, then waits for you to confirm, modify or cancel. You confirm the call script too. A mistake here goes out under the agent’s name, so the checkpoint sits before the action.\n\nProgress stays visible while calls run\nA minimisable banner shows “12 calls in progress, ETA 6 min”, split into successful and failed, with retry, cancel all or schedule for later. On web, the chat moves to the side and progress gets its own window.\n\nWhen the AI gets confused, it tells you\nFred notifies the agent in chat, and the agent can pause the batch, merge into the live call or mark the lead for human follow-up. If the agent is offline, actions queue and run when they’re back.\n\nResults turn into actions\nEvery call gets a transcript and a summary, with highlighted insights like “Client said: send floorplan” and a button to create the follow-up. Lead cards collapse and expand, with retry and reschedule built in.\n\nImporting cleans up after itself\nCSV, CRM sync or quick add, then duplicate detection and phone cleanup, then a plain summary: “32 new leads added; 5 duplicates removed.” Leads with gaps get prompts like “Add phone for AI calling.”\n\nThreads became Projects\nEarly on I had Leads and Threads as separate ideas, and how they related wasn’t clear. Projects fixed that by giving every lead a home, and the agent a clear context to work in.",
         decision2:
-            "Kept case studies short on the marketing site; deep work lives in this portfolio instead of duplicating.",
+            "",
         decision3:
-            "Used a single CTA (email/book) rather than a form maze. Conversion quality over lead volume.",
+            "",
         outcome:
-            "A site that sounds like me and gives freelance clients a clear, low-pressure way in.",
+            "I delivered the wireframes, the design system, 50+ high-fidelity mobile screens and the web version. The work stayed at design stage.",
         reflection:
-            "I’d ship a rough site in week two and iterate live.\n\nI polished offline longer than I needed to.",
-        accent: "#D17BB0",
-        slug: "chutney-studios",
+            "The next thing I’d push for is testing the dry-run and failure flows with real agents, since that’s where trust is won or lost.",
+        accent: "#44586A",
+        slug: "voice-ai",
         ...EMPTY_MEDIA,
     },
     {

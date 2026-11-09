@@ -1431,7 +1431,7 @@ function Thumb({ name, accent }: { name: string; accent: string }) {
 const defaultCases: CaseItem[] = [
     { label: "Fintech App", tag: "PRODUCT / UX", slug: "fintech-app" },
     { label: "Health Platform", tag: "SYSTEM / UI", slug: "health-platform" },
-    { label: "Chutney Studios", tag: "BRAND / WEB", slug: "chutney-studios" },
+    { label: "Fred", tag: "PRODUCT / UX", slug: "voice-ai" },
 ]
 
 addPropertyControls(Y2KHome, {

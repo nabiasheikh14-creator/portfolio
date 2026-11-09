@@ -97,8 +97,9 @@ function normalizeProjects(
 ): WorkProject[] {
     const normalized = (items || [])
         .map((it: any, index: number) => {
-            const slug =
+            const rawSlug =
                 String(it?.slug || "").replace(/^\//, "") || `project-${index + 1}`
+            const slug = rawSlug === "chutney-studios" ? "voice-ai" : rawSlug
             const custom = resolveLink(it?.href || it?.link, "")
             const fallback =
                 DEFAULT_ITEMS.find((d) => d.slug === slug) ||
@@ -126,16 +127,27 @@ function normalizeProjects(
                     "",
                 slug,
                 year: String(matchedDefault?.year || it?.year || ""),
-                accent: String(it?.accent || accent || ACCENT),
+                accent:
+                    rawSlug === "chutney-studios"
+                        ? "#44586A"
+                        : String(it?.accent || accent || ACCENT),
                 coverUrl:
-                    matchedDefault?.coverUrl ||
-                    (it?.coverUrl ? String(it.coverUrl) : ""),
-                videoUrl: matchedDefault
-                    ? matchedDefault.videoUrl || ""
-                    : (it?.videoUrl ? String(it.videoUrl) : "") ||
-                      fallback?.videoUrl ||
-                      "",
-                href: custom || `${basePath}/${slug}`,
+                    rawSlug === "chutney-studios"
+                        ? ""
+                        : matchedDefault?.coverUrl ||
+                          (it?.coverUrl ? String(it.coverUrl) : ""),
+                videoUrl:
+                    rawSlug === "chutney-studios"
+                        ? ""
+                        : matchedDefault
+                          ? matchedDefault.videoUrl || ""
+                          : (it?.videoUrl ? String(it.videoUrl) : "") ||
+                            fallback?.videoUrl ||
+                            "",
+                href:
+                    rawSlug === "chutney-studios" || slug === "voice-ai"
+                        ? `${basePath}/chutney-studios`
+                        : custom || `${basePath}/${slug}`,
             } satisfies WorkProject
         })
         .filter((it) => it.title)
@@ -1224,15 +1236,15 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://framerusercontent.com/assets/aXOC788i48024F6WaK7ANZYjRcs.mp4",
     },
     {
-        title: "CRM and sales management with AI agent",
-        subtitle: "Brand + site",
+        title: "Fred",
+        subtitle:
+            "Designing how a real estate agent supervises an AI that calls their leads",
         description:
-            "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
-        slug: "chutney-studios",
+            "A voice AI assistant for real estate agents. It sorts their leads, makes the calls and follows up, from a chat-first mobile app and a web version on the same system.",
+        slug: "voice-ai",
         year: "2025",
-        accent: ACCENT,
-        videoUrl:
-            "https://framerusercontent.com/assets/1l5FmP2EGRoLJ5xUbGoAAne5sg.mp4",
+        accent: "#44586A",
+        videoUrl: "",
     },
     {
         title: "Safar-e-Asaan",
