@@ -296,7 +296,8 @@
             display: home ? "none" : "inline-flex",
             alignItems: "center",
             gap: "8px",
-            padding: phone ? "8px 14px" : "10px 22px",
+            padding: phone ? "14px 16px" : "10px 22px",
+            minHeight: phone ? "44px" : "",
             background: "rgba(255,255,255,0.9)",
             border: "1.5px solid rgb(17,17,17)",
             borderRadius: "999px",
@@ -345,9 +346,49 @@
         return btn
     }
 
+    function inTopFixedBar(node) {
+        var el = node && node.parentElement
+        while (el && el !== document.body) {
+            if (window.getComputedStyle(el).position === "fixed") {
+                var r = el.getBoundingClientRect()
+                return r.top <= 4 && r.height > 20 && r.height < 140
+            }
+            el = el.parentElement
+        }
+        return false
+    }
+
+    function phoneNavHitArea() {
+        var phone = false
+        try {
+            phone = window.matchMedia("(max-width: 809.98px)").matches
+        } catch (_) {}
+        var links = document.querySelectorAll("a")
+        for (var i = 0; i < links.length; i++) {
+            var a = links[i]
+            var hit = inTopFixedBar(a)
+            if (!phone || !hit) {
+                if (a.dataset.phoneNavHit === "1") {
+                    a.style.minHeight = ""
+                    a.style.display = ""
+                    a.style.alignItems = ""
+                    a.style.boxSizing = ""
+                    delete a.dataset.phoneNavHit
+                }
+                continue
+            }
+            a.dataset.phoneNavHit = "1"
+            a.style.display = "inline-flex"
+            a.style.alignItems = "center"
+            a.style.boxSizing = "border-box"
+            a.style.minHeight = "44px"
+        }
+    }
+
     function syncBtn() {
         if (!document.body) return
         ensureBtn()
+        phoneNavHitArea()
     }
 
     function tryPlay() {

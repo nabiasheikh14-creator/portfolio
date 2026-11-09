@@ -30,6 +30,21 @@ const INTRO_VH = 480
 /** Phone / small-tablet: shorter scroll intro so the desk arrives sooner. */
 const INTRO_VH_PHONE = 220
 const PHONE_MQ = "(max-width: 809.98px)"
+
+function useIsPhone() {
+    const [phone, setPhone] = useState(
+        () => typeof window !== "undefined" && window.matchMedia(PHONE_MQ).matches,
+    )
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const mq = window.matchMedia(PHONE_MQ)
+        const sync = () => setPhone(mq.matches)
+        sync()
+        mq.addEventListener?.("change", sync)
+        return () => mq.removeEventListener?.("change", sync)
+    }, [])
+    return phone
+}
 /** Session flag — scroll intro only on the first homepage visit in this tab. */
 const INTRO_SEEN_KEY = "__nabiaDeskIntroSeen"
 /** Set before navigating home → /work so WorkIndex can settle the zoom. */
@@ -702,8 +717,11 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             style={{
                 position: "relative",
                 width: "100%",
-                height: animated ? `${introVh}vh` : undefined,
-                minHeight: animated ? undefined : "100vh",
+                height: isPhone ? "100vh" : animated ? `${introVh}vh` : undefined,
+                minHeight: isPhone ? undefined : animated ? undefined : "100vh",
+                overflowY: isPhone ? "auto" : undefined,
+                overflowX: isPhone ? "hidden" : undefined,
+                WebkitOverflowScrolling: isPhone ? "touch" : undefined,
                 background: cream,
                 fontFamily: family,
                 ...stripSize(props.style),
@@ -716,11 +734,13 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
 
             <div
                 style={{
-                    position: animated ? "sticky" : "relative",
+                    position: isPhone ? "relative" : animated ? "sticky" : "relative",
                     top: 0,
-                    height: "100vh",
+                    height: isPhone ? Math.ceil(scale * STAGE_H) + 128 : "100vh",
                     width: "100%",
                     overflow: "hidden",
+                    paddingTop: isPhone ? 112 : 0,
+                    boxSizing: "border-box",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
@@ -882,6 +902,16 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
                     )}
                 </AnimatePresence>
             </div>
+
+            {isPhone ? (
+                <PhoneDeskMenu
+                    clicks={clicks}
+                    soundLabel={playing || soundOn ? "SOUND ON" : "SOUND OFF"}
+                    family={family}
+                    ink={ink}
+                    onActivate={activate}
+                />
+            ) : null}
 
             <AnimatePresence>
                 {popup?.popupKind === "experience" && (
@@ -1441,6 +1471,71 @@ function PopupBody({
     )
 }
 
+function PhoneDeskMenu({
+    clicks,
+    soundLabel,
+    family,
+    ink,
+    onActivate,
+}: {
+    clicks: Click[]
+    soundLabel: string
+    family: string
+    ink: string
+    onActivate: (c: Click) => void
+}) {
+    const row: CSSProperties = {
+        display: "flex",
+        alignItems: "center",
+        width: "100%",
+        minHeight: 48,
+        padding: "12px 16px",
+        boxSizing: "border-box",
+        border: `1.5px solid ${ink}`,
+        background: "#fff",
+        color: ink,
+        fontFamily: family,
+        fontSize: 14,
+        fontWeight: 600,
+        letterSpacing: "0.04em",
+        textTransform: "uppercase",
+        textDecoration: "none",
+        textAlign: "left",
+        cursor: "pointer",
+    }
+    return (
+        <nav
+            aria-label="Desk"
+            style={{
+                position: "relative",
+                zIndex: 5,
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+                width: "100%",
+                boxSizing: "border-box",
+                padding: "4px 18px 80px",
+            }}
+        >
+            {clicks.map((c) => {
+                const label = c.action === "sound" ? soundLabel : c.label
+                if (c.action === "page" && c.href) {
+                    return (
+                        <a key={c.key} href={c.href} style={row}>
+                            {label}
+                        </a>
+                    )
+                }
+                return (
+                    <button key={c.key} type="button" onClick={() => onActivate(c)} style={row}>
+                        {label}
+                    </button>
+                )
+            })}
+        </nav>
+    )
+}
+
 function ModalShell({
     onClose,
     family,
@@ -1452,6 +1547,7 @@ function ModalShell({
     width?: string
     children: ReactNode
 }) {
+    const phone = useIsPhone()
     // Portal to body so sticky/overflow/transform on the desk never clips popups
     // or breaks hover + fixed positioning after CMS/image edits.
     const modal = (
@@ -1469,7 +1565,7 @@ function ModalShell({
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                padding: 20,
+                padding: phone ? 12 : 20,
                 pointerEvents: "auto",
             }}
         >
@@ -1482,8 +1578,8 @@ function ModalShell({
                 style={{
                     background: CREAM,
                     border: `1.5px solid ${INK}`,
-                    width,
-                    maxHeight: "min(86vh, 820px)",
+                    width: phone ? "min(100%, calc(100vw - 24px))" : width,
+                    maxHeight: phone ? "calc(100dvh - 24px)" : "min(86vh, 820px)",
                     overflow: "auto",
                     position: "relative",
                     fontFamily: family,
@@ -1514,7 +1610,7 @@ function ModalShell({
                 >
                     X CLOSE
                 </button>
-                {children}
+                <div style={{ paddingTop: phone ? 42 : 0 }}>{children}</div>
             </motion.div>
         </motion.div>
     )
@@ -1648,20 +1744,22 @@ function ExperiencePopup({
             selected?.duration === j.duration)
 
     const detailKicker = "What I learned"
+    const phone = useIsPhone()
 
     return (
         <ModalShell onClose={onClose} family={family} width="min(920px, 95vw)">
             <div
                 style={{
                     display: "grid",
-                    gridTemplateColumns: "minmax(260px, 320px) 1fr",
-                    minHeight: 480,
+                    gridTemplateColumns: phone ? "1fr" : "minmax(260px, 320px) 1fr",
+                    minHeight: phone ? undefined : 480,
                     alignItems: "stretch",
                 }}
             >
                 <aside
                     style={{
-                        borderRight: `1.5px solid ${ink}`,
+                        borderRight: phone ? "none" : `1.5px solid ${ink}`,
+                        borderBottom: phone ? `1.5px solid ${ink}` : "none",
                         padding: POPUP.padSplit,
                         boxSizing: "border-box",
                         background: CREAM,

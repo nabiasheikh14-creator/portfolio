@@ -854,7 +854,7 @@ function MobileSequence({
                 display: "flex",
                 flexDirection: "column",
                 gap: 56,
-                padding: "100px 18px 80px",
+                padding: "140px 18px 80px",
                 boxSizing: "border-box",
             }}
         >
@@ -1171,7 +1171,8 @@ function DeskBack({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: phone ? "8px 14px" : "10px 22px",
+                padding: phone ? "14px 16px" : "10px 22px",
+                minHeight: phone ? "44px" : "",
                 background: "rgba(255,255,255,0.92)",
                 border: "1.5px solid rgb(17,17,17)",
                 borderRadius: "999px",

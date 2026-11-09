@@ -589,7 +589,8 @@ function DeskBack({
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "8px",
-                padding: phone ? "8px 14px" : "10px 22px",
+                padding: phone ? "14px 16px" : "10px 22px",
+                minHeight: phone ? "44px" : "",
                 background: "rgba(255,255,255,0.9)",
                 border: "1.5px solid rgb(17,17,17)",
                 borderRadius: "999px",
@@ -877,7 +878,7 @@ function MobileCase({
             style={{
                 position: "relative",
                 zIndex: 2,
-                padding: "100px 18px 48px",
+                padding: "140px 18px 48px",
                 boxSizing: "border-box",
                 background: CREAM,
             }}
@@ -922,8 +923,8 @@ function MobileCase({
                 style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: 10,
-                    margin: "32px 0 48px",
+                    gap: 4,
+                    margin: "28px 0 40px",
                 }}
             >
                 {nav.map((item) => {
@@ -939,7 +940,8 @@ function MobileCase({
                                 gap: 10,
                                 background: "transparent",
                                 border: "none",
-                                padding: 0,
+                                minHeight: 44,
+                                padding: "12px 0",
                                 cursor: "pointer",
                                 fontFamily: family,
                                 fontSize: 14,
