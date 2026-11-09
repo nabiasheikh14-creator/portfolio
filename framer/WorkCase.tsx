@@ -25,7 +25,7 @@ const PHONE_MQ = "(max-width: 809.98px)"
 const LEFT_COL = "max(240px, 28vw)"
 const FRAME_RADIUS = 12
 /** Shared case-study rhythm */
-const SECTION_GAP = 72
+const SECTION_GAP = 96
 const BLOCK_GAP = 28
 const BODY_SIZE = 16
 const BODY_LH = 1.65
@@ -1195,7 +1195,7 @@ function CaseNarrative({
                 <StoryBlock
                     kicker="Decisions"
                     body={decisionBody
-                        .map((d, i) => `${String(i + 1).padStart(2, "0")}. ${d}`)
+                        .map((d, i) => `${String(i + 1).padStart(2, "0")}\n${d}`)
                         .join("\n\n")}
                     family={family}
                     displayFamily={displayFamily}
@@ -1328,13 +1328,37 @@ function linkify(text: string): ReactNode[] {
     )
 }
 
+const BODY_INK = "#333333"
+
+function storyBlocks(body: string): { subhead: string; text: string }[] {
+    return body
+        .split(/\n\n+/)
+        .map((block) => block.trim())
+        .filter(Boolean)
+        .map((block) => {
+            const breakAt = block.indexOf("\n")
+            if (breakAt > 0) {
+                const subhead = block.slice(0, breakAt).trim()
+                const text = block.slice(breakAt + 1).trim()
+                if (
+                    subhead &&
+                    text &&
+                    subhead.length <= 42 &&
+                    !subhead.includes(".")
+                ) {
+                    return { subhead, text }
+                }
+            }
+            return { subhead: "", text: block }
+        })
+}
+
 function StoryBlock({
     kicker,
     body,
     family,
     displayFamily,
     ink,
-    muted,
 }: {
     kicker: string
     body: string
@@ -1343,36 +1367,75 @@ function StoryBlock({
     ink: string
     muted: string
 }) {
+    const blocks = hasText(body) ? storyBlocks(body) : []
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div
-                style={{
-                    fontFamily: displayFamily,
-                    fontSize: "clamp(22px, 2.2vw, 28px)",
-                    fontWeight: 400,
-                    letterSpacing: "0",
-                    lineHeight: 1.2,
-                    color: ink,
-                }}
-            >
-                {kicker}
-            </div>
-            {hasText(body) ? (
-                <p
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <span
+                    aria-hidden
                     style={{
-                        margin: 0,
-                        fontFamily: family,
-                        fontSize: BODY_SIZE,
+                        display: "block",
+                        width: 36,
+                        height: 1,
+                        background: ink,
+                    }}
+                />
+                <div
+                    style={{
+                        fontFamily: displayFamily,
+                        fontSize: 40,
                         fontWeight: 400,
                         letterSpacing: "0",
-                        lineHeight: BODY_LH,
-                        color: muted,
-                        maxWidth: "100%",
-                        whiteSpace: "pre-wrap",
+                        lineHeight: 1.05,
+                        color: ink,
                     }}
                 >
-                    {linkify(body)}
-                </p>
+                    {kicker}
+                </div>
+            </div>
+            {blocks.length ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+                    {blocks.map((block, i) => (
+                        <div
+                            key={i}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: block.subhead ? 6 : 0,
+                            }}
+                        >
+                            {block.subhead ? (
+                                <div
+                                    style={{
+                                        margin: 0,
+                                        fontFamily: family,
+                                        fontSize: 16,
+                                        fontWeight: 600,
+                                        letterSpacing: "0",
+                                        lineHeight: 1.35,
+                                        color: ink,
+                                    }}
+                                >
+                                    {block.subhead}
+                                </div>
+                            ) : null}
+                            <p
+                                style={{
+                                    margin: 0,
+                                    fontFamily: family,
+                                    fontSize: BODY_SIZE,
+                                    fontWeight: 400,
+                                    letterSpacing: "0",
+                                    lineHeight: BODY_LH,
+                                    color: BODY_INK,
+                                    maxWidth: "100%",
+                                }}
+                            >
+                                {linkify(block.text)}
+                            </p>
+                        </div>
+                    ))}
+                </div>
             ) : null}
         </div>
     )
@@ -2175,7 +2238,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         constraints:
             "",
         process:
-            "We used four methods, each chosen to answer a different question.\n\nInterviews with 4 riders, for how the bus feels in their words.\n\nRide-alongs on the W-11 and the Green Line. None of us were regular bus riders, so we needed to experience both.\n\nFly-on-the-wall observation. We recorded audio and images while riding and watched how people interacted with the bus.\n\nSecondary research from news articles and transport-planning literature.\n\nRiders have no reliable source for routes. Salma, a frequent rider, asks people nearby. Salauddin, who uses both systems, walked a mile to find a stop and said: “Yeh bus ka route kiu nahi likha hua kahin par?” (Why isn’t the route written anywhere?)\n\nDoubt continues on board. In our journey map, Salma wonders mid-ride, “Yeh driver konsa route leraha hai?” (Which route is this driver taking?)\n\nSafety and comfort decide which system people prefer. Salauddin chooses the Green Line for safety and cleanliness. He still takes the W-11 because it goes where he needs to go. His concerns are pickpocketing, overcrowding, and diesel smell.\n\nThe Green Line shows what order looks like. It has a maintained station, a bus every 5 to 6 minutes, and separate sections for women, families, and men. Its network is too small to replace the W-11.\n\nThe buses aren’t the whole problem. The missing information is. People already use the W-11 because it is cheap and it reaches everywhere. The system fails at telling them where it goes, when it comes, and whether they are safe. That shifted our focus from improving the bus to improving the information and the stops around it.\n\nWe mapped the stakeholders: riders, drivers and conductors, government, technology providers, local businesses, and communities. The map showed who would have to act for any solution to work.",
+            "We used four methods, each chosen to answer a different question.\n\nInterviews\nWith 4 riders, for how the bus feels in their words.\n\nRide-alongs\nOn the W-11 and the Green Line. None of us were regular bus riders, so we needed to experience both.\n\nFly-on-the-wall observation\nWe recorded audio and images while riding and watched how people interacted with the bus.\n\nSecondary research\nFrom news articles and transport-planning literature.\n\nNo reliable routes\nRiders have no reliable source for routes. Salma, a frequent rider, asks people nearby. Salauddin, who uses both systems, walked a mile to find a stop and said: “Yeh bus ka route kiu nahi likha hua kahin par?” (Why isn’t the route written anywhere?)\n\nDoubt on board\nDoubt continues on board. In our journey map, Salma wonders mid-ride, “Yeh driver konsa route leraha hai?” (Which route is this driver taking?)\n\nSafety and comfort\nSafety and comfort decide which system people prefer. Salauddin chooses the Green Line for safety and cleanliness. He still takes the W-11 because it goes where he needs to go. His concerns are pickpocketing, overcrowding, and diesel smell.\n\nThe Green Line\nThe Green Line shows what order looks like. It has a maintained station, a bus every 5 to 6 minutes, and separate sections for women, families, and men. Its network is too small to replace the W-11.\n\nThe missing information\nThe buses aren’t the whole problem. The missing information is. People already use the W-11 because it is cheap and it reaches everywhere. The system fails at telling them where it goes, when it comes, and whether they are safe. That shifted our focus from improving the bus to improving the information and the stops around it.\n\nStakeholders\nWe mapped the stakeholders: riders, drivers and conductors, government, technology providers, local businesses, and communities. The map showed who would have to act for any solution to work.",
         decision1:
             "Digital infographics and screens could show live arrivals, but funding, maintenance, and literacy would limit them.",
         decision2:
@@ -2183,7 +2246,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         decision3:
             "We kept signage and maps as the core. Because screens fail people who can’t read, we added audio announcements and a helpline button. A feedback helpline only works if customer care exists, so it stayed a support, not the system.",
         outcome:
-            "We built mid-fidelity prototypes, a stop map and an infographic poster, wrote four task scenarios, and tested on 6 April 2024. The scenarios were a first-time visitor who doesn’t speak English, a wheelchair user, a student, and a non-reader. We measured time on task and success or failure.\n\nParticipants understood the map layout and found stops, but were confused about route colors. The poster didn’t show the direction of travel or the order of stops. Nobody could tell where they were or what came next.\n\nWe changed to larger, heavier type, a simpler map, a simpler color scheme with higher contrast, distinct icons for connecting stops, and arrows and a clear “you are here” on the poster.\n\nThe system has six parts.\n\nNo route information. A route map and infographic listing all routes, plus bus stop signage on lamp posts.\n\nDoubt on board. Signage inside the bus showing every stop on the route.\n\nNon-readers excluded. A ticker, speaker announcements, and a helpline button at stops and on buses.\n\nSafety fears. A redesigned stop with shelter, fan, CCTV, alarm, and emergency button.\n\nDrivers stopping mid-road. A workshop and manual for drivers on technology and conduct.\n\nNobody owns the system. A service blueprint across passenger, staff, and backstage actions. A ticker, a GPS tracker, and an alarm each need people behind them, such as a technical team or a control center.\n\nWhat we delivered: the signage and map system, the stop concept, the blueprint, the driver manual, and a documentary. What we didn’t get: a pilot, real-rider testing, or any measurable change.",
+            "We built mid-fidelity prototypes, a stop map and an infographic poster, wrote four task scenarios, and tested on 6 April 2024. The scenarios were a first-time visitor who doesn’t speak English, a wheelchair user, a student, and a non-reader. We measured time on task and success or failure.\n\nParticipants understood the map layout and found stops, but were confused about route colors. The poster didn’t show the direction of travel or the order of stops. Nobody could tell where they were or what came next.\n\nWe changed to larger, heavier type, a simpler map, a simpler color scheme with higher contrast, distinct icons for connecting stops, and arrows and a clear “you are here” on the poster.\n\nSix parts\nThe system has six parts.\n\nNo route information\nA route map and infographic listing all routes, plus bus stop signage on lamp posts.\n\nDoubt on board\nSignage inside the bus showing every stop on the route.\n\nNon-readers excluded\nA ticker, speaker announcements, and a helpline button at stops and on buses.\n\nSafety fears\nA redesigned stop with shelter, fan, CCTV, alarm, and emergency button.\n\nDrivers stopping mid-road\nA workshop and manual for drivers on technology and conduct.\n\nNobody owns the system\nA service blueprint across passenger, staff, and backstage actions. A ticker, a GPS tracker, and an alarm each need people behind them, such as a technical team or a control center.\n\nWhat we delivered\nThe signage and map system, the stop concept, the blueprint, the driver manual, and a documentary. What we didn’t get: a pilot, real-rider testing, or any measurable change.",
         reflection:
             "Participants were classmates, not the riders, who vary widely in literacy, language, and familiarity with the area. We also A/B tested poster versions. Which version won isn’t in the file.\n\nI’d test with real riders at a real stop, including people who can’t read. Cost and maintenance are also open. We flagged them for screens but didn’t price the stop.",
         accent: "#5E151C",
