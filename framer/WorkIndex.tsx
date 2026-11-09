@@ -1073,7 +1073,13 @@ function ProjectVisual({
                 position: "relative",
                 width: "100%",
                 height: fill ? "100%" : undefined,
-                aspectRatio: fill ? undefined : tall ? "4 / 5" : "16 / 10",
+                aspectRatio: fill
+                    ? undefined
+                    : item.videoUrl
+                      ? "16 / 9"
+                      : tall
+                        ? "4 / 5"
+                        : "16 / 10",
                 borderRadius: VISUAL_RADIUS,
                 overflow: "hidden",
                 // Neutral dark under video — no tinted accent fill flashing through
