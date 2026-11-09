@@ -38,6 +38,8 @@ export interface WorkProject {
     accent: string
     coverUrl?: string
     videoUrl?: string
+    moreCoverUrl?: string
+    moreVideoUrl?: string
     href?: string
 }
 
@@ -144,6 +146,8 @@ function normalizeProjects(
                           : (it?.videoUrl ? String(it.videoUrl) : "") ||
                             fallback?.videoUrl ||
                             "",
+                moreCoverUrl: matchedDefault?.moreCoverUrl || "",
+                moreVideoUrl: matchedDefault?.moreVideoUrl || "",
                 href:
                     rawSlug === "chutney-studios" || slug === "voice-ai"
                         ? `${basePath}/chutney-studios`
@@ -420,7 +424,8 @@ export default function WorkIndex(props: WorkIndexProps) {
                 const dist = Math.abs(mid - center)
                 if (dist < bestDist) {
                     bestDist = dist
-                    best = i
+                    const project = Number(node.dataset.project)
+                    best = Number.isFinite(project) ? project : i
                 }
                 const t = Math.min(
                     1,
@@ -604,6 +609,24 @@ function SoftDeskGrid({ opacity }: { opacity: number }) {
                 filter: "grayscale(1) brightness(1.05) contrast(0.92)",
             }}
         />
+    )
+}
+
+function framesOf(item: WorkProject): WorkProject[] {
+    if (!item.moreVideoUrl) return [item]
+    return [
+        item,
+        {
+            ...item,
+            videoUrl: item.moreVideoUrl,
+            coverUrl: item.moreCoverUrl,
+        },
+    ]
+}
+
+function workSlides(list: WorkProject[]) {
+    return list.flatMap((item, projectIndex) =>
+        framesOf(item).map((frame) => ({ item: frame, projectIndex })),
     )
 }
 
@@ -811,17 +834,20 @@ function DesktopBrowser({
                     gap: 14,
                 }}
             >
-                {list.map((item, index) => (
+                {workSlides(list).map((slide, slideIndex) => (
                     <VisualSlide
-                        key={item.slug}
-                        item={item}
-                        index={index}
-                        active={index === activeIndex}
-                        dim={dims[index] ?? (index === activeIndex ? 0 : 1)}
+                        key={`${slide.item.slug}-${slideIndex}`}
+                        item={slide.item}
+                        index={slide.projectIndex}
+                        active={slide.projectIndex === activeIndex}
+                        dim={
+                            dims[slideIndex] ??
+                            (slide.projectIndex === activeIndex ? 0 : 1)
+                        }
                         accent={accent}
                         cream={cream}
                         setRef={(el) => {
-                            slideRefs.current[index] = el
+                            slideRefs.current[slideIndex] = el
                         }}
                     />
                 ))}
@@ -902,7 +928,9 @@ function MobileSequence({
                     <a
                         href={item.href}
                         style={{
-                            display: "block",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 14,
                             textDecoration: "none",
                             color: "inherit",
                         }}
@@ -913,6 +941,18 @@ function MobileSequence({
                             cream={cream}
                             tall
                         />
+                        {item.moreVideoUrl ? (
+                            <ProjectVisual
+                                item={{
+                                    ...item,
+                                    videoUrl: item.moreVideoUrl,
+                                    coverUrl: item.moreCoverUrl,
+                                }}
+                                accent={accent}
+                                cream={cream}
+                                tall
+                            />
+                        ) : null}
                     </a>
                     <h2
                         style={{
@@ -1007,6 +1047,7 @@ function VisualSlide({
         <section
             ref={setRef}
             data-work-slide={index}
+            data-project={index}
             aria-label={item.title}
             style={{
                 display: "block",
@@ -1234,8 +1275,12 @@ const DEFAULT_ITEMS: WorkProject[] = [
         year: "2025",
         accent: ACCENT,
         coverUrl:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room-poster.jpg",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro-poster.jpg",
         videoUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro.mp4",
+        moreCoverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room-poster.jpg",
+        moreVideoUrl:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
     },
     {
