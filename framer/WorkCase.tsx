@@ -1167,8 +1167,8 @@ function CaseNarrative({
                     body={
                         [
                             p.process,
-                            hasText(p.goals) ? `Goals: ${p.goals}` : "",
-                            hasText(p.constraints) ? `Constraints: ${p.constraints}` : "",
+                            hasText(p.goals) ? `Goals\n${p.goals}` : "",
+                            hasText(p.constraints) ? `Constraints\n${p.constraints}` : "",
                         ]
                             .filter(Boolean)
                             .join("\n\n")
@@ -1349,6 +1349,12 @@ function storyBlocks(body: string): { subhead: string; text: string }[] {
                     return { subhead, text }
                 }
             }
+            if (
+                block.length <= 48 &&
+                !/[.!?]/.test(block)
+            ) {
+                return { subhead: block, text: "" }
+            }
             return { subhead: "", text: block }
         })
 }
@@ -1401,7 +1407,7 @@ function StoryBlock({
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: block.subhead ? 6 : 0,
+                                gap: block.subhead && block.text ? 6 : 0,
                             }}
                         >
                             {block.subhead ? (
@@ -1419,6 +1425,7 @@ function StoryBlock({
                                     {block.subhead}
                                 </div>
                             ) : null}
+                            {block.text ? (
                             <p
                                 style={{
                                     margin: 0,
@@ -1433,6 +1440,7 @@ function StoryBlock({
                             >
                                 {linkify(block.text)}
                             </p>
+                            ) : null}
                         </div>
                     ))}
                 </div>
@@ -2101,13 +2109,13 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         context:
             "A mobile-first consumer fintech product for people managing everyday money. New users landed in a dense sign-up flow written for compliance, not for humans, and most bounced before they ever saw value.",
         problem:
-            "Completion dropped hard between account creation and first funded action. Support tickets clustered around “what do you need this for?” moments. Business impact: paid acquisition was leaking before activation.",
+            "Completion dropped hard between account creation and first funded action.\n\nSupport tickets clustered around “what do you need this for?” moments.\n\nBusiness impact\nPaid acquisition was leaking before activation.",
         goals:
             "Raise sign-up completion, reduce time-to-first-value, and keep KYC/compliance intact without scaring people off.",
         constraints:
             "Legacy API order, fixed legal copy requirements, 8-week window, engineering bandwidth for one major flow rewrite, not a full redesign.",
         process:
-            "Mapped the live funnel and drop-off points → interviewed recent drop-offs and completers → sketched alternate question orders → wireframed a “one clear ask per screen” flow → prototype-tested with 8 participants → iterated copy and progress cues with compliance.",
+            "Funnel\nMapped the live funnel and drop-off points.\n\nInterviews\nInterviewed recent drop-offs and completers.\n\nQuestion order\nSketched alternate question orders.\n\nOne ask per screen\nWireframed a “one clear ask per screen” flow.\n\nPrototype\nPrototype-tested with 8 participants.\n\nCopy with compliance\nIterated copy and progress cues with compliance.",
         decision1:
             "Chose progressive disclosure over a single long form, even though it meant more screens, because testing showed cognitive load beat click count.",
         decision2:
@@ -2115,9 +2123,9 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         decision3:
             "Cut a “product tour” after sign-up; first success action replaced it. Tour completion was vanity. Funded accounts were the real metric.",
         outcome:
-            "Sign-up completion improved noticeably in testing; the flow now sets expectations before asking for sensitive details. Shipped to production in the following release train.",
+            "Sign-up completion improved noticeably in testing; the flow now sets expectations before asking for sensitive details.\n\nShipped to production in the following release train.",
         reflection:
-            "I’d bring compliance into the first workshop earlier. We lost a week negotiating copy that could have been co-authored up front.",
+            "I’d bring compliance into the first workshop earlier.\n\nWe lost a week negotiating copy that could have been co-authored up front.",
         accent: "#7457C9",
         slug: "fintech-app",
         ...EMPTY_MEDIA,
@@ -2138,15 +2146,15 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         overview:
             "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
         context:
-            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.\n\nCompany: Brown Noise Media.",
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.\n\nCompany\nBrown Noise Media.",
         problem:
-            "With the rise of Indie Filmmaking and non-unionised productions in North America, there is a gap between film makers and hiring talent, crew, locations and props making it an inefficient and time consuming process. Since it's difficult for independent filmmakers to join film unions, given the high costs and barriers to entry, all pre-production processes are handled by filmmakers themselves.",
+            "With the rise of Indie Filmmaking and non-unionised productions in North America, there is a gap between film makers and hiring talent, crew, locations and props making it an inefficient and time consuming process.\n\nSince it's difficult for independent filmmakers to join film unions, given the high costs and barriers to entry, all pre-production processes are handled by filmmakers themselves.",
         goals:
             "",
         constraints:
             "",
         process:
-            "To solve this, my team and I designed brand identity, strategy, social media presence, and the website for the platform, Bridge.\n\nClick to view https://www.figma.com/proto/l2ZT9Uzivb5Xrch3WTzhJN/Bridge-Website-and-Platform?node-id=1115-33934",
+            "What we designed\nTo solve this, my team and I designed brand identity, strategy, social media presence, and the website for the platform, Bridge.\n\nPrototype\nClick to view https://www.figma.com/proto/l2ZT9Uzivb5Xrch3WTzhJN/Bridge-Website-and-Platform?node-id=1115-33934",
         decision1:
             "",
         decision2:
@@ -2199,7 +2207,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         constraints:
             "Evenings/weekends only, solo build, budget of time not money.",
         process:
-            "Tone board → type pairing tests → logo sketches → site IA → build in Framer → soft launch to peers for feedback.",
+            "Tone board\n\nType pairing tests\n\nLogo sketches\n\nSite IA\n\nBuild in Framer\n\nSoft launch to peers for feedback",
         decision1:
             "Picked a friendly type pairing over a colder “premium” stack. The studio’s edge is approachable taste, not intimidation.",
         decision2:
@@ -2209,7 +2217,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         outcome:
             "A site that sounds like me and gives freelance clients a clear, low-pressure way in.",
         reflection:
-            "I’d ship a rough site in week two and iterate live. I polished offline longer than I needed to.",
+            "I’d ship a rough site in week two and iterate live.\n\nI polished offline longer than I needed to.",
         accent: "#D17BB0",
         slug: "chutney-studios",
         ...EMPTY_MEDIA,
