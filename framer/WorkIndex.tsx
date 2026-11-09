@@ -133,12 +133,12 @@ function normalizeProjects(
                         : String(it?.accent || accent || ACCENT),
                 coverUrl:
                     rawSlug === "chutney-studios"
-                        ? ""
+                        ? matchedDefault?.coverUrl || ""
                         : matchedDefault?.coverUrl ||
                           (it?.coverUrl ? String(it.coverUrl) : ""),
                 videoUrl:
                     rawSlug === "chutney-studios"
-                        ? ""
+                        ? matchedDefault?.videoUrl || ""
                         : matchedDefault
                           ? matchedDefault.videoUrl || ""
                           : (it?.videoUrl ? String(it.videoUrl) : "") ||
@@ -1244,7 +1244,10 @@ const DEFAULT_ITEMS: WorkProject[] = [
         slug: "voice-ai",
         year: "2025",
         accent: "#44586A",
-        videoUrl: "",
+        coverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@2b07e77da43bcde96a1ef041c5a14c9d14914d02/framer/films/fred-poster.jpg",
+        videoUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@2b07e77da43bcde96a1ef041c5a14c9d14914d02/framer/films/fred-phones.mp4",
     },
     {
         title: "Safar-e-Asaan",
