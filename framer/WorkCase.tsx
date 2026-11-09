@@ -1153,6 +1153,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
+                <MediaFrame src={p.processImage} accent={a} label="Sales pipeline" tall />
                 <MediaFrame src={p.contextImage} accent={a} label="Context image" tall />
             </CaseSection>
 
@@ -2298,6 +2299,8 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         slug: "voice-ai",
         ...EMPTY_MEDIA,
         heroImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@728b0f26b130f1d4e2b1213c8a934fd7acadaa96/framer/case/fred/fred-cover.jpg",
+        processImage:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/laptop-pipeline.png",
         contextImage:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-overview.png",
