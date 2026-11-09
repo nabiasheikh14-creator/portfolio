@@ -750,7 +750,9 @@ function DesktopCase({
                         style={{
                             margin: "0 0 18px",
                             fontFamily: displayFamily,
-                            fontSize: "clamp(34px, 3.6vw, 52px)",
+                            fontSize: project.longform
+                                ? "clamp(32px, 3vw, 42px)"
+                                : "clamp(34px, 3.6vw, 52px)",
                             fontWeight: 400,
                             letterSpacing: "-0.01em",
                             lineHeight: 1.05,
@@ -762,11 +764,11 @@ function DesktopCase({
                     {project.overview ? (
                         <p
                             style={{
-                                margin: "0 0 28px",
+                                margin: project.longform ? "0 0 14px" : "0 0 28px",
                                 fontFamily: family,
-                                fontSize: BODY_SIZE,
+                                fontSize: project.longform ? 14 : BODY_SIZE,
                                 fontWeight: 400,
-                                lineHeight: BODY_LH,
+                                lineHeight: project.longform ? 1.45 : BODY_LH,
                                 color: muted,
                                 maxWidth: 340,
                             }}
@@ -780,6 +782,7 @@ function DesktopCase({
                         displayFamily={displayFamily}
                         muted={muted}
                         ink={ink}
+                        compact={project.longform}
                     />
                 </div>
 
@@ -1075,12 +1078,14 @@ function MetaChips({
     displayFamily,
     muted,
     ink,
+    compact,
 }: {
     project: ProjectRecord
     family: string
     displayFamily: string
     muted: string
     ink: string
+    compact?: boolean
 }) {
     const bits = [
         project.year && { k: "Date", v: project.year },
@@ -1091,7 +1096,7 @@ function MetaChips({
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 8 : 14 }}>
             {bits.map((b) => (
                 <div key={b.k}>
                     <div
@@ -1110,9 +1115,9 @@ function MetaChips({
                     <div
                         style={{
                             fontFamily: family,
-                            fontSize: 14,
+                            fontSize: compact ? 13 : 14,
                             fontWeight: 400,
-                            lineHeight: 1.45,
+                            lineHeight: compact ? 1.35 : 1.45,
                             color: ink,
                         }}
                     >
@@ -1127,15 +1132,31 @@ function MetaChips({
 function CaseSection({
     id,
     setSectionRef,
+    lead,
     children,
 }: {
     id: string
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    lead?: boolean
     children: ReactNode
 }) {
     const motion = useContext(CaseMotion)
     return (
-        <section ref={setSectionRef(id)} id={id}>
+        <section
+            ref={setSectionRef(id)}
+            id={id}
+            style={
+                motion.cover
+                    ? {
+                          position: "relative",
+                          zIndex: 1,
+                          background: CREAM,
+                          marginTop: lead ? 0 : -72,
+                          paddingBottom: 96,
+                      }
+                    : undefined
+            }
+        >
             <Parallax amount={motion.section} lift={motion.lift}>
                 <div
                     style={{
@@ -1192,8 +1213,8 @@ function CaseNarrative({
     )
     const motion = {
         lift: Boolean(p.longform),
-        section: p.longform ? 200 : 80,
-        media: p.longform ? 90 : 64,
+        section: p.longform ? 64 : 80,
+        media: p.longform ? 110 : 64,
         cover: Boolean(p.longform),
     }
     const showFinal = [
@@ -1208,7 +1229,7 @@ function CaseNarrative({
 
     return (
         <CaseMotion.Provider value={motion}>
-            <CaseSection id="overview" setSectionRef={setSectionRef}>
+            <CaseSection id="overview" lead setSectionRef={setSectionRef}>
                 <MediaFrame src={p.heroImage} accent={a} label="Hero image" tall />
                 <StoryBlock
                     kicker="Overview"
@@ -1528,12 +1549,11 @@ function Parallax({
             const below = elMid - viewMid
             let shift = 0
             if (lift) {
-                // Only chapters still below the fold rise up to meet the
-                // scroll. Anything already on screen stays put, so the
-                // opening title never jumps into the nav.
+                // A chapter rises only once it is at the bottom edge, and
+                // only through the empty padding of the chapter above it.
                 const entering = rect.top - viewTop
-                if (entering > viewH * 0.72) {
-                    shift = -Math.min(amount, (entering - viewH * 0.72) * 0.7)
+                if (entering > viewH - 24) {
+                    shift = -Math.min(amount, (entering - (viewH - 24)) * 0.5)
                 }
             } else {
                 const progress = Math.max(0, Math.min(1, below / (viewH * 0.55)))
