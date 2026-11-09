@@ -26,7 +26,7 @@ const LEFT_COL = "max(240px, 28vw)"
 const FRAME_RADIUS = 12
 /** Shared case-study rhythm */
 const SECTION_GAP = 96
-const BLOCK_GAP = 28
+const BLOCK_GAP = 64
 const BODY_SIZE = 16
 const BODY_LH = 1.65
 
@@ -1375,6 +1375,58 @@ function storyBlocks(body: string): { subhead: string; text: string }[] {
         })
 }
 
+function Parallax({
+    amount,
+    children,
+}: {
+    amount: number
+    children: ReactNode
+}) {
+    const boxRef = useRef<HTMLDivElement>(null)
+    const layerRef = useRef<HTMLDivElement>(null)
+    const isStatic = useIsStaticRenderer()
+
+    useEffect(() => {
+        const box = boxRef.current
+        const layer = layerRef.current
+        if (!box || !layer || isStatic || typeof window === "undefined") return
+        if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return
+        const scroller = box.closest("[data-case-scroller]") as HTMLElement | null
+        let frame = 0
+        const update = () => {
+            frame = 0
+            const rect = box.getBoundingClientRect()
+            const viewTop = scroller ? scroller.getBoundingClientRect().top : 0
+            const viewH = scroller ? scroller.clientHeight : window.innerHeight
+            const viewMid = viewTop + viewH / 2
+            const elMid = rect.top + rect.height / 2
+            const progress = Math.max(-1, Math.min(1, (elMid - viewMid) / (viewH * 0.72)))
+            layer.style.transform = `translate3d(0, ${(progress * amount).toFixed(1)}px, 0)`
+        }
+        const onScroll = () => {
+            if (!frame) frame = requestAnimationFrame(update)
+        }
+        update()
+        const target: HTMLElement | Window = scroller || window
+        target.addEventListener("scroll", onScroll, { passive: true })
+        window.addEventListener("resize", onScroll)
+        return () => {
+            if (frame) cancelAnimationFrame(frame)
+            target.removeEventListener("scroll", onScroll)
+            window.removeEventListener("resize", onScroll)
+            layer.style.transform = ""
+        }
+    }, [amount, isStatic])
+
+    return (
+        <div ref={boxRef}>
+            <div ref={layerRef} style={{ willChange: "transform" }}>
+                {children}
+            </div>
+        </div>
+    )
+}
+
 function StoryBlock({
     kicker,
     body,
@@ -1392,6 +1444,7 @@ function StoryBlock({
     const blocks = hasText(body) ? storyBlocks(body) : []
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+            <Parallax amount={14}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <span
                     aria-hidden
@@ -1415,6 +1468,7 @@ function StoryBlock({
                     {kicker}
                 </div>
             </div>
+            </Parallax>
             {blocks.length ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                     {blocks.map((block, i) => (
@@ -1495,6 +1549,7 @@ function MediaFrame({
     const url = String(src || "").trim()
     if (!url) return null
     return (
+        <Parallax amount={42}>
         <figure style={{ margin: 0, width: "100%" }}>
             <img
                 src={url}
@@ -1507,6 +1562,7 @@ function MediaFrame({
                 }}
             />
         </figure>
+        </Parallax>
     )
 }
 
@@ -1522,6 +1578,7 @@ function VideoFrame({
     const url = String(src || "").trim()
     if (!url) return null
     return (
+        <Parallax amount={42}>
         <figure style={{ margin: 0, width: "100%" }}>
             <div
                 style={{
@@ -1590,6 +1647,7 @@ function VideoFrame({
                 )}
             </div>
         </figure>
+        </Parallax>
     )
 }
 
