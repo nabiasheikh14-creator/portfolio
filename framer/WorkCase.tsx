@@ -2237,6 +2237,18 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         accent: "#44586A",
         slug: "voice-ai",
         ...EMPTY_MEDIA,
+        heroImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/laptop-pipeline.png",
+        contextImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-overview.png",
+        problemImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-bulk-calling.png",
+        wireframeImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/wireframes.png",
+        flowImage:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-onboarding.png",
+        prototypeVideo:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/design-system.mp4",
     },
     {
         title:
