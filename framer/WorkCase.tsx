@@ -1367,7 +1367,7 @@ function StoryBlock({
                         letterSpacing: "0",
                         lineHeight: BODY_LH,
                         color: muted,
-                        maxWidth: 680,
+                        maxWidth: "100%",
                         whiteSpace: "pre-wrap",
                     }}
                 >
@@ -1409,70 +1409,16 @@ function MediaFrame({
     if (!url) return null
     return (
         <figure style={{ margin: 0, width: "100%" }}>
-            <div
+            <img
+                src={url}
+                alt={label || ""}
                 style={{
-                    position: "relative",
+                    display: "block",
                     width: "100%",
-                    aspectRatio: tall ? "16 / 10" : "16 / 9",
+                    height: "auto",
                     borderRadius: FRAME_RADIUS,
-                    overflow: "hidden",
-                    background: "#F3EFE6",
-                    border: url ? "none" : "1.5px solid rgba(17,17,17,0.14)",
-                    boxSizing: "border-box",
                 }}
-            >
-                {url ? (
-                    <img
-                        src={url}
-                        alt={label || ""}
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            width: "100%",
-                            height: "100%",
-                            objectFit: "contain",
-                            display: "block",
-                        }}
-                    />
-                ) : (
-                    <div
-                        style={{
-                            position: "absolute",
-                            inset: 0,
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: 8,
-                            color: MUTED,
-                            fontFamily: SANS,
-                            fontSize: 14,
-                            fontWeight: 400,
-                            letterSpacing: "0.02em",
-                            padding: 24,
-                            textAlign: "center",
-                            boxSizing: "border-box",
-                        }}
-                    >
-                        <span
-                            aria-hidden
-                            style={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: 8,
-                                border: `1.5px dashed rgba(17,17,17,0.25)`,
-                                display: "grid",
-                                placeItems: "center",
-                                fontSize: 18,
-                                color: LABEL,
-                            }}
-                        >
-                            +
-                        </span>
-                        <span>{label || "Image"}</span>
-                    </div>
-                )}
-            </div>
+            />
         </figure>
     )
 }
