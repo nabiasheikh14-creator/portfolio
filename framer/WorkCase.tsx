@@ -78,6 +78,7 @@ interface ProjectRecord {
     finalImage4: string
     outcomeImage: string
     prototypeVideo: string
+    storyVideo?: string
 }
 
 interface WorkCaseProps {
@@ -270,6 +271,7 @@ export default function WorkCase(props: WorkCaseProps) {
                 finalImage4: media(it.finalImage4, fb.finalImage4),
                 outcomeImage: media(it.outcomeImage, fb.outcomeImage),
                 prototypeVideo: media(it.prototypeVideo, fb.prototypeVideo),
+                storyVideo: media(it.storyVideo || "", fb.storyVideo || ""),
             } as ProjectRecord
         })
     }, [catalog])
@@ -1153,6 +1155,7 @@ function CaseNarrative({
                     ink={ink}
                     muted={muted}
                 />
+                <VideoFrame src={p.storyVideo || ""} accent={a} label="Case study film" />
                 <MediaFrame src={p.processImage} accent={a} label="Sales pipeline" tall />
                 <MediaFrame src={p.contextImage} accent={a} label="Context image" tall />
             </CaseSection>
@@ -2311,6 +2314,8 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         flowImage:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@e0a6ed93fecadfef835294f13bafbc170bac6726/framer/case/fred/flow-onboarding.png",
         prototypeVideo:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@72eb47359c0f2ee37ca957db816338ca6bd4edc3/framer/films/fred-reel.mp4",
+        storyVideo:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@72eb47359c0f2ee37ca957db816338ca6bd4edc3/framer/films/fred-reel.mp4",
     },
     {
