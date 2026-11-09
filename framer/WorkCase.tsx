@@ -1167,8 +1167,8 @@ function CaseNarrative({
                     body={
                         [
                             p.process,
-                            hasText(p.goals) ? `Goals — ${p.goals}` : "",
-                            hasText(p.constraints) ? `Constraints — ${p.constraints}` : "",
+                            hasText(p.goals) ? `Goals: ${p.goals}` : "",
+                            hasText(p.constraints) ? `Constraints: ${p.constraints}` : "",
                         ]
                             .filter(Boolean)
                             .join("\n\n")
@@ -1195,7 +1195,7 @@ function CaseNarrative({
                 <StoryBlock
                     kicker="Decisions"
                     body={decisionBody
-                        .map((d, i) => `${String(i + 1).padStart(2, "0")} — ${d}`)
+                        .map((d, i) => `${String(i + 1).padStart(2, "0")}. ${d}`)
                         .join("\n\n")}
                     family={family}
                     displayFamily={displayFamily}
@@ -2036,25 +2036,25 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         overview:
             "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
         context:
-            "A mobile-first consumer fintech product for people managing everyday money. New users landed in a dense sign-up flow written for compliance, not for humans — and most bounced before they ever saw value.",
+            "A mobile-first consumer fintech product for people managing everyday money. New users landed in a dense sign-up flow written for compliance, not for humans, and most bounced before they ever saw value.",
         problem:
             "Completion dropped hard between account creation and first funded action. Support tickets clustered around “what do you need this for?” moments. Business impact: paid acquisition was leaking before activation.",
         goals:
             "Raise sign-up completion, reduce time-to-first-value, and keep KYC/compliance intact without scaring people off.",
         constraints:
-            "Legacy API order, fixed legal copy requirements, 8-week window, engineering bandwidth for one major flow rewrite — not a full redesign.",
+            "Legacy API order, fixed legal copy requirements, 8-week window, engineering bandwidth for one major flow rewrite, not a full redesign.",
         process:
             "Mapped the live funnel and drop-off points → interviewed recent drop-offs and completers → sketched alternate question orders → wireframed a “one clear ask per screen” flow → prototype-tested with 8 participants → iterated copy and progress cues with compliance.",
         decision1:
-            "Chose progressive disclosure over a single long form — even though it meant more screens — because testing showed cognitive load beat click count.",
+            "Chose progressive disclosure over a single long form, even though it meant more screens, because testing showed cognitive load beat click count.",
         decision2:
             "Kept mandatory KYC fields but moved “why we ask” inline next to each field instead of a separate FAQ, after users skipped the FAQ entirely.",
         decision3:
-            "Cut a “product tour” after sign-up; first success action replaced it. Tour completion was vanity — funded accounts were the real metric.",
+            "Cut a “product tour” after sign-up; first success action replaced it. Tour completion was vanity. Funded accounts were the real metric.",
         outcome:
             "Sign-up completion improved noticeably in testing; the flow now sets expectations before asking for sensitive details. Shipped to production in the following release train.",
         reflection:
-            "I’d bring compliance into the first workshop earlier — we lost a week negotiating copy that could have been co-authored up front.",
+            "I’d bring compliance into the first workshop earlier. We lost a week negotiating copy that could have been co-authored up front.",
         accent: "#7457C9",
         slug: "fintech-app",
         ...EMPTY_MEDIA,
@@ -2075,7 +2075,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         overview:
             "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
         context:
-            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.\n\nCompany — Brown Noise Media.",
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.\n\nCompany: Brown Noise Media.",
         problem:
             "With the rise of Indie Filmmaking and non-unionised productions in North America, there is a gap between film makers and hiring talent, crew, locations and props making it an inefficient and time consuming process. Since it's difficult for independent filmmakers to join film unions, given the high costs and barriers to entry, all pre-production processes are handled by filmmakers themselves.",
         goals:
@@ -2128,7 +2128,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         overview:
             "Chutney Studios is my after-hours practice. This is the brand and site I built for it.",
         context:
-            "A personal studio for branding and sites for small, good-taste brands. Needed a presence that felt warm and clear — not agency-slick.",
+            "A personal studio for branding and sites for small, good-taste brands. Needed a presence that felt warm and clear, not agency-slick.",
         problem:
             "Without a sharp site, inquiries were vague and mismatched. I needed a filter as much as a brochure.",
         goals:
@@ -2138,15 +2138,15 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         process:
             "Tone board → type pairing tests → logo sketches → site IA → build in Framer → soft launch to peers for feedback.",
         decision1:
-            "Picked a friendly type pairing over a colder “premium” stack — the studio’s edge is approachable taste, not intimidation.",
+            "Picked a friendly type pairing over a colder “premium” stack. The studio’s edge is approachable taste, not intimidation.",
         decision2:
             "Kept case studies short on the marketing site; deep work lives in this portfolio instead of duplicating.",
         decision3:
-            "Used a single CTA (email/book) rather than a form maze — conversion quality over lead volume.",
+            "Used a single CTA (email/book) rather than a form maze. Conversion quality over lead volume.",
         outcome:
             "A site that sounds like me and gives freelance clients a clear, low-pressure way in.",
         reflection:
-            "I’d ship a rough site in week two and iterate live — I polished offline longer than I needed to.",
+            "I’d ship a rough site in week two and iterate live. I polished offline longer than I needed to.",
         accent: "#D17BB0",
         slug: "chutney-studios",
         ...EMPTY_MEDIA,
@@ -2175,7 +2175,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         constraints:
             "",
         process:
-            "We used four methods, each chosen to answer a different question.\n\nInterviews with 4 riders, for how the bus feels in their words.\n\nRide-alongs on the W-11 and the Green Line. None of us were regular bus riders, so we needed to experience both.\n\nFly-on-the-wall observation. We recorded audio and images while riding and watched how people interacted with the bus.\n\nSecondary research from news articles and transport-planning literature.\n\nRiders have no reliable source for routes. Salma, a frequent rider, asks people nearby. Salauddin, who uses both systems, walked a mile to find a stop and said: “Yeh bus ka route kiu nahi likha hua kahin par?” (Why isn’t the route written anywhere?)\n\nDoubt continues on board. In our journey map, Salma wonders mid-ride, “Yeh driver konsa route leraha hai?” (Which route is this driver taking?)\n\nSafety and comfort decide which system people prefer. Salauddin chooses the Green Line for safety and cleanliness. He still takes the W-11 because it goes where he needs to go. His concerns are pickpocketing, overcrowding, and diesel smell.\n\nThe Green Line shows what order looks like. It has a maintained station, a bus every 5–6 minutes, and separate sections for women, families, and men. Its network is too small to replace the W-11.\n\nThe buses aren’t the whole problem. The missing information is. People already use the W-11 because it is cheap and it reaches everywhere. The system fails at telling them where it goes, when it comes, and whether they are safe. That shifted our focus from improving the bus to improving the information and the stops around it.\n\nWe mapped the stakeholders: riders, drivers and conductors, government, technology providers, local businesses, and communities. The map showed who would have to act for any solution to work.",
+            "We used four methods, each chosen to answer a different question.\n\nInterviews with 4 riders, for how the bus feels in their words.\n\nRide-alongs on the W-11 and the Green Line. None of us were regular bus riders, so we needed to experience both.\n\nFly-on-the-wall observation. We recorded audio and images while riding and watched how people interacted with the bus.\n\nSecondary research from news articles and transport-planning literature.\n\nRiders have no reliable source for routes. Salma, a frequent rider, asks people nearby. Salauddin, who uses both systems, walked a mile to find a stop and said: “Yeh bus ka route kiu nahi likha hua kahin par?” (Why isn’t the route written anywhere?)\n\nDoubt continues on board. In our journey map, Salma wonders mid-ride, “Yeh driver konsa route leraha hai?” (Which route is this driver taking?)\n\nSafety and comfort decide which system people prefer. Salauddin chooses the Green Line for safety and cleanliness. He still takes the W-11 because it goes where he needs to go. His concerns are pickpocketing, overcrowding, and diesel smell.\n\nThe Green Line shows what order looks like. It has a maintained station, a bus every 5 to 6 minutes, and separate sections for women, families, and men. Its network is too small to replace the W-11.\n\nThe buses aren’t the whole problem. The missing information is. People already use the W-11 because it is cheap and it reaches everywhere. The system fails at telling them where it goes, when it comes, and whether they are safe. That shifted our focus from improving the bus to improving the information and the stops around it.\n\nWe mapped the stakeholders: riders, drivers and conductors, government, technology providers, local businesses, and communities. The map showed who would have to act for any solution to work.",
         decision1:
             "Digital infographics and screens could show live arrivals, but funding, maintenance, and literacy would limit them.",
         decision2:
