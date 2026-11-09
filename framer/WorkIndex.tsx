@@ -1233,8 +1233,10 @@ const DEFAULT_ITEMS: WorkProject[] = [
         slug: "fintech-app",
         year: "2025",
         accent: ACCENT,
+        coverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel-poster.jpg",
         videoUrl:
-            "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel.mp4",
     },
     {
         title: "FRED.AI",
