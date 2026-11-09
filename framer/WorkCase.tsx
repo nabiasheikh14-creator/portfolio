@@ -1381,9 +1381,6 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
-                    frames={p.frames}
-                    section="decisions"
-                    accent={a}
                 />
             </CaseSection>
             ) : null}
@@ -2438,13 +2435,13 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             },
             {
                 section: "experience",
-                after: 3,
+                after: 4,
                 label: "Room mockup",
                 video: true,
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
             },
             {
-                section: "decisions",
+                section: "beyond",
                 after: 2,
                 label: "Future's Archive website",
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/website.jpg",
