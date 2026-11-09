@@ -88,7 +88,7 @@ interface ProjectRecord {
     beyond?: string
     decision4?: string
     longform?: boolean
-    frames?: { section: string; src: string; video?: boolean; label?: string }[]
+    frames?: { section: string; src: string; video?: boolean; label?: string; after?: number }[]
 }
 
 const CaseMotion = createContext({
@@ -1255,6 +1255,9 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="challenge"
+                    accent={a}
                 />
                 <MediaFrame src={p.problemImage} accent={a} label="Problem image" tall />
                 <MediaFrame src={p.researchImage} accent={a} label="Research image" />
@@ -1270,8 +1273,10 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="research"
+                    accent={a}
                 />
-                <SectionFrames frames={p.frames} section="research" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1292,6 +1297,9 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="approach"
+                    accent={a}
                 />
                 <MediaFrame src={p.sketchImage} accent={a} label="Sketches" tall />
                 <MediaFrame src={p.wireframeImage} accent={a} label="Wireframes" tall />
@@ -1302,7 +1310,6 @@ function CaseNarrative({
                     tall
                 />
                 <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
-                <SectionFrames frames={p.frames} section="approach" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1315,6 +1322,9 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="system"
+                    accent={a}
                 />
             </CaseSection>
             ) : null}
@@ -1328,8 +1338,10 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="experience"
+                    accent={a}
                 />
-                <SectionFrames frames={p.frames} section="experience" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1342,8 +1354,10 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="beyond"
+                    accent={a}
                 />
-                <SectionFrames frames={p.frames} section="beyond" accent={a} />
             </CaseSection>
             ) : null}
 
@@ -1367,6 +1381,9 @@ function CaseNarrative({
                     displayFamily={displayFamily}
                     ink={ink}
                     muted={muted}
+                    frames={p.frames}
+                    section="decisions"
+                    accent={a}
                 />
             </CaseSection>
             ) : null}
@@ -1597,6 +1614,9 @@ function StoryBlock({
     family,
     displayFamily,
     ink,
+    frames,
+    section,
+    accent,
 }: {
     kicker: string
     body: string
@@ -1604,8 +1624,14 @@ function StoryBlock({
     displayFamily: string
     ink: string
     muted: string
+    frames?: { section: string; src: string; video?: boolean; label?: string; after?: number }[]
+    section?: string
+    accent?: string
 }) {
     const blocks = hasText(body) ? storyBlocks(body) : []
+    const inserts = (frames || []).filter(
+        (f) => section && f.section === section && hasMedia(f.src),
+    )
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -1632,52 +1658,72 @@ function StoryBlock({
                 </div>
             </div>
             {blocks.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-                    {blocks.map((block, i) => (
-                        <div
-                            key={i}
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: block.subhead && block.text ? 6 : 0,
-                            }}
-                        >
-                            {block.subhead ? (
-                                <div
+                <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+                    {blocks.flatMap((block, i) => {
+                        const here = inserts.filter((f) => f.after === i + 1)
+                        return [
+                            <div
+                                key={`b-${i}`}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: block.subhead && block.text ? 6 : 0,
+                                }}
+                            >
+                                {block.subhead ? (
+                                    <div
+                                        style={{
+                                            margin: 0,
+                                            fontFamily: family,
+                                            fontSize: 16,
+                                            fontWeight: 600,
+                                            letterSpacing: "0",
+                                            lineHeight: 1.35,
+                                            color: ink,
+                                        }}
+                                    >
+                                        {block.subhead}
+                                    </div>
+                                ) : null}
+                                {block.text ? (
+                                <p
                                     style={{
                                         margin: 0,
                                         fontFamily: family,
-                                        fontSize: 16,
-                                        fontWeight: 600,
+                                        fontSize: BODY_SIZE,
+                                        fontWeight: 400,
                                         letterSpacing: "0",
-                                        lineHeight: 1.35,
-                                        color: ink,
+                                        lineHeight: BODY_LH,
+                                        color: BODY_INK,
+                                        maxWidth: "100%",
                                     }}
                                 >
-                                    {block.subhead}
-                                </div>
-                            ) : null}
-                            {block.text ? (
-                            <p
-                                style={{
-                                    margin: 0,
-                                    fontFamily: family,
-                                    fontSize: BODY_SIZE,
-                                    fontWeight: 400,
-                                    letterSpacing: "0",
-                                    lineHeight: BODY_LH,
-                                    color: BODY_INK,
-                                    maxWidth: "100%",
-                                }}
-                            >
-                                {linkify(block.text)}
-                            </p>
-                            ) : null}
-                        </div>
-                    ))}
+                                    {linkify(block.text)}
+                                </p>
+                                ) : null}
+                            </div>,
+                            ...here.map((f, n) => (
+                                <FramePiece key={`m-${i}-${n}`} frame={f} accent={accent || ""} />
+                            )),
+                        ]
+                    })}
                 </div>
             ) : null}
         </div>
+    )
+}
+
+function FramePiece({
+    frame,
+    accent,
+}: {
+    frame: { src: string; video?: boolean; label?: string }
+    accent: string
+}) {
+    return frame.video ? (
+        <VideoFrame src={frame.src} accent={accent} label={frame.label || ""} />
+    ) : (
+        <MediaFrame src={frame.src} accent={accent} label={frame.label || ""} tall />
     )
 }
 
@@ -1694,41 +1740,6 @@ function MediaRow({ children }: { children: ReactNode }) {
         >
             {children}
         </div>
-    )
-}
-
-function SectionFrames({
-    frames,
-    section,
-    accent,
-}: {
-    frames?: { section: string; src: string; video?: boolean; label?: string }[]
-    section: string
-    accent: string
-}) {
-    const items = (frames || []).filter((f) => f.section === section && hasMedia(f.src))
-    if (!items.length) return null
-    return (
-        <>
-            {items.map((f, i) =>
-                f.video ? (
-                    <VideoFrame
-                        key={`${section}-${i}`}
-                        src={f.src}
-                        accent={accent}
-                        label={f.label || ""}
-                    />
-                ) : (
-                    <MediaFrame
-                        key={`${section}-${i}`}
-                        src={f.src}
-                        accent={accent}
-                        label={f.label || ""}
-                        tall
-                    />
-                ),
-            )}
-        </>
     )
 }
 
@@ -2396,44 +2407,45 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@fbccb08ab644d59b5951a7bd77a5888666bd4914/framer/films/sooraj-reel.mp4",
         frames: [
             {
+                section: "challenge",
+                after: 4,
+                label: "Heat wall",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/heat.jpg",
+            },
+            {
                 section: "research",
+                after: 10,
                 label: "Research board",
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/research.jpg",
             },
             {
                 section: "approach",
+                after: 6,
                 label: "Project architecture",
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/architecture.jpg",
             },
             {
-                section: "approach",
-                label: "Process film",
-                video: true,
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/films/sooraj-process.mp4",
-            },
-            {
-                section: "experience",
-                label: "Two futures",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/futures.jpg",
-            },
-            {
-                section: "experience",
-                label: "Room mockup",
-                video: true,
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
-            },
-            {
-                section: "experience",
+                section: "system",
+                after: 6,
                 label: "The room",
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/room.jpg",
             },
             {
                 section: "experience",
-                label: "Heat wall",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/heat.jpg",
+                after: 1,
+                label: "Two futures",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/futures.jpg",
             },
             {
-                section: "beyond",
+                section: "experience",
+                after: 3,
+                label: "Room mockup",
+                video: true,
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@d9417c4df01d96d017fe3248e066e792521acaf6/framer/films/sooraj-room.mp4",
+            },
+            {
+                section: "decisions",
+                after: 2,
                 label: "Future's Archive website",
                 src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/website.jpg",
             },
