@@ -1074,16 +1074,18 @@ function CaseSection({
     children: ReactNode
 }) {
     return (
-        <section
-            ref={setSectionRef(id)}
-            id={id}
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: BLOCK_GAP,
-            }}
-        >
-            {children}
+        <section ref={setSectionRef(id)} id={id}>
+            <Parallax amount={80}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: BLOCK_GAP,
+                    }}
+                >
+                    {children}
+                </div>
+            </Parallax>
         </section>
     )
 }
@@ -1400,7 +1402,7 @@ function Parallax({
             const viewH = scroller ? scroller.clientHeight : window.innerHeight
             const viewMid = viewTop + viewH / 2
             const elMid = rect.top + rect.height / 2
-            const progress = Math.max(-1, Math.min(1, (elMid - viewMid) / (viewH * 0.72)))
+            const progress = Math.max(0, Math.min(1, (elMid - viewMid) / (viewH * 0.55)))
             layer.style.transform = `translate3d(0, ${(progress * amount).toFixed(1)}px, 0)`
         }
         const onScroll = () => {
@@ -1444,7 +1446,6 @@ function StoryBlock({
     const blocks = hasText(body) ? storyBlocks(body) : []
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-            <Parallax amount={14}>
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <span
                     aria-hidden
@@ -1468,7 +1469,6 @@ function StoryBlock({
                     {kicker}
                 </div>
             </div>
-            </Parallax>
             {blocks.length ? (
                 <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
                     {blocks.map((block, i) => (
@@ -1549,7 +1549,7 @@ function MediaFrame({
     const url = String(src || "").trim()
     if (!url) return null
     return (
-        <Parallax amount={42}>
+        <Parallax amount={64}>
         <figure style={{ margin: 0, width: "100%" }}>
             <img
                 src={url}
@@ -1578,7 +1578,7 @@ function VideoFrame({
     const url = String(src || "").trim()
     if (!url) return null
     return (
-        <Parallax amount={42}>
+        <Parallax amount={64}>
         <figure style={{ margin: 0, width: "100%" }}>
             <div
                 style={{
