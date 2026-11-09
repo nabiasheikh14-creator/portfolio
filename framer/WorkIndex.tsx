@@ -1245,9 +1245,9 @@ const DEFAULT_ITEMS: WorkProject[] = [
         year: "2025",
         accent: "#44586A",
         coverUrl:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@2b07e77da43bcde96a1ef041c5a14c9d14914d02/framer/films/fred-poster.jpg",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@bf100e6d97ea0d1f653a2ce6235f5afd8cca9a1b/framer/films/fred-poster.jpg",
         videoUrl:
-            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@2b07e77da43bcde96a1ef041c5a14c9d14914d02/framer/films/fred-phones.mp4",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@bf100e6d97ea0d1f653a2ce6235f5afd8cca9a1b/framer/films/fred-phones.mp4",
     },
     {
         title: "Safar-e-Asaan",
