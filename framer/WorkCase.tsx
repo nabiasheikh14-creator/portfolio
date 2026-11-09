@@ -715,7 +715,6 @@ function DesktopCase({
             }}
         >
             <aside
-                data-case-aside="true"
                 style={{
                     position: "absolute",
                     top: 0,
@@ -726,17 +725,27 @@ function DesktopCase({
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: project.longform ? "flex-start" : "space-between",
-                    gap: project.longform ? 32 : undefined,
-                    padding: "108px 2.2vw 40px 3.2vw",
+                    padding: project.longform
+                        ? "108px 2.2vw 28px 3.2vw"
+                        : "108px 2.2vw 40px 3.2vw",
                     boxSizing: "border-box",
-                    overflowX: "hidden",
-                    overflowY: project.longform ? "auto" : "hidden",
+                    overflow: "hidden",
                     background: CREAM,
                     backgroundColor: CREAM,
-                    pointerEvents: project.longform ? "auto" : "none",
+                    pointerEvents: "none",
                 }}
             >
-                <div style={{ position: "relative", zIndex: 1, pointerEvents: "auto" }}>
+                <div
+                    data-case-aside={project.longform ? "true" : undefined}
+                    style={{
+                        position: "relative",
+                        zIndex: 1,
+                        pointerEvents: "auto",
+                        flex: project.longform ? "1 1 auto" : undefined,
+                        minHeight: project.longform ? 0 : undefined,
+                        overflowY: project.longform ? "auto" : "visible",
+                    }}
+                >
                     <h1
                         style={{
                             margin: "0 0 18px",
@@ -780,10 +789,11 @@ function DesktopCase({
                         position: "relative",
                         zIndex: 1,
                         pointerEvents: "auto",
+                        flex: "none",
                         display: "flex",
                         flexDirection: "column",
-                        gap: nav.length > 7 ? 6 : 10,
-                        paddingTop: 24,
+                        gap: nav.length > 7 ? 4 : 10,
+                        paddingTop: nav.length > 7 ? 16 : 24,
                     }}
                 >
                     {nav.map((item) => {
