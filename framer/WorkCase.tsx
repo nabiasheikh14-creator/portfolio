@@ -1,4 +1,6 @@
 import {
+    createContext,
+    useContext,
     useEffect,
     useMemo,
     useRef,
@@ -79,7 +81,21 @@ interface ProjectRecord {
     outcomeImage: string
     prototypeVideo: string
     storyVideo?: string
+    collaborators?: string
+    research?: string
+    system?: string
+    experience?: string
+    beyond?: string
+    decision4?: string
+    longform?: boolean
 }
+
+const CaseMotion = createContext({
+    lift: false,
+    section: 80,
+    media: 64,
+    cover: false,
+})
 
 interface WorkCaseProps {
     catalog: ProjectRecord[]
@@ -154,6 +170,7 @@ function buildNav(p: ProjectRecord): CaseNavItem[] {
         "Challenge",
         hasText(p.problem) || hasMedia(p.problemImage) || hasMedia(p.researchImage),
     )
+    push("research", "Research", hasText(p.research))
     push(
         "approach",
         "Approach",
@@ -166,10 +183,13 @@ function buildNav(p: ProjectRecord): CaseNavItem[] {
             hasMedia(p.processImage) ||
             hasMedia(p.iterationImage),
     )
+    push("system", "System", hasText(p.system))
+    push("experience", "Experience", hasText(p.experience))
+    push("beyond", "Beyond the room", hasText(p.beyond))
     push(
         "decisions",
         "Decisions",
-        [p.decision1, p.decision2, p.decision3].some((d) => hasText(d)),
+        [p.decision1, p.decision2, p.decision3, p.decision4].some((d) => hasText(d)),
     )
     push(
         "final",
@@ -272,6 +292,13 @@ export default function WorkCase(props: WorkCaseProps) {
                 outcomeImage: media(it.outcomeImage, fb.outcomeImage),
                 prototypeVideo: media(it.prototypeVideo, fb.prototypeVideo),
                 storyVideo: media(it.storyVideo || "", fb.storyVideo || ""),
+                collaborators: fb.collaborators || "",
+                research: fb.research || "",
+                system: fb.system || "",
+                experience: fb.experience || "",
+                beyond: fb.beyond || "",
+                decision4: fb.decision4 || "",
+                longform: Boolean(fb.longform),
             } as ProjectRecord
         })
     }, [catalog])
@@ -416,6 +443,15 @@ export default function WorkCase(props: WorkCaseProps) {
             if (!el) return
             const target = e.target as Node | null
             if (target && el.contains(target)) return
+            const aside = document.querySelector("[data-case-aside]")
+            if (
+                target &&
+                aside &&
+                aside.contains(target) &&
+                aside.scrollHeight > aside.clientHeight + 4
+            ) {
+                return
+            }
             e.preventDefault()
             el.scrollTop += e.deltaY
         }
@@ -679,6 +715,7 @@ function DesktopCase({
             }}
         >
             <aside
+                data-case-aside="true"
                 style={{
                     position: "absolute",
                     top: 0,
@@ -688,13 +725,15 @@ function DesktopCase({
                     width: LEFT_COL,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
+                    justifyContent: project.longform ? "flex-start" : "space-between",
+                    gap: project.longform ? 32 : undefined,
                     padding: "108px 2.2vw 40px 3.2vw",
                     boxSizing: "border-box",
-                    overflow: "hidden",
+                    overflowX: "hidden",
+                    overflowY: project.longform ? "auto" : "hidden",
                     background: CREAM,
                     backgroundColor: CREAM,
-                    pointerEvents: "none",
+                    pointerEvents: project.longform ? "auto" : "none",
                 }}
             >
                 <div style={{ position: "relative", zIndex: 1, pointerEvents: "auto" }}>
@@ -743,7 +782,7 @@ function DesktopCase({
                         pointerEvents: "auto",
                         display: "flex",
                         flexDirection: "column",
-                        gap: 10,
+                        gap: nav.length > 7 ? 6 : 10,
                         paddingTop: 24,
                     }}
                 >
@@ -808,7 +847,7 @@ function DesktopCase({
                     backgroundColor: CREAM,
                     display: "flex",
                     flexDirection: "column",
-                    gap: SECTION_GAP,
+                    gap: project.longform ? 28 : SECTION_GAP,
                 }}
             >
                 <CaseNarrative
@@ -968,7 +1007,13 @@ function MobileCase({
                 })}
             </nav>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: SECTION_GAP }}>
+            <div
+                style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: project.longform ? 28 : SECTION_GAP,
+                }}
+            >
                 <CaseNarrative
                     project={project}
                     setSectionRef={setSectionRef}
@@ -1032,6 +1077,7 @@ function MetaChips({
         project.timeline && { k: "Duration", v: project.timeline },
         project.role && { k: "Role", v: project.role },
         project.tools && { k: "Tools", v: project.tools },
+        project.collaborators && { k: "Collaborators", v: project.collaborators },
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
@@ -1077,14 +1123,15 @@ function CaseSection({
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     children: ReactNode
 }) {
+    const motion = useContext(CaseMotion)
     return (
         <section ref={setSectionRef(id)} id={id}>
-            <Parallax amount={80}>
+            <Parallax amount={motion.section} lift={motion.lift}>
                 <div
                     style={{
                         display: "flex",
                         flexDirection: "column",
-                        gap: BLOCK_GAP,
+                        gap: motion.cover ? 40 : BLOCK_GAP,
                     }}
                 >
                     {children}
@@ -1130,9 +1177,15 @@ function CaseNarrative({
         hasMedia(p.flowImage) ||
         hasMedia(p.processImage) ||
         hasMedia(p.iterationImage)
-    const decisionBody = [p.decision1, p.decision2, p.decision3].filter((d) =>
-        hasText(d),
+    const decisionBody = [p.decision1, p.decision2, p.decision3, p.decision4].filter(
+        (d) => hasText(d),
     )
+    const motion = {
+        lift: Boolean(p.longform),
+        section: p.longform ? 200 : 80,
+        media: p.longform ? 90 : 64,
+        cover: Boolean(p.longform),
+    }
     const showFinal = [
         p.finalImage1,
         p.finalImage2,
@@ -1144,7 +1197,7 @@ function CaseNarrative({
     const showReflection = hasText(p.reflection)
 
     return (
-        <>
+        <CaseMotion.Provider value={motion}>
             <CaseSection id="overview" setSectionRef={setSectionRef}>
                 <MediaFrame src={p.heroImage} accent={a} label="Hero image" tall />
                 <StoryBlock
@@ -1175,6 +1228,19 @@ function CaseNarrative({
             </CaseSection>
             ) : null}
 
+            {hasText(p.research) ? (
+            <CaseSection id="research" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Research"
+                    body={p.research || ""}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+            </CaseSection>
+            ) : null}
+
             {showApproach ? (
             <CaseSection id="approach" setSectionRef={setSectionRef}>
                 <StoryBlock
@@ -1202,6 +1268,45 @@ function CaseNarrative({
                     tall
                 />
                 <MediaFrame src={p.iterationImage} accent={a} label="Iteration" />
+            </CaseSection>
+            ) : null}
+
+            {hasText(p.system) ? (
+            <CaseSection id="system" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="System"
+                    body={p.system || ""}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+            </CaseSection>
+            ) : null}
+
+            {hasText(p.experience) ? (
+            <CaseSection id="experience" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Experience"
+                    body={p.experience || ""}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
+            </CaseSection>
+            ) : null}
+
+            {hasText(p.beyond) ? (
+            <CaseSection id="beyond" setSectionRef={setSectionRef}>
+                <StoryBlock
+                    kicker="Beyond the room"
+                    body={p.beyond || ""}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    muted={muted}
+                />
             </CaseSection>
             ) : null}
 
@@ -1330,7 +1435,7 @@ function CaseNarrative({
                     </div>
                 </section>
             )}
-        </>
+        </CaseMotion.Provider>
     )
 }
 
@@ -1385,9 +1490,11 @@ function storyBlocks(body: string): { subhead: string; text: string }[] {
 
 function Parallax({
     amount,
+    lift,
     children,
 }: {
     amount: number
+    lift?: boolean
     children: ReactNode
 }) {
     const boxRef = useRef<HTMLDivElement>(null)
@@ -1408,8 +1515,21 @@ function Parallax({
             const viewH = scroller ? scroller.clientHeight : window.innerHeight
             const viewMid = viewTop + viewH / 2
             const elMid = rect.top + rect.height / 2
-            const progress = Math.max(0, Math.min(1, (elMid - viewMid) / (viewH * 0.55)))
-            layer.style.transform = `translate3d(0, ${(progress * amount).toFixed(1)}px, 0)`
+            const below = elMid - viewMid
+            let shift = 0
+            if (lift) {
+                // Only chapters still below the fold rise up to meet the
+                // scroll. Anything already on screen stays put, so the
+                // opening title never jumps into the nav.
+                const entering = rect.top - viewTop
+                if (entering > viewH * 0.72) {
+                    shift = -Math.min(amount, (entering - viewH * 0.72) * 0.7)
+                }
+            } else {
+                const progress = Math.max(0, Math.min(1, below / (viewH * 0.55)))
+                shift = progress * amount
+            }
+            layer.style.transform = `translate3d(0, ${shift.toFixed(1)}px, 0)`
         }
         const onScroll = () => {
             if (!frame) frame = requestAnimationFrame(update)
@@ -1424,7 +1544,7 @@ function Parallax({
             window.removeEventListener("resize", onScroll)
             layer.style.transform = ""
         }
-    }, [amount, isStatic])
+    }, [amount, lift, isStatic])
 
     return (
         <div ref={boxRef}>
@@ -1553,9 +1673,10 @@ function MediaFrame({
     tall?: boolean
 }) {
     const url = String(src || "").trim()
+    const motion = useContext(CaseMotion)
     if (!url) return null
     return (
-        <Parallax amount={64}>
+        <Parallax amount={motion.media} lift={motion.lift}>
         <figure style={{ margin: 0, width: "100%" }}>
             <img
                 src={url}
@@ -1582,9 +1703,10 @@ function VideoFrame({
     label?: string
 }) {
     const url = String(src || "").trim()
+    const motion = useContext(CaseMotion)
     if (!url) return null
     return (
-        <Parallax amount={64}>
+        <Parallax amount={motion.media} lift={motion.lift}>
         <figure style={{ margin: 0, width: "100%" }}>
             <div
                 style={{
@@ -2172,42 +2294,32 @@ const EMPTY_MEDIA = {
 
 const DEFAULT_CATALOG: ProjectRecord[] = [
     {
-        title:
-            "Sooraj Nagar",
-        subtitle:
-            "Onboarding redesign",
-        role:
-            "Lead Product Designer",
-        year:
-            "2025",
-        timeline:
-            "8 weeks · 2025",
-        tools:
-            "Figma, User interviews, Prototyping",
-        overview:
-            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
-        context:
-            "A mobile-first consumer fintech product for people managing everyday money. New users landed in a dense sign-up flow written for compliance, not for humans, and most bounced before they ever saw value.",
-        problem:
-            "Completion dropped hard between account creation and first funded action.\n\nSupport tickets clustered around “what do you need this for?” moments.\n\nBusiness impact\nPaid acquisition was leaking before activation.",
-        goals:
-            "Raise sign-up completion, reduce time-to-first-value, and keep KYC/compliance intact without scaring people off.",
-        constraints:
-            "Legacy API order, fixed legal copy requirements, 8-week window, engineering bandwidth for one major flow rewrite, not a full redesign.",
-        process:
-            "Funnel\nMapped the live funnel and drop-off points.\n\nInterviews\nInterviewed recent drop-offs and completers.\n\nQuestion order\nSketched alternate question orders.\n\nOne ask per screen\nWireframed a “one clear ask per screen” flow.\n\nPrototype\nPrototype-tested with 8 participants.\n\nCopy with compliance\nIterated copy and progress cues with compliance.",
-        decision1:
-            "Chose progressive disclosure over a single long form, even though it meant more screens, because testing showed cognitive load beat click count.",
-        decision2:
-            "Kept mandatory KYC fields but moved “why we ask” inline next to each field instead of a separate FAQ, after users skipped the FAQ entirely.",
-        decision3:
-            "Cut a “product tour” after sign-up; first success action replaced it. Tour completion was vanity. Funded accounts were the real metric.",
-        outcome:
-            "Sign-up completion improved noticeably in testing; the flow now sets expectations before asking for sensitive details.\n\nShipped to production in the following release train.",
-        reflection:
-            "I’d bring compliance into the first workshop earlier.\n\nWe lost a week negotiating copy that could have been co-authored up front.",
+        title: "Sooraj Nagar",
+        subtitle: "Speculative climate installation",
+        role: "Project Lead, Design Researcher and Experience Designer, undergraduate thesis at IVSAA",
+        year: "2025",
+        timeline: "9 months, from research to a public installation",
+        tools: "Participatory futures workshops, surveys, expert interviews, Futures Wheel, XF Ladder, LOOPY, Unity 3D, SketchUp, TouchDesigner, Figma, FigJam, and a physical button panel with projection",
+        collaborators: "Nabeel Ashraf, 3D modelling. Umair Abbas, Unity development. Advisor: Fatin Nawaz.",
+        overview: "92% of young Karachiites I surveyed believe their city's climate future is bleak. I led a year-long research and design project that let them press a button, watch Shahra-e-Faisal heat up or heal by 2120, and leave knowing which actions actually matter.",
+        context: "Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions. The actions sit across three roles: government, community and individual. Every press shifts the road toward one of two futures in the year 2120, a future of collapse or a future of renewal.\n\nThe project started with a question. If every headline says we are doomed, what does that belief do to how we act today? Nine months of research later, it became an immersive experience, a future-news website, a take-home zine and an online community, all designed to turn climate dread into agency.",
+        problem: "Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.\n\n92% of 65 survey respondents, ages 20 to 35, described the climate future as bad. The only optimistic answers came from people living in the US, UK or Australia.\n\nIn workshops, people drew Karachi on fire or turned to desert. One wrote, \"I'm leaving the country before it kills me.\"\n\nKarachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.\n\nPakistani institutions are stuck firefighting present crises. There is almost no local futures work, and global future visions either leave out the Global South or cast it as the dystopia.\n\nWhy it matters\nHopelessness is not neutral. It produces disengagement and emigration. A population that cannot picture a liveable future will not push for the policies or habits that would create one. The design challenge was to make a better future feel real, local and reachable, without preaching.\n\nHow might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?",
+        research: "Six months of mixed-method research shaped every decision in the build. I designed and ran each stream myself, then brought it together on one FigJam board that became the project's source of truth.\n\nSurvey, 65 people\nPeople aged 20 to 35, in Karachi and in the diaspora. The pessimism was near-universal among people still in the city, 92%, and it tracked geography rather than generation.\n\nFutures workshop\nUniversity students in Karachi. Heat came through as the climate impact people feel in their bodies, and the future showed up as fire, desert and suffocation.\n\nFutures worksheets\n32 responses from young adults, filled in remotely. The same two themes held outside the workshop room.\n\nUrban design interviews\nArif Hasan, architect, and Farhan Anwar, urban planning and sustainability. They reframed responsibility. Individual action on its own does not cool a city. State policy has to be in the system. India's GRIHA rating came up as one example of policy that actually sets a standard.\n\nClimate and futures interviews\nAvinash Kumar of Greenpeace India, Talha Kehar of Earth's Heartbeat, Sahibzada Mayed, Faizan Raza of Ideate Innovations, and Aqdas Fatima of Karachi Urban Lab, plus a Culture Hacks Lab webinar. They held the Global South framing and pushed for the dystopia to be shown honestly, not softened.\n\nTwo lines from those conversations stayed with the work.\n\n\"For the West, climate change is a near future. We are going through it.\"\n\n\"People need to see how bad things can get.\"\n\nUrban heat\nI traced Karachi's heat to four drivers. Asphalt and concrete have replaced land that used to absorb less heat. Vehicles and air conditioners dump waste heat into the street. Vegetation loss cuts the cooling that comes from transpiration. Dense, glass-faced towers trap heat and block the wind. The Handbook on Urban Heat Management supplied evidence for cooling strategies that suit the Global South: green corridors, neighbourhood gardens and urban reforestation.\n\nTheory\nMurray Bookchin's social ecology: these crises are rooted in social hierarchy, so the response has to be collective. Arturo Escobar's Designs for the Pluriverse: many local futures, not one Western one. Mitchell and Chaudhury's Worlding Beyond the End of the World: for colonised communities the apocalypse already happened, and their futures are built on survival rather than fear. Anna Tsing's The Mushroom at the End of the World: hope can be messy and still real. Reina-Rozo on solarpunk as a decolonial technology.\n\nPrecedents\nLiam Young's Planetary Redesign, Slow Factory's Applied Utopia, Kaspersky's Earth 2050, Puffball Studios' Sheh-re-Tabassum, Weathering with You, A Psalm for the Wild-Built and The Lorax. The gap across all of them was the same. Almost no hopeful future is set in Pakistan.\n\nDestruction as the default\nYoung people equate the future with destruction. The pessimism was not an opinion. It was the starting point.\n\nHeat is the shared language\nBurning, suffocating, fainting. Everyone already had a bodily reference for climate change.\n\nResponsibility, split honestly\nBlaming individuals alienates people. Blaming only the state breeds passivity. The design had to show both.\n\nAbstraction does not land\nPeople needed to see their own city, not a metaphor. Testing made that impossible to ignore.",
+        process: "Listen first\nSurveyed 65 people, ran a futures workshop and collected 32 worksheets to map how Karachi imagines its future.\n\nAsk the experts\nInterviewed 7 urban planners, climate activists and futures researchers to ground the speculation in policy reality.\n\nBuild two futures\nUsed the Futures Wheel and XF Ladder to world-build a future of collapse and a future of renewal for 2120.\n\nModel the system\nMapped how each action ripples through heat, air and greenery in LOOPY, then turned that map into the logic behind the buttons.\n\nPrototype, fail, re-root\nTested an abstract TouchDesigner version, learned it did not land, and rebuilt the experience on a real Karachi road in Unity.\n\nExtend beyond the room\nDesigned a future-news website, a take-home zine and an Instagram community so the experience did not end at the exit.",
+        goals: "Make a hopeful Karachi feel physically real, not theoretical.\n\nGive visitors agency by letting their own choices determine the city's outcome.\n\nTeach, without preaching, which actions genuinely cool a city and which only look green.\n\nLeave people with a next step they can take that week.",
+        constraints: "One designer leading a year-long thesis on an academic calendar. No budget for commercial hardware or a dedicated venue. 3D modelling and Unity development sat outside my core skills, so I recruited two collaborators and directed their work. A first-time visitor had to understand the installation within seconds, with no one there to explain it.\n\nTimeline\nResearch and conceptualisation took six months. The installation took six weeks to build. Branding and the design system took four weeks, the website a week, and the zine a week.",
+        system: "Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.\n\nThree roles\nI split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.\n\nSolar and wind\nA government action toward renewal. Each press cools the scene by 3°C. Solar panels appear on two rooftops and on five street poles.\n\nUrban reforestation\nA government action toward renewal, 3°C cooler per press. Walkable space grows, two or three buildings turn green, and wind turbines and street solar appear.\n\nSmart city policy\nA government action toward collapse, 4°C hotter per press. Four buildings become half-built towers or empty plots.\n\nNeighbourhood gardens\nA community action toward renewal, 2°C cooler per press. Greenery spreads across balconies and unused rooftops.\n\nRooftop gardens\nA community action toward renewal, 2°C cooler per press. Gardens appear on the roofs.\n\nPalm trees\nA community action toward collapse, 3°C hotter per press. Palms replace the trees that were already there.\n\nTravel by bus\nAn individual action toward renewal. Choosing the bus is one of the choices that cools the road.\n\nTravel by car\nAn individual action toward collapse. Traffic and exhaust smoke build with every press.\n\nCentral air conditioning\nAn individual action toward collapse. Running central air is one of the choices that heats the city.\n\nPalms that heat the city\nPalms are a popular greening choice along Karachi's roads, but they are not native, they draw heavily on groundwater, they cast almost no shade, and they do little to cool the air compared with indigenous trees. A green-looking action that makes things worse.\n\nA smart city can mean collapse\nIn practice, top-down, tech-first megaprojects bring glass towers and half-finished developments. Those intensify the heat island rather than relieve it.",
+        experience: "Two futures for 2120\nUsing the Futures Wheel and the Experiential Futures Ladder, I traced the second- and third-order consequences of today's choices and built two versions of Shahra-e-Faisal. In the future of collapse, unchecked tech consumption and heat have made the air toxic: AC exhaust, cracked asphalt and a permanent heat fog. In the future of renewal, the city invested in heat-resilient infrastructure: 30% green cover, rooftop gardens, walkable streets, wind and solar.\n\nThe first prototype failed\nThe first build was a TouchDesigner piece. Four community actions changed an abstract picture of the air. I tested it with people in their twenties and thirties. The feedback was blunt. It was not understandable until someone explained it. If a button says solar panels, people expected to see the panels, not only the air changing. Testers also wanted to know who is responsible, the public or the authorities.\n\nRebuilt on Shahra-e-Faisal\nI threw out the abstraction and rebuilt the experience on Shahra-e-Faisal, the road most Karachiites have sat in traffic, flooded or baked on. The Unity scene starts in present-day Karachi. Each press of a physical button spawns a visible consequence, panels, gardens, smoke or half-built towers, and moves a live temperature readout. Testing is also what pushed the piece from four community actions to nine actions across three roles. A physical button panel fed a laptop running the Unity scene, and a projector filled the room.\n\nFive ways a press confirms itself\nEvery press answered through five channels, so no one was left guessing. The tactile button glowed. A message popped up. A short line rooted the action in real life, such as \"The palm trees still stand tall. Everyone else is looking for shade.\" Sound played. A temperature reading climbed or fell.\n\nA mixed ending\nThe journey was deliberately open. Visitors could end in a mixed future, dystopian and hopeful elements side by side, because that is closer to how real change happens. The experience closes on a call to action and a QR code to join the Sooraj Nagar community.",
+        beyond: "An installation lasts an afternoon. I designed three touchpoints so the idea kept working after people left.\n\nFuture's Archive\nA research-based news archive from 2120. Visitors switch between the collapse archive and the renewal archive and read headlines from each future about Shahra-e-Faisal. It built anticipation before the installation, and it let people explore the futures on their own devices.\n\nZine and manifesto kit\nEvery visitor left with a printed guide to the real actions behind each button, plus a manifesto kit. To work toward a renewed future, we first have to imagine it.\n\nThe community\nThe @soorajnagarkarachi Instagram turns visitors into a community that keeps reimagining the city.",
+        decision1: "A real road, not an abstraction\nI rebuilt the whole experience on a real Karachi road instead of refining the abstract prototype. It meant a much heavier 3D build inside a six-week window, but testing showed that abstraction broke comprehension, and comprehension was the point.",
+        decision2: "Three roles on every button\nEvery visitor could act as government, community and individual, rather than only as a private person. The expert interviews showed that an individual-only frame is both ineffective and alienating. Young people needed to see where their power ends and the state's begins.",
+        decision3: "Hope had to include the harm\nI kept buttons that make things worse, including ones that look green. Palm trees and smart city policy both push toward collapse. A hope-only experience would have been easy to dismiss. Showing the trade-offs is what made the hopeful future believable.",
+        decision4: "Specialists, with me directing\nI brought in specialists rather than doing everything myself. I scoped the 3D modelling and the Unity development as separate workstreams, wrote the button-logic spec they built against, and kept research, narrative and the experience with me. That is how one person shipped an installation, a website, a zine and a community in one academic year.",
+        outcome: "Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.\n\nWhat it proved\nA research-led, locally rooted experience can move young people from \"Karachi is doomed\" to \"here is what would change it\". The same method can travel to any city facing extreme heat.",
+        reflection: "Measure the shift\nI would measure the change, not only watch it. Two questions before and after, \"How hopeful do you feel about Karachi's future?\", would have turned strong anecdotes into evidence.\n\nBring policy in earlier\nFarhan Anwar's interview changed the whole system. Organisations such as Karachi Urban Lab, or the Sindh government, could have co-owned the actions and carried them forward.\n\nA method, not a one-off\nSooraj Nagar is a method. Participatory futures research, a research-backed model of actions, and an immersive public touchpoint can be run for any heat-stressed city in the Global South.",
         accent: "#7457C9",
         slug: "fintech-app",
+        longform: true,
         ...EMPTY_MEDIA,
     },
     {

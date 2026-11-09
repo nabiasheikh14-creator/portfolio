@@ -1220,9 +1220,9 @@ function DeskBack({
 const DEFAULT_ITEMS: WorkProject[] = [
     {
         title: "Sooraj Nagar",
-        subtitle: "Onboarding redesign",
+        subtitle: "Speculative climate installation",
         description:
-            "A consumer fintech app was losing new users during a long, jargon-heavy sign-up. I reworked the first-run experience end to end.",
+            "92% of young Karachiites I surveyed believe their city's climate future is bleak. Sooraj Nagar lets them press a button and watch Shahra-e-Faisal heat up or heal by 2120.",
         slug: "fintech-app",
         year: "2025",
         accent: ACCENT,
