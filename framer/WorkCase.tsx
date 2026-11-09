@@ -1315,6 +1315,15 @@ function CaseNarrative({
 
             {hasText(p.system) ? (
             <CaseSection id="system" setSectionRef={setSectionRef}>
+                {String(p.system).startsWith("Nine actions") ? (
+                    <SystemBoard
+                        family={family}
+                        displayFamily={displayFamily}
+                        ink={ink}
+                        accent={a}
+                        frames={p.frames}
+                    />
+                ) : (
                 <StoryBlock
                     kicker="System"
                     body={p.system || ""}
@@ -1326,6 +1335,7 @@ function CaseNarrative({
                     section="system"
                     accent={a}
                 />
+                )}
             </CaseSection>
             ) : null}
 
@@ -1601,6 +1611,486 @@ function Parallax({
             <div ref={layerRef} style={{ willChange: "transform" }}>
                 {children}
             </div>
+        </div>
+    )
+}
+
+const COOL = "#1B6B45"
+const HEAT = "#A33B24"
+
+type SystemAction = { name: string; delta: string; detail: string }
+
+const SYSTEM_ROLES: {
+    role: string
+    renewal: SystemAction[]
+    collapse: SystemAction[]
+}[] = [
+    {
+        role: "Government",
+        renewal: [
+            {
+                name: "Solar and wind",
+                delta: "−3°C",
+                detail: "A government action toward renewal. Each press cools the scene by 3°C. Solar panels appear on two rooftops and on five street poles.",
+            },
+            {
+                name: "Urban reforestation",
+                delta: "−3°C",
+                detail: "A government action toward renewal, 3°C cooler per press. Walkable space grows, two or three buildings turn green, and wind turbines and street solar appear.",
+            },
+        ],
+        collapse: [
+            {
+                name: "Smart city policy",
+                delta: "+4°C",
+                detail: "A government action toward collapse, 4°C hotter per press. Four buildings become half-built towers or empty plots.",
+            },
+        ],
+    },
+    {
+        role: "Community",
+        renewal: [
+            {
+                name: "Neighbourhood gardens",
+                delta: "−2°C",
+                detail: "A community action toward renewal, 2°C cooler per press. Greenery spreads across balconies and unused rooftops.",
+            },
+            {
+                name: "Rooftop gardens",
+                delta: "−2°C",
+                detail: "A community action toward renewal, 2°C cooler per press. Gardens appear on the roofs.",
+            },
+        ],
+        collapse: [
+            {
+                name: "Palm trees",
+                delta: "+3°C",
+                detail: "A community action toward collapse, 3°C hotter per press. Palms replace the trees that were already there.",
+            },
+        ],
+    },
+    {
+        role: "Individual",
+        renewal: [
+            {
+                name: "Travel by bus",
+                delta: "Cools",
+                detail: "An individual action toward renewal. Choosing the bus is one of the choices that cools the road.",
+            },
+        ],
+        collapse: [
+            {
+                name: "Travel by car",
+                delta: "Heats",
+                detail: "An individual action toward collapse. Traffic and exhaust smoke build with every press.",
+            },
+            {
+                name: "Central air conditioning",
+                delta: "Heats",
+                detail: "An individual action toward collapse. Running central air is one of the choices that heats the city.",
+            },
+        ],
+    },
+]
+
+const SYSTEM_NOTES: { name: string; detail: string }[] = [
+    {
+        name: "Palms that heat the city",
+        detail: "Palms are a popular greening choice along Karachi's roads, but they are not native, they draw heavily on groundwater, they cast almost no shade, and they do little to cool the air compared with indigenous trees. A green-looking action that makes things worse.",
+    },
+    {
+        name: "A smart city can mean collapse",
+        detail: "In practice, top-down, tech-first megaprojects bring glass towers and half-finished developments. Those intensify the heat island rather than relieve it.",
+    },
+]
+
+function SystemBoard({
+    family,
+    displayFamily,
+    ink,
+    accent,
+    frames,
+}: {
+    family: string
+    displayFamily: string
+    ink: string
+    accent: string
+    frames?: { section: string; src: string; video?: boolean; label?: string; after?: number }[]
+}) {
+    const phone = useMediaQuery(PHONE_MQ)
+    const room = (frames || []).filter((f) => f.section === "system" && hasMedia(f.src))
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <span
+                    aria-hidden
+                    style={{ display: "block", width: 36, height: 1, background: ink }}
+                />
+                <div
+                    style={{
+                        fontFamily: displayFamily,
+                        fontSize: 40,
+                        fontWeight: 400,
+                        letterSpacing: "0",
+                        lineHeight: 1.05,
+                        color: ink,
+                    }}
+                >
+                    System
+                </div>
+            </div>
+            <p
+                style={{
+                    margin: 0,
+                    fontFamily: family,
+                    fontSize: BODY_SIZE,
+                    fontWeight: 400,
+                    lineHeight: BODY_LH,
+                    color: BODY_INK,
+                }}
+            >
+                Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div
+                    style={{
+                        fontFamily: family,
+                        fontSize: 16,
+                        fontWeight: 600,
+                        lineHeight: 1.35,
+                        color: ink,
+                    }}
+                >
+                    Three roles
+                </div>
+                <p
+                    style={{
+                        margin: 0,
+                        fontFamily: family,
+                        fontSize: BODY_SIZE,
+                        fontWeight: 400,
+                        lineHeight: BODY_LH,
+                        color: BODY_INK,
+                    }}
+                >
+                    I split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.
+                </p>
+            </div>
+            {room.map((f, i) => (
+                <FramePiece key={`system-room-${i}`} frame={f} accent={accent} />
+            ))}
+            <div
+                style={{
+                    borderRadius: FRAME_RADIUS,
+                    background: "#E9E3D6",
+                    overflow: "hidden",
+                }}
+            >
+                {phone ? (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                        {SYSTEM_ROLES.map((group) => (
+                            <div
+                                key={group.role}
+                                style={{ borderTop: "1px solid rgba(17,17,17,0.1)" }}
+                            >
+                                <RoleMark role={group.role} family={family} ink={ink} />
+                                <PoleLabel family={family} tone="cool" label="Renewal" hint="cools the road" />
+                                {group.renewal.map((action, i) => (
+                                    <ActionRow
+                                        key={action.name}
+                                        action={action}
+                                        tone="cool"
+                                        family={family}
+                                        ink={ink}
+                                        rule={i > 0}
+                                    />
+                                ))}
+                                <PoleLabel family={family} tone="heat" label="Collapse" hint="heats the road" />
+                                {group.collapse.map((action, i) => (
+                                    <ActionRow
+                                        key={action.name}
+                                        action={action}
+                                        tone="heat"
+                                        family={family}
+                                        ink={ink}
+                                        rule={i > 0}
+                                    />
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                        <div
+                            style={{
+                                display: "grid",
+                                gridTemplateColumns: "1fr 44px 1fr",
+                            }}
+                        >
+                            <PoleLabel family={family} tone="cool" label="Renewal" hint="cools the road" align="right" />
+                            <div />
+                            <PoleLabel family={family} tone="heat" label="Collapse" hint="heats the road" />
+                        </div>
+                        {SYSTEM_ROLES.map((group) => (
+                            <div
+                                key={group.role}
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "1fr 44px 1fr",
+                                    borderTop: `1px solid ${accent}55`,
+                                }}
+                            >
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                    {group.renewal.map((action, i) => (
+                                        <ActionRow
+                                            key={action.name}
+                                            action={action}
+                                            tone="cool"
+                                            family={family}
+                                            ink={ink}
+                                            align="right"
+                                            rule={i > 0}
+                                        />
+                                    ))}
+                                </div>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        borderLeft: `1px solid ${accent}`,
+                                        borderRight: `1px solid ${accent}`,
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            fontFamily: family,
+                                            fontSize: 11,
+                                            fontWeight: 600,
+                                            letterSpacing: "0.14em",
+                                            textTransform: "uppercase",
+                                            color: ink,
+                                            writingMode: "vertical-rl",
+                                            textOrientation: "mixed",
+                                        }}
+                                    >
+                                        {group.role}
+                                    </span>
+                                </div>
+                                <div style={{ display: "flex", flexDirection: "column" }}>
+                                    {group.collapse.map((action, i) => (
+                                        <ActionRow
+                                            key={action.name}
+                                            action={action}
+                                            tone="heat"
+                                            family={family}
+                                            ink={ink}
+                                            rule={i > 0}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: phone ? "1fr" : "1fr 1fr",
+                    gap: phone ? 22 : 28,
+                }}
+            >
+                {SYSTEM_NOTES.map((note) => (
+                    <div
+                        key={note.name}
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 6,
+                            borderLeft: `2px solid ${HEAT}`,
+                            paddingLeft: 14,
+                        }}
+                    >
+                        <div
+                            style={{
+                                fontFamily: family,
+                                fontSize: 16,
+                                fontWeight: 600,
+                                lineHeight: 1.35,
+                                color: ink,
+                            }}
+                        >
+                            {note.name}
+                        </div>
+                        <p
+                            style={{
+                                margin: 0,
+                                fontFamily: family,
+                                fontSize: BODY_SIZE,
+                                fontWeight: 400,
+                                lineHeight: BODY_LH,
+                                color: BODY_INK,
+                            }}
+                        >
+                            {note.detail}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function RoleMark({ role, family, ink }: { role: string; family: string; ink: string }) {
+    return (
+        <div
+            style={{
+                padding: "14px 16px 4px",
+                fontFamily: family,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                color: ink,
+            }}
+        >
+            {role}
+        </div>
+    )
+}
+
+function PoleLabel({
+    family,
+    tone,
+    label,
+    hint,
+    align,
+}: {
+    family: string
+    tone: "cool" | "heat"
+    label: string
+    hint: string
+    align?: "right"
+}) {
+    return (
+        <div
+            style={{
+                padding: align ? "16px 18px 8px" : "16px 18px 8px",
+                textAlign: align || "left",
+            }}
+        >
+            <div
+                style={{
+                    fontFamily: family,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    letterSpacing: "0.14em",
+                    textTransform: "uppercase",
+                    color: tone === "cool" ? COOL : HEAT,
+                }}
+            >
+                {label}
+            </div>
+            <div
+                style={{
+                    marginTop: 3,
+                    fontFamily: family,
+                    fontSize: 13,
+                    fontWeight: 400,
+                    lineHeight: 1.3,
+                    color: LABEL,
+                }}
+            >
+                {hint}
+            </div>
+        </div>
+    )
+}
+
+function ActionRow({
+    action,
+    tone,
+    family,
+    ink,
+    align,
+    rule,
+}: {
+    action: SystemAction
+    tone: "cool" | "heat"
+    family: string
+    ink: string
+    align?: "right"
+    rule?: boolean
+}) {
+    const numeric = action.delta.includes("°")
+    const delta = (
+        <div
+            style={{
+                flex: "none",
+                width: 72,
+                fontFamily: family,
+                fontSize: numeric ? 22 : 12,
+                fontWeight: 600,
+                letterSpacing: numeric ? "-0.04em" : "0.08em",
+                textTransform: numeric ? "none" : "uppercase",
+                color: tone === "cool" ? COOL : HEAT,
+                lineHeight: 1.1,
+                paddingTop: numeric ? 1 : 4,
+                textAlign: "center",
+            }}
+        >
+            {action.delta}
+        </div>
+    )
+    const copy = (
+        <div style={{ flex: 1, minWidth: 0, textAlign: align || "left" }}>
+            <div
+                style={{
+                    fontFamily: family,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    lineHeight: 1.35,
+                    color: ink,
+                }}
+            >
+                {action.name}
+            </div>
+            <p
+                style={{
+                    margin: "4px 0 0",
+                    fontFamily: family,
+                    fontSize: 15,
+                    fontWeight: 400,
+                    lineHeight: 1.5,
+                    color: BODY_INK,
+                }}
+            >
+                {action.detail}
+            </p>
+        </div>
+    )
+    return (
+        <div
+            style={{
+                display: "flex",
+                gap: 8,
+                padding: "14px 16px 16px",
+                alignItems: "flex-start",
+                borderTop: rule ? "1px solid rgba(17,17,17,0.08)" : "none",
+            }}
+        >
+            {align === "right" ? (
+                <>
+                    {copy}
+                    {delta}
+                </>
+            ) : (
+                <>
+                    {delta}
+                    {copy}
+                </>
+            )}
         </div>
     )
 }
