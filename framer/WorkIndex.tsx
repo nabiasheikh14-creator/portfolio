@@ -152,6 +152,13 @@ function normalizeProjects(
         })
         .filter((it) => it.title)
 
+    const workOrder = ["fintech-app", "voice-ai", "health-platform", "travel-app"]
+    normalized.sort((a, b) => {
+        const ai = workOrder.indexOf(a.slug)
+        const bi = workOrder.indexOf(b.slug)
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+    })
+
     if (normalized.length) return normalized
     return DEFAULT_ITEMS.map((it) => ({
         ...it,
@@ -1230,20 +1237,7 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://framerusercontent.com/assets/ORbhq8svUVYaQVK6qVkEsQVUyc.mp4",
     },
     {
-        title: "Bridge",
-        subtitle: "Website & platform",
-        description:
-            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
-        slug: "health-platform",
-        year: "2024",
-        accent: "#ED3B3F",
-        coverUrl:
-            "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
-        videoUrl:
-            "https://framerusercontent.com/assets/aXOC788i48024F6WaK7ANZYjRcs.mp4",
-    },
-    {
-        title: "Fred",
+        title: "FRED.AI",
         subtitle:
             "Designing how a real estate agent supervises an AI that calls their leads",
         description:
@@ -1255,6 +1249,19 @@ const DEFAULT_ITEMS: WorkProject[] = [
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@7a15d08e12f25b8c9f4e2575da6b8b0974aa4460/framer/films/fred-web-poster.jpg",
         videoUrl:
             "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@7a15d08e12f25b8c9f4e2575da6b8b0974aa4460/framer/films/fred-web.mp4",
+    },
+    {
+        title: "Bridge",
+        subtitle: "Website & platform",
+        description:
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
+        slug: "health-platform",
+        year: "2024",
+        accent: "#ED3B3F",
+        coverUrl:
+            "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
+        videoUrl:
+            "https://framerusercontent.com/assets/aXOC788i48024F6WaK7ANZYjRcs.mp4",
     },
     {
         title: "Safar-e-Asaan",

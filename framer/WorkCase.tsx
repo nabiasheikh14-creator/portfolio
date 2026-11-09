@@ -2407,7 +2407,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
     },
     {
         title:
-            "Fred",
+            "FRED.AI",
         subtitle:
             "Designing how a real estate agent supervises an AI that calls their leads",
         role:
