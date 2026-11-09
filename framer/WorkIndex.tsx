@@ -1075,7 +1075,7 @@ function ProjectVisual({
                 height: fill ? "100%" : undefined,
                 aspectRatio: fill
                     ? undefined
-                    : item.videoUrl
+                    : item.videoUrl || item.coverUrl
                       ? "16 / 9"
                       : tall
                         ? "4 / 5"
@@ -1265,7 +1265,7 @@ const DEFAULT_ITEMS: WorkProject[] = [
         year: "2024",
         accent: "#5E151C",
         coverUrl:
-            "https://framerusercontent.com/images/Q5BxRRTHioPZGEZPzTYczijeEY.jpeg",
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@294195e0f1d243b7ef51276d7a8e21d7362149b2/framer/case/safar/exhibition.jpg",
         videoUrl: "",
     },
 ]
