@@ -2398,23 +2398,23 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             {
                 section: "research",
                 label: "Research board",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/research.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/research.jpg",
             },
             {
                 section: "approach",
                 label: "Project architecture",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/architecture.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/architecture.jpg",
             },
             {
                 section: "approach",
                 label: "Process film",
                 video: true,
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/films/sooraj-process.mp4",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/films/sooraj-process.mp4",
             },
             {
                 section: "experience",
                 label: "Two futures",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/futures.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/futures.jpg",
             },
             {
                 section: "experience",
@@ -2425,17 +2425,17 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
             {
                 section: "experience",
                 label: "The room",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/room.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/room.jpg",
             },
             {
                 section: "experience",
                 label: "Heat wall",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/heat.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/heat.jpg",
             },
             {
                 section: "beyond",
                 label: "Future's Archive website",
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@f091b82cdb98de3b468059c89ec317acb02fdd9a/framer/case/sooraj/website.jpg",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@34b1200b65bf191f3a52150972c2c5644f5dba5c/framer/case/sooraj/website.jpg",
             },
         ],
     },
