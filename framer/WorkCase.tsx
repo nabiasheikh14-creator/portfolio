@@ -2110,20 +2110,27 @@ function ZineFlip({
 }) {
     const [index, setIndex] = useState(0)
     const [turn, setTurn] = useState<{ from: number; to: number; hot: boolean } | null>(null)
+    const turnRef = useRef(turn)
+    turnRef.current = turn
     const last = ZINE_PAGES.length - 1
+    const finish = (to: number) => {
+        setIndex(to)
+        setTurn(null)
+    }
     const go = (to: number) => {
-        if (turn || to === index || to < 0 || to > last) return
+        if (turnRef.current || to === index || to < 0 || to > last) return
         const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
         if (reduce) {
-            setIndex(to)
+            finish(to)
             return
         }
         setTurn({ from: index, to, hot: false })
-        requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-                setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
-            })
-        })
+        window.setTimeout(() => {
+            setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
+        }, 40)
+        window.setTimeout(() => {
+            if (turnRef.current?.to === to) finish(to)
+        }, 780)
     }
     const forward = turn ? turn.to > turn.from : true
     const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 0 : -180
@@ -2164,9 +2171,8 @@ function ZineFlip({
                     {leaf ? (
                         <div
                             onTransitionEnd={(event) => {
-                                if (event.propertyName !== "transform" || !turn?.hot) return
-                                setIndex(turn.to)
-                                setTurn(null)
+                                if (event.propertyName !== "transform" || !turnRef.current?.hot) return
+                                finish(turnRef.current.to)
                             }}
                             style={{
                                 position: "absolute",
