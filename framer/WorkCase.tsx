@@ -2074,6 +2074,163 @@ function CardGrid({
     )
 }
 
+const ZINE_SHA = "c991bf93e9a8f4549789ebf9e9e236f215117b43"
+const ZINE_PAGES: { src: string; alt: string }[] = [
+    ["01", "Sooraj Nagar"],
+    ["02", "Travelling By Cars"],
+    ["03", "Public Buses"],
+    ["04", "Rooftop Gardening"],
+    ["05", "Solar And Wind Energy"],
+    ["06", "Central Air Conditioning"],
+    ["07", "Palm Trees"],
+    ["08", "Smart City Policy"],
+    ["09", "Neighbourhood Gardens"],
+    ["10", "Urban Reforestation Policy"],
+    ["11", "Predictions"],
+    ["12", "So what should we do?"],
+    ["13", "Being a young adult in Karachi"],
+    ["14", "UGH"],
+    ["15", "The right trees"],
+    ["16", "This zine presents the nine actions"],
+].map(([file, alt]) => ({
+    src: `https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@${ZINE_SHA}/framer/case/sooraj/zine/${file}.jpg`,
+    alt,
+}))
+
+function ZineFlip({
+    family,
+    displayFamily,
+    ink,
+    accent,
+}: {
+    family: string
+    displayFamily: string
+    ink: string
+    accent: string
+}) {
+    const [index, setIndex] = useState(0)
+    const [turn, setTurn] = useState<{ from: number; to: number; hot: boolean } | null>(null)
+    const turnRef = useRef(turn)
+    turnRef.current = turn
+    const last = ZINE_PAGES.length - 1
+    const finish = (to: number) => {
+        setIndex(to)
+        setTurn(null)
+    }
+    const go = (to: number) => {
+        if (turnRef.current || to === index || to < 0 || to > last) return
+        const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        if (reduce) {
+            finish(to)
+            return
+        }
+        setTurn({ from: index, to, hot: false })
+        window.setTimeout(() => {
+            setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
+        }, 40)
+        window.setTimeout(() => {
+            if (turnRef.current?.to === to) finish(to)
+        }, 780)
+    }
+    const forward = turn ? turn.to > turn.from : true
+    const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 0 : -180
+    const under = turn ? (forward ? ZINE_PAGES[turn.to] : ZINE_PAGES[turn.from]) : ZINE_PAGES[index]
+    const leaf = turn ? (forward ? ZINE_PAGES[turn.from] : ZINE_PAGES[turn.to]) : null
+    const shown = turn ? turn.to : index
+    const pill: CSSProperties = {
+        fontFamily: family,
+        fontSize: 13,
+        lineHeight: 1.2,
+        color: ink,
+        background: "transparent",
+        border: OUTLINE,
+        borderRadius: 999,
+        padding: "8px 14px",
+        cursor: "pointer",
+    }
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div style={{ width: "min(100%, 480px)" }}>
+                <div
+                    style={{
+                        position: "relative",
+                        width: "100%",
+                        aspectRatio: "1138 / 1638",
+                        perspective: "1600px",
+                        border: OUTLINE,
+                        borderRadius: 4,
+                        background: CREAM,
+                        boxShadow: "0 16px 36px rgba(17,17,17,0.12)",
+                    }}
+                >
+                    <img
+                        src={under.src}
+                        alt={leaf ? "" : under.alt}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", borderRadius: 3 }}
+                    />
+                    {leaf ? (
+                        <div
+                            onTransitionEnd={(event) => {
+                                if (event.propertyName !== "transform" || !turnRef.current?.hot) return
+                                finish(turnRef.current.to)
+                            }}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                transformOrigin: "left center",
+                                transform: `rotateY(${angle}deg)`,
+                                transition: turn?.hot ? "transform 0.7s cubic-bezier(.2,.7,.2,1)" : "none",
+                                transformStyle: "preserve-3d",
+                            }}
+                        >
+                            <img
+                                src={leaf.src}
+                                alt=""
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", backfaceVisibility: "hidden", borderRadius: 3 }}
+                            />
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    background: CREAM,
+                                    border: OUTLINE,
+                                    transform: "rotateY(180deg)",
+                                    backfaceVisibility: "hidden",
+                                    borderRadius: 3,
+                                }}
+                            />
+                        </div>
+                    ) : null}
+                    <button
+                        type="button"
+                        aria-label="Previous page"
+                        disabled={shown === 0 || Boolean(turn)}
+                        onClick={() => go(index - 1)}
+                        style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "32%", background: "transparent", border: 0, cursor: shown === 0 ? "default" : "pointer", zIndex: 2 }}
+                    />
+                    <button
+                        type="button"
+                        aria-label="Next page"
+                        disabled={shown === last || Boolean(turn)}
+                        onClick={() => go(index + 1)}
+                        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "68%", background: "transparent", border: 0, cursor: shown === last ? "default" : "pointer", zIndex: 2 }}
+                    />
+                </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                <button type="button" onClick={() => go(index - 1)} disabled={shown === 0 || Boolean(turn)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1 }}>
+                    Previous
+                </button>
+                <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 72, textAlign: "center" }}>
+                    {String(shown + 1).padStart(2, "0")}
+                </span>
+                <button type="button" onClick={() => go(index + 1)} disabled={shown === last || Boolean(turn)} style={{ ...pill, opacity: shown === last ? 0.35 : 1 }}>
+                    Next
+                </button>
+            </div>
+        </div>
+    )
+}
 
 function PullQuote({
     quote,
@@ -2661,6 +2818,7 @@ function SoorajSections({
                         { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/instagram.jpg" },
                     ].map((card) => ({ ...card, image: card.image || undefined }))}
                 />
+                <ZineFlip family={family} displayFamily={displayFamily} ink={ink} accent={accent} />
             </CaseSection>
 
             <CaseSection id="decisions" setSectionRef={setSectionRef}>
