@@ -2554,6 +2554,28 @@ function SoorajSections({
                 <BodyCopy family={family}>
                     Using the Futures Wheel and the Experiential Futures Ladder, I built two versions of Shahra-e-Faisal. Collapse is toxic air, cracked asphalt and a permanent heat fog. Renewal is 30% green cover, rooftop gardens, walkable streets, wind and solar.
                 </BodyCopy>
+                <CardGrid
+                    columns={3}
+                    family={family}
+                    ink={ink}
+                    cards={[
+                        {
+                            title: "Two futures",
+                            body: "One road in 2120, pulled between renewal and collapse.",
+                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/split.jpg",
+                        },
+                        {
+                            title: "Collapse",
+                            body: "Toxic air, cracked asphalt and a permanent heat fog.",
+                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/collapse.jpg",
+                        },
+                        {
+                            title: "Renewal",
+                            body: "30% green cover, rooftop gardens, walkable streets, wind and solar.",
+                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/renewal.jpg",
+                        },
+                    ]}
+                />
                 <BodyCopy family={family}>
                     The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
                 </BodyCopy>
