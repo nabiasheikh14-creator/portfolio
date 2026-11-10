@@ -427,7 +427,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         radioTrackUrl = DEFAULT_RADIO_TRACK,
         tickSound = "",
     } = props
-    const family = props.font?.fontFamily || INTER
+    const family = INTER
     const displayFamily = props.displayFont?.fontFamily || ANNIE
     const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
     const trackUrl = resolveRadioUrl(radioTrackUrl) || DEFAULT_RADIO_TRACK

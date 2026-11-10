@@ -208,7 +208,7 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
         style,
     } = props
     const family =
-        props.font?.fontFamily || props.bodyFont?.fontFamily || INTER
+        INTER
     const scaleMul = Math.max(
         0.7,
         Math.min(1.4, Number(deskScale ?? objectScale) || 1),

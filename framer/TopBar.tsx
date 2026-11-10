@@ -37,7 +37,7 @@ export default function TopBar(props: TopBarProps) {
         archiveHref = "/archive",
         contactHref = 'mailto:hello@example.com?subject=Let%27s%20work%20together&body=Hi%20Nabia%2C%0A%0AI%27d%20love%20to%20chat%20about%20a%20project.%0A%0A',
     } = props
-    const family = props.font?.fontFamily || INTER
+    const family = INTER
 
     const link: CSSProperties = {
         fontFamily: family,

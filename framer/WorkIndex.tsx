@@ -201,7 +201,7 @@ export default function WorkIndex(props: WorkIndexProps) {
         backLink = "/",
         projectBasePath = "/work",
     } = props
-    const family = props.font?.fontFamily || SANS
+    const family = SANS
     const isStatic = useIsStaticRenderer()
     const isPhone = useMediaQuery(PHONE_MQ)
     const backHref = resolveLink(backLink, "/")

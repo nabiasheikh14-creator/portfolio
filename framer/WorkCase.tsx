@@ -234,8 +234,8 @@ export default function WorkCase(props: WorkCaseProps) {
         footerLinkedinUrl = "https://linkedin.com/",
         footerEmail = "hello@example.com",
     } = props
-    const family = props.font?.fontFamily || SANS
-    const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
+    const family = SANS
+    const displayFamily = SANS
     const isStatic = useIsStaticRenderer()
     const isPhone = useMediaQuery(PHONE_MQ)
     const backHref = resolveLink(backLink, "/work")
@@ -3913,8 +3913,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         contained = false,
         style,
     } = props
-    const family =
-        props.font?.fontFamily || props.bodyFont?.fontFamily || SANS
+    const family = SANS
     const scaleMul = Math.max(
         0.7,
         Math.min(1.4, Number(deskScale ?? objectScale) || 1),
