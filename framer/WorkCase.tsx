@@ -2209,161 +2209,228 @@ function DecisionRow({
     )
 }
 
+function deltaNumber(delta: string): number | null {
+    if (!delta.endsWith("°C")) return null
+    const raw = delta.slice(0, -2).replace("−", "-").replace("+", "").trim()
+    const n = Number(raw)
+    if (!Number.isFinite(n)) return null
+    return delta.trim().startsWith("−") || delta.trim().startsWith("-") ? -Math.abs(n) : Math.abs(n)
+}
+
+function formatRoad(n: number): string {
+    if (n === 0) return "0°C"
+    const sign = n > 0 ? "+" : "−"
+    const abs = Math.abs(n)
+    const text = Number.isInteger(abs) ? String(abs) : abs.toFixed(1)
+    return `${sign}${text}°C`
+}
+
 function TierTable({
     groups,
+    notes,
     legend,
     family,
-    displayFamily,
-    ink,
 }: {
     groups: TierGroup[]
+    notes: NoteItem[]
     legend: string
     family: string
-    displayFamily: string
     ink: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const cell = (actions: TierAction[], tone: "cool" | "heat") => (
-        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
-            {actions.map((action, i) => (
-                <div
-                    key={action.name}
+    const [role, setRole] = useState("All")
+    const [pressed, setPressed] = useState<string[]>([])
+    const board = "#1A1916"
+    const cream = "#F4F0E6"
+    const quiet = "rgba(244,240,230,0.68)"
+    const line = "rgba(244,240,230,0.14)"
+    const coolInk = "#8ED4AE"
+    const heatInk = "#F0A090"
+    const roles = ["All", ...groups.map((group) => group.role)]
+    const visible = role === "All" ? groups : groups.filter((group) => group.role === role)
+    const catalog = groups.flatMap((group) => [
+        ...group.renewal.map((action) => ({ ...action, tone: "cool" as const })),
+        ...group.collapse.map((action) => ({ ...action, tone: "heat" as const })),
+    ])
+    const on = catalog.filter((action) => pressed.includes(action.name))
+    const numbered = on.map((action) => deltaNumber(action.delta)).filter((n): n is number => n != null)
+    const sum = numbered.reduce((total, n) => total + n, 0)
+    const words = on.filter((action) => deltaNumber(action.delta) == null)
+    const figure = numbered.length ? formatRoad(sum) : words.length ? (words.every((action) => action.tone === "cool") ? "Cools" : words.every((action) => action.tone === "heat") ? "Heats" : "Mixed") : "0°C"
+    const figureColor = figure === "Cools" || sum < 0 ? coolInk : figure === "Heats" || sum > 0 ? heatInk : cream
+    const toggle = (name: string) => setPressed((cur) => (cur.includes(name) ? cur.filter((item) => item !== name) : [...cur, name]))
+    const chip = (label: string, active: boolean, onClick: () => void): ReactNode => (
+        <button
+            type="button"
+            className="sooraj-press"
+            aria-pressed={active}
+            onClick={onClick}
+            style={{
+                fontFamily: family,
+                fontSize: 12,
+                lineHeight: 1.3,
+                color: active ? board : cream,
+                background: active ? cream : "transparent",
+                border: `1px solid ${active ? cream : "rgba(244,240,230,0.32)"}`,
+                borderRadius: 999,
+                padding: "5px 10px",
+                cursor: "pointer",
+            }}
+        >
+            {label}
+        </button>
+    )
+    const actionButton = (action: TierAction, tone: "cool" | "heat") => {
+        const active = pressed.includes(action.name)
+        const toneColor = tone === "cool" ? coolInk : heatInk
+        return (
+            <button
+                key={action.name}
+                type="button"
+                className="sooraj-action"
+                aria-pressed={active}
+                onClick={() => toggle(action.name)}
+                style={{
+                    display: "flex",
+                    gap: 12,
+                    alignItems: "flex-start",
+                    width: "100%",
+                    textAlign: "left",
+                    background: active ? "rgba(244,240,230,0.07)" : "transparent",
+                    border: 0,
+                    borderRadius: 10,
+                    padding: "12px 10px",
+                    cursor: "pointer",
+                    color: cream,
+                }}
+            >
+                <span
                     style={{
-                        display: "flex",
-                        gap: 14,
-                        alignItems: "flex-start",
-                        padding: "16px 0",
-                        borderTop: i ? "1px solid rgba(17,17,17,0.08)" : "none",
+                        flex: "none",
+                        fontFamily: family,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        lineHeight: 1.3,
+                        color: active ? board : toneColor,
+                        background: active ? toneColor : "transparent",
+                        border: `1px solid ${toneColor}`,
+                        borderRadius: 999,
+                        padding: "5px 10px",
+                        marginTop: 1,
                     }}
                 >
-                    <div
-                        style={{
-                            flex: "none",
-                            width: phone ? 88 : 112,
-                            lineHeight: 0.9,
-                            color: tone === "cool" ? COOL : HEAT,
-                        }}
-                    >
-                        <span
-                            style={{
-                                fontFamily: displayFamily,
-                                fontSize: phone ? 32 : 40,
-                            }}
-                        >
-                            {action.delta.endsWith("°C") ? action.delta.slice(0, -2) : action.delta}
-                        </span>
-                        {action.delta.endsWith("°C") ? (
-                            <span
-                                style={{
-                                    fontFamily: family,
-                                    fontSize: 13,
-                                    fontWeight: 600,
-                                    marginLeft: 2,
-                                }}
-                            >
-                                °C
-                            </span>
-                        ) : null}
-                    </div>
-                    <div style={{ minWidth: 0 }}>
-                        <div
-                            style={{
-                                fontFamily: family,
-                                fontSize: 16,
-                                fontWeight: 600,
-                                lineHeight: 1.35,
-                                color: ink,
-                            }}
-                        >
-                            {action.name}
-                        </div>
-                        <div
-                            style={{
-                                marginTop: 4,
-                                fontFamily: family,
-                                fontSize: 14,
-                                lineHeight: 1.45,
-                                color: BODY_INK,
-                            }}
-                        >
-                            {action.detail}
-                        </div>
-                    </div>
-                </div>
-            ))}
+                    {action.delta}
+                </span>
+                <span style={{ minWidth: 0 }}>
+                    <span style={{ display: "block", fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: cream }}>
+                        {action.name}
+                    </span>
+                    <span style={{ display: "block", marginTop: 4, fontFamily: family, fontSize: 14, lineHeight: 1.45, color: quiet }}>
+                        {action.detail}
+                    </span>
+                </span>
+            </button>
+        )
+    }
+    const head = (label: string, color: string) => (
+        <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color, padding: "4px 10px 8px" }}>
+            {label}
         </div>
     )
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <p
-                style={{
-                    margin: 0,
-                    fontFamily: family,
-                    fontSize: 14,
-                    lineHeight: 1.45,
-                    color: MUTED,
-                }}
-            >
-                {legend}
-            </p>
-            <div style={{ borderTop: "1px solid rgba(17,17,17,0.16)" }}>
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 22,
+                background: board,
+                color: cream,
+                borderRadius: 18,
+                padding: phone ? 16 : 28,
+            }}
+        >
+            <style>
+                {`.sooraj-press:focus-visible,.sooraj-action:focus-visible{outline:2px solid rgba(244,240,230,0.7);outline-offset:2px}.sooraj-action:hover{background:rgba(244,240,230,0.05)}`}
+            </style>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {roles.map((item) => (
+                    <span key={item}>{chip(item, role === item, () => setRole(item))}</span>
+                ))}
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 16, alignItems: "flex-end" }}>
+                <div>
+                    <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: quiet }}>
+                        The road
+                    </div>
+                    <div style={{ fontFamily: family, fontSize: phone ? 36 : 44, fontWeight: 600, lineHeight: 1.05, color: figureColor, marginTop: 4 }}>
+                        {figure}
+                    </div>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", maxWidth: 420 }}>
+                    <span style={{ fontFamily: family, fontSize: 14, lineHeight: 1.45, color: quiet }}>
+                        {on.length ? `${on.length} pressed` : legend}
+                    </span>
+                    {on.length ? chip("Clear", false, () => setPressed([])) : null}
+                </div>
+            </div>
+            <div style={{ borderTop: `1px solid ${line}` }}>
                 {phone ? (
-                    groups.map((group) => (
-                        <div key={group.role} style={{ borderBottom: "1px solid rgba(17,17,17,0.12)", padding: "16px 0 8px" }}>
-                            <div
-                                style={{
-                                    fontFamily: family,
-                                    fontSize: 12,
-                                    fontWeight: 600,
-                                    letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
-                                    color: ink,
-                                    marginBottom: 8,
-                                }}
-                            >
+                    visible.map((group) => (
+                        <div key={group.role} style={{ borderBottom: `1px solid ${line}`, padding: "16px 0 8px" }}>
+                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: cream, marginBottom: 10 }}>
                                 {group.role}
                             </div>
-                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: COOL }}>
-                                Renewal
-                            </div>
-                            {cell(group.renewal, "cool")}
-                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: HEAT, marginTop: 8 }}>
-                                Collapse
-                            </div>
-                            {cell(group.collapse, "heat")}
+                            {head("Renewal", coolInk)}
+                            {group.renewal.map((action) => actionButton(action, "cool"))}
+                            {head("Collapse", heatInk)}
+                            {group.collapse.map((action) => actionButton(action, "heat"))}
                         </div>
                     ))
                 ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "128px 1fr 1fr", columnGap: 28 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "132px 1fr 1fr", columnGap: 18 }}>
                         <div />
-                        <div style={{ padding: "12px 0", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: COOL }}>
-                            Renewal
-                        </div>
-                        <div style={{ padding: "12px 0", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: HEAT }}>
-                            Collapse
-                        </div>
-                        {groups.map((group) => (
+                        {head("Renewal", coolInk)}
+                        {head("Collapse", heatInk)}
+                        {visible.map((group) => (
                             <div key={group.role} style={{ display: "contents" }}>
                                 <div
                                     style={{
-                                        borderTop: "1px solid rgba(17,17,17,0.12)",
+                                        borderTop: `1px solid ${line}`,
                                         paddingTop: 18,
                                         fontFamily: family,
-                                        fontSize: 13,
+                                        fontSize: 12,
                                         fontWeight: 600,
-                                        letterSpacing: "0.08em",
+                                        letterSpacing: "0.1em",
                                         textTransform: "uppercase",
-                                        color: ink,
+                                        color: cream,
                                     }}
                                 >
                                     {group.role}
                                 </div>
-                                <div style={{ borderTop: "1px solid rgba(17,17,17,0.12)" }}>{cell(group.renewal, "cool")}</div>
-                                <div style={{ borderTop: "1px solid rgba(17,17,17,0.12)" }}>{cell(group.collapse, "heat")}</div>
+                                <div style={{ borderTop: `1px solid ${line}`, paddingTop: 8 }}>{group.renewal.map((action) => actionButton(action, "cool"))}</div>
+                                <div style={{ borderTop: `1px solid ${line}`, paddingTop: 8 }}>{group.collapse.map((action) => actionButton(action, "heat"))}</div>
                             </div>
                         ))}
                     </div>
                 )}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                {notes.map((note) => {
+                    const linked = note.title.startsWith("Palms") ? pressed.includes("Palm trees") : pressed.includes("Smart city policy")
+                    return (
+                        <div
+                            key={note.title}
+                            style={{
+                                border: `1px solid ${linked ? heatInk : line}`,
+                                borderRadius: FRAME_RADIUS,
+                                padding: "16px 16px 16px 18px",
+                            }}
+                        >
+                            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: cream }}>{note.title}</div>
+                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: quiet }}>{note.body}</p>
+                        </div>
+                    )
+                })}
             </div>
         </div>
     )
@@ -2508,37 +2575,11 @@ function SoorajSections({
                 </BodyCopy>
                 <TierTable
                     groups={SOORAJ_UI.tiers}
-                    legend="Read across a role. Renewal cools the road, collapse heats it, and the figure is the change for each press."
+                    notes={SOORAJ_UI.notes}
+                    legend="Press an action to put it on the road. Renewal cools, collapse heats, and the figure is the change for each press."
                     family={family}
-                    displayFamily={displayFamily}
                     ink={ink}
                 />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: phone ? "1fr" : "1fr 1fr",
-                        gap: 12,
-                    }}
-                >
-                    {SOORAJ_UI.notes.map((note) => (
-                        <div
-                            key={note.title}
-                            style={{
-                                border: "1px solid rgba(17,17,17,0.12)",
-                                borderLeft: `3px solid ${HEAT}`,
-                                borderRadius: FRAME_RADIUS,
-                                padding: "16px 16px 16px 18px",
-                            }}
-                        >
-                            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
-                                {note.title}
-                            </div>
-                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                                {note.body}
-                            </p>
-                        </div>
-                    ))}
-                </div>
             </CaseSection>
 
             <CaseSection id="experience" setSectionRef={setSectionRef}>
