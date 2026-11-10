@@ -26,6 +26,7 @@ const LABEL = "#888888"
 const PHONE_MQ = "(max-width: 809.98px)"
 const LEFT_COL = "max(240px, 28vw)"
 const FRAME_RADIUS = 12
+const OUTLINE = "1px solid rgba(17,17,17,0.16)"
 /** Shared case-study rhythm */
 const SECTION_GAP = 96
 const BLOCK_GAP = 64
@@ -1510,8 +1511,9 @@ function CaseNarrative({
                                     gap: 16,
                                     textDecoration: "none",
                                     color: ink,
-                                    background: "rgba(255,255,255,0.62)",
-                                    borderRadius: 14,
+                                    background: "transparent",
+                                    border: OUTLINE,
+                                    borderRadius: FRAME_RADIUS,
                                     padding: "14px 16px",
                                 }}
                             >
@@ -1892,8 +1894,6 @@ function ProcessStrip({
 }) {
     const phone = useMediaQuery(PHONE_MQ)
     const vertical = direction === "vertical" || phone
-    const [open, setOpen] = useState(steps.findIndex((step) => step.pivot))
-    const active = open >= 0 ? open : 0
     return (
         <div
             style={{
@@ -1902,80 +1902,73 @@ function ProcessStrip({
                 gap: 12,
             }}
         >
-            {steps.map((step, i) => {
-                const on = i === active
-                return (
-                    <button
-                        key={step.label}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => setOpen(i)}
+            {steps.map((step, i) => (
+                <div
+                    key={step.label}
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                        gap: 8,
+                        minWidth: 0,
+                        textAlign: "left",
+                        background: "transparent",
+                        borderRadius: FRAME_RADIUS,
+                        border: OUTLINE,
+                        padding: "16px 16px 18px",
+                        color: ink,
+                    }}
+                >
+                    <span
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "flex-start",
-                            gap: 8,
-                            minWidth: 0,
-                            textAlign: "left",
-                            cursor: "pointer",
-                            background: on ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)",
-                            borderRadius: 14,
-                            border: "none",
-                            padding: "16px 16px 18px",
-                            color: ink,
+                            fontFamily: displayFamily,
+                            fontSize: 26,
+                            lineHeight: 1,
+                            color: step.pivot ? accent : ink,
                         }}
                     >
+                        {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span
+                        style={{
+                            fontFamily: family,
+                            fontSize: 14,
+                            fontWeight: 600,
+                            lineHeight: 1.35,
+                            color: step.pivot ? accent : ink,
+                        }}
+                    >
+                        {step.label}
+                    </span>
+                    {step.pivot ? (
                         <span
                             style={{
-                                fontFamily: displayFamily,
-                                fontSize: 26,
-                                lineHeight: 1,
-                                color: step.pivot || on ? accent : ink,
+                                fontFamily: family,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                letterSpacing: "0.12em",
+                                textTransform: "uppercase",
+                                color: accent,
                             }}
                         >
-                            {String(i + 1).padStart(2, "0")}
+                            Pivot
                         </span>
+                    ) : null}
+                    {step.detail ? (
                         <span
                             style={{
                                 fontFamily: family,
                                 fontSize: 14,
-                                fontWeight: 600,
-                                lineHeight: 1.35,
-                                color: step.pivot || on ? accent : ink,
+                                fontWeight: 400,
+                                lineHeight: 1.45,
+                                color: BODY_INK,
                             }}
                         >
-                            {step.label}
+                            {step.detail}
                         </span>
-                        {step.pivot ? (
-                            <span
-                                style={{
-                                    fontFamily: family,
-                                    fontSize: 11,
-                                    fontWeight: 600,
-                                    letterSpacing: "0.12em",
-                                    textTransform: "uppercase",
-                                    color: accent,
-                                }}
-                            >
-                                Pivot
-                            </span>
-                        ) : null}
-                        {step.detail ? (
-                            <span
-                                style={{
-                                    fontFamily: family,
-                                    fontSize: 14,
-                                    fontWeight: 400,
-                                    lineHeight: 1.45,
-                                    color: BODY_INK,
-                                }}
-                            >
-                                {step.detail}
-                            </span>
-                        ) : null}
-                    </button>
-                )
-            })}
+                    ) : null}
+                </div>
+            ))}
         </div>
     )
 }
@@ -2012,9 +2005,10 @@ function CardGrid({
                         display: "flex",
                         flexDirection: "column",
                         gap: 8,
-                        borderRadius: 14,
+                        borderRadius: FRAME_RADIUS,
+                        border: OUTLINE,
                         padding: card.image ? 10 : 16,
-                        background: "rgba(255,255,255,0.62)",
+                        background: "transparent",
                         minWidth: 0,
                     }}
                 >
@@ -2080,6 +2074,158 @@ function CardGrid({
     )
 }
 
+const ZINE_SHA = "228cb8d4720e083b63cada079993e824431aff3a"
+const ZINE_PAGES: { src: string; alt: string }[] = [
+    ["01", "Travelling By Cars"],
+    ["02", "Public Buses"],
+    ["03", "Rooftop Gardening"],
+    ["04", "Solar And Wind Energy"],
+    ["05", "Central Air Conditioning"],
+    ["06", "Palm Trees"],
+    ["07", "Smart City Policy"],
+    ["08", "Neighbourhood Gardens"],
+    ["09", "Urban Reforestation Policy"],
+    ["10", "Predictions"],
+    ["11", "So what should we do?"],
+    ["12", "Being a young adult in Karachi"],
+    ["13", "UGH"],
+    ["14", "This zine presents the nine actions"],
+    ["15", "The right trees"],
+    ["16", "Sooraj Nagar"],
+].map(([file, alt]) => ({
+    src: `https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@${ZINE_SHA}/framer/case/sooraj/zine/${file}.jpg`,
+    alt,
+}))
+
+function ZineFlip({
+    family,
+    displayFamily,
+    ink,
+    accent,
+}: {
+    family: string
+    displayFamily: string
+    ink: string
+    accent: string
+}) {
+    const [index, setIndex] = useState(0)
+    const [turn, setTurn] = useState<{ from: number; to: number; hot: boolean } | null>(null)
+    const last = ZINE_PAGES.length - 1
+    const go = (to: number) => {
+        if (turn || to === index || to < 0 || to > last) return
+        const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        if (reduce) {
+            setIndex(to)
+            return
+        }
+        setTurn({ from: index, to, hot: false })
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
+            })
+        })
+    }
+    const forward = turn ? turn.to > turn.from : true
+    const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 0 : -180
+    const under = turn ? (forward ? ZINE_PAGES[turn.to] : ZINE_PAGES[turn.from]) : ZINE_PAGES[index]
+    const leaf = turn ? (forward ? ZINE_PAGES[turn.from] : ZINE_PAGES[turn.to]) : null
+    const shown = turn ? turn.to : index
+    const pill: CSSProperties = {
+        fontFamily: family,
+        fontSize: 13,
+        lineHeight: 1.2,
+        color: ink,
+        background: "transparent",
+        border: OUTLINE,
+        borderRadius: 999,
+        padding: "8px 14px",
+        cursor: "pointer",
+    }
+    return (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
+            <div style={{ width: "min(100%, 480px)" }}>
+                <div
+                    style={{
+                        position: "relative",
+                        width: "100%",
+                        aspectRatio: "1138 / 1638",
+                        perspective: "1600px",
+                        border: OUTLINE,
+                        borderRadius: 4,
+                        background: CREAM,
+                        boxShadow: "0 16px 36px rgba(17,17,17,0.12)",
+                    }}
+                >
+                    <img
+                        src={under.src}
+                        alt={leaf ? "" : under.alt}
+                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", borderRadius: 3 }}
+                    />
+                    {leaf ? (
+                        <div
+                            onTransitionEnd={(event) => {
+                                if (event.propertyName !== "transform" || !turn?.hot) return
+                                setIndex(turn.to)
+                                setTurn(null)
+                            }}
+                            style={{
+                                position: "absolute",
+                                inset: 0,
+                                transformOrigin: "left center",
+                                transform: `rotateY(${angle}deg)`,
+                                transition: turn?.hot ? "transform 0.7s cubic-bezier(.2,.7,.2,1)" : "none",
+                                transformStyle: "preserve-3d",
+                            }}
+                        >
+                            <img
+                                src={leaf.src}
+                                alt=""
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", backfaceVisibility: "hidden", borderRadius: 3 }}
+                            />
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    inset: 0,
+                                    background: CREAM,
+                                    border: OUTLINE,
+                                    transform: "rotateY(180deg)",
+                                    backfaceVisibility: "hidden",
+                                    borderRadius: 3,
+                                }}
+                            />
+                        </div>
+                    ) : null}
+                    <button
+                        type="button"
+                        aria-label="Previous page"
+                        disabled={shown === 0 || Boolean(turn)}
+                        onClick={() => go(index - 1)}
+                        style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "32%", background: "transparent", border: 0, cursor: shown === 0 ? "default" : "pointer", zIndex: 2 }}
+                    />
+                    <button
+                        type="button"
+                        aria-label="Next page"
+                        disabled={shown === last || Boolean(turn)}
+                        onClick={() => go(index + 1)}
+                        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "68%", background: "transparent", border: 0, cursor: shown === last ? "default" : "pointer", zIndex: 2 }}
+                    />
+                </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
+                <button type="button" onClick={() => go(index - 1)} disabled={shown === 0 || Boolean(turn)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1 }}>
+                    Previous
+                </button>
+                <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 72, textAlign: "center" }}>
+                    {String(shown + 1).padStart(2, "0")}
+                </span>
+                <button type="button" onClick={() => go(index + 1)} disabled={shown === last || Boolean(turn)} style={{ ...pill, opacity: shown === last ? 0.35 : 1 }}>
+                    Next
+                </button>
+            </div>
+        </div>
+    )
+}
+
 function PullQuote({
     quote,
     displayFamily,
@@ -2126,8 +2272,6 @@ function DecisionRow({
     accent: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const [part, setPart] = useState("All")
-    const shown = part === "All" ? parts : parts.filter((item) => item.label === part)
     return (
         <div
             style={{
@@ -2136,8 +2280,9 @@ function DecisionRow({
                 gap: phone ? 8 : 18,
                 marginBottom: 12,
                 padding: "18px 18px 20px",
-                background: "rgba(255,255,255,0.62)",
-                borderRadius: 14,
+                background: "transparent",
+                border: OUTLINE,
+                borderRadius: FRAME_RADIUS,
             }}
         >
             <div
@@ -2162,33 +2307,7 @@ function DecisionRow({
                 >
                     {title}
                 </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {["All", ...parts.map((item) => item.label)].map((label) => {
-                        const on = part === label
-                        return (
-                            <button
-                                key={label}
-                                type="button"
-                                aria-pressed={on}
-                                onClick={() => setPart(label)}
-                                style={{
-                                    fontFamily: family,
-                                    fontSize: 12,
-                                    lineHeight: 1.3,
-                                    color: on ? "#F3EFE6" : ink,
-                                    background: on ? ink : "transparent",
-                                    border: `1px solid ${on ? ink : "rgba(17,17,17,0.18)"}`,
-                                    borderRadius: 999,
-                                    padding: "5px 10px",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                {label}
-                            </button>
-                        )
-                    })}
-                </div>
-                {shown.map((item) => (
+                {parts.map((item) => (
                     <div
                         key={item.label}
                         style={{
@@ -2470,7 +2589,6 @@ function SoorajSections({
     displayFamily: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const [reflection, setReflection] = useState(0)
     const frames = project.frames || []
     const pic = (section: string, video?: boolean) =>
         frames.find((f) => f.section === section && Boolean(f.video) === Boolean(video) && hasMedia(f.src))
@@ -2492,8 +2610,9 @@ function SoorajSections({
                 <div
                     key={item.caption}
                     style={{
-                        background: "rgba(255,255,255,0.62)",
-                        borderRadius: 14,
+                        background: "transparent",
+                        border: OUTLINE,
+                        borderRadius: FRAME_RADIUS,
                         padding: "16px 16px 18px",
                         minWidth: 0,
                     }}
@@ -2533,12 +2652,12 @@ function SoorajSections({
             <CaseSection id="challenge" setSectionRef={setSectionRef}>
                 <SectionKicker kicker="Challenge" displayFamily={displayFamily} ink={ink} />
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
                         </p>
                     </div>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
                         </p>
@@ -2549,7 +2668,7 @@ function SoorajSections({
                     displayFamily={displayFamily}
                     ink={ink}
                 />
-                <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 18px 18px" }}>
+                <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 18px 18px" }}>
                     <p style={{ margin: 0, fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.5, color: ink }}>
                         How might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
                     </p>
@@ -2569,7 +2688,7 @@ function SoorajSections({
                         "For the West, climate change is a near future. We are going through it.",
                         "People need to see how bad things can get.",
                     ].map((quote) => (
-                        <blockquote key={quote} style={{ margin: 0, background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "18px 18px 20px" }}>
+                        <blockquote key={quote} style={{ margin: 0, background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "18px 18px 20px" }}>
                             <p style={{ margin: 0, fontFamily: displayFamily, fontSize: 26, lineHeight: 1.2, color: ink }}>
                                 {quote}
                             </p>
@@ -2593,13 +2712,13 @@ function SoorajSections({
                     direction="vertical"
                 />
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Goals</div>
                         <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             Make a hopeful Karachi feel physically real. Give visitors agency over the outcome. Teach which actions cool a city, and which only look green. Leave a next step they can take that week.
                         </p>
                     </div>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Constraints</div>
                         <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds. Research took six months, the installation six weeks, branding four weeks, the website a week, and the zine a week.
@@ -2662,12 +2781,12 @@ function SoorajSections({
                     ]}
                 />
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
                         </p>
                     </div>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             Every press answered through the glowing button, a message, a line rooted in real life, a sound, and a temperature that climbed or fell. Visitors could end in a mixed future, because that is closer to how real change happens.
                         </p>
@@ -2693,6 +2812,7 @@ function SoorajSections({
                         { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/instagram.jpg" },
                     ].map((card) => ({ ...card, image: card.image || undefined }))}
                 />
+                <ZineFlip family={family} displayFamily={displayFamily} ink={ink} accent={accent} />
             </CaseSection>
 
             <CaseSection id="decisions" setSectionRef={setSectionRef}>
@@ -2717,12 +2837,12 @@ function SoorajSections({
                 <SectionKicker kicker="Outcome" displayFamily={displayFamily} ink={ink} />
                 {statRow(SOORAJ_UI.outcomeStats)}
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
                         </p>
                     </div>
-                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
                         <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
                             A research-led, locally rooted experience can move young people from "Karachi is doomed" to "here is what would change it". The same method can travel to any city facing extreme heat.
                         </p>
@@ -2740,24 +2860,18 @@ function SoorajSections({
                         gap: 28,
                     }}
                 >
-                    {SOORAJ_UI.reflections.map((item, index) => {
-                        const on = reflection === index
-                        return (
-                        <button
+                    {SOORAJ_UI.reflections.map((item) => (
+                        <div
                             key={item.title}
-                            type="button"
-                            aria-pressed={on}
-                            onClick={() => setReflection(index)}
                             style={{
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: 10,
                                 minWidth: 0,
                                 textAlign: "left",
-                                cursor: "pointer",
-                                background: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.55)",
-                                border: "none",
-                                borderRadius: 14,
+                                background: "transparent",
+                                border: OUTLINE,
+                                borderRadius: FRAME_RADIUS,
                                 padding: "16px 16px 18px",
                                 color: ink,
                             }}
@@ -2768,7 +2882,7 @@ function SoorajSections({
                                     fontSize: 28,
                                     fontWeight: 400,
                                     lineHeight: 1.15,
-                                    color: on ? accent : ink,
+                                    color: ink,
                                 }}
                             >
                                 {item.title}
@@ -2776,9 +2890,8 @@ function SoorajSections({
                             <p style={{ margin: 0, fontFamily: family, fontSize: 16, lineHeight: 1.6, color: BODY_INK }}>
                                 {item.body}
                             </p>
-                        </button>
-                        )
-                    })}
+                        </div>
+                    ))}
                 </div>
             </CaseSection>
         </>
@@ -2806,7 +2919,6 @@ function StoryBlock({
     accent?: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const [focus, setFocus] = useState("All")
     const blocks = hasText(body) ? storyBlocks(body) : []
     const inserts = (frames || []).filter(
         (f) => section && f.section === section && hasMedia(f.src),
@@ -2837,30 +2949,6 @@ function StoryBlock({
         }
     })
     flush()
-    const chip = (label: string, index: number) => {
-        const on = focus === label
-        return (
-            <button
-                key={`${label}-${index}`}
-                type="button"
-                aria-pressed={on}
-                onClick={() => setFocus(label)}
-                style={{
-                    fontFamily: family,
-                    fontSize: 12,
-                    lineHeight: 1.3,
-                    color: on ? "#F3EFE6" : ink,
-                    background: on ? ink : "transparent",
-                    border: `1px solid ${on ? ink : "rgba(17,17,17,0.18)"}`,
-                    borderRadius: 999,
-                    padding: "5px 10px",
-                    cursor: "pointer",
-                }}
-            >
-                {label}
-            </button>
-        )
-    }
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
             <div
@@ -2875,12 +2963,6 @@ function StoryBlock({
             >
                 {kicker}
             </div>
-            {asCards ? (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {chip("All", -1)}
-                    {labeled.map((block, index) => chip(block.subhead, index))}
-                </div>
-            ) : null}
             {pieces.map((piece) => {
                 if (piece.kind === "media") {
                     return piece.frames.map((frame, n) => (
@@ -2904,8 +2986,6 @@ function StoryBlock({
                         </div>
                     )
                 }
-                const items = focus === "All" ? piece.items : piece.items.filter((item) => item.subhead === focus)
-                if (!items.length) return null
                 return (
                     <div
                         key={piece.key}
@@ -2915,44 +2995,31 @@ function StoryBlock({
                             gap: 12,
                         }}
                     >
-                        {items.map((item, index) => {
-                            const on = focus === item.subhead
-                            return (
-                                <div
-                                    key={`${item.subhead}-${index}`}
-                                    role="button"
-                                    tabIndex={0}
-                                    aria-pressed={on}
-                                    onClick={() => setFocus(on ? "All" : item.subhead)}
-                                    onKeyDown={(event) => {
-                                        if (event.key === "Enter" || event.key === " ") {
-                                            event.preventDefault()
-                                            setFocus(on ? "All" : item.subhead)
-                                        }
-                                    }}
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        gap: 8,
-                                        textAlign: "left",
-                                        cursor: "pointer",
-                                        background: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.55)",
-                                        borderRadius: 14,
-                                        padding: "16px 16px 18px",
-                                        minWidth: 0,
-                                    }}
-                                >
-                                    <span style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
-                                        {item.subhead}
+                        {piece.items.map((item, index) => (
+                            <div
+                                key={`${item.subhead}-${index}`}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 8,
+                                    textAlign: "left",
+                                    background: "transparent",
+                                    border: OUTLINE,
+                                    borderRadius: FRAME_RADIUS,
+                                    padding: "16px 16px 18px",
+                                    minWidth: 0,
+                                }}
+                            >
+                                <span style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                    {item.subhead}
+                                </span>
+                                {item.text ? (
+                                    <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.55, color: BODY_INK }}>
+                                        {linkify(item.text)}
                                     </span>
-                                    {item.text ? (
-                                        <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.55, color: BODY_INK }}>
-                                            {linkify(item.text)}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            )
-                        })}
+                                ) : null}
+                            </div>
+                        ))}
                     </div>
                 )
             })}
