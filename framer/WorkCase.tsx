@@ -1877,6 +1877,65 @@ function StatBlock({
     )
 }
 
+function StepCopy({
+    step,
+    index,
+    family,
+    displayFamily,
+    ink,
+    accent,
+    align,
+}: {
+    step: StepItem
+    index: number
+    family: string
+    displayFamily: string
+    ink: string
+    accent: string
+    align: "center" | "left"
+}) {
+    const color = step.pivot ? accent : ink
+    return (
+        <div
+            style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+                alignItems: align === "center" ? "center" : "flex-start",
+                textAlign: align,
+                minWidth: 0,
+            }}
+        >
+            <span style={{ fontFamily: displayFamily, fontSize: 32, lineHeight: 1, color }}>{String(index + 1).padStart(2, "0")}</span>
+            <span style={{ fontFamily: family, fontSize: 14, fontWeight: 600, lineHeight: 1.35, color }}>{step.label}</span>
+            {step.pivot ? (
+                <span style={{ fontFamily: family, fontSize: 11, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: accent }}>
+                    Pivot
+                </span>
+            ) : null}
+            {step.detail ? <span style={{ fontFamily: family, fontSize: 13, lineHeight: 1.45, color: BODY_INK }}>{step.detail}</span> : null}
+        </div>
+    )
+}
+
+function TimelineDot({ pivot, accent }: { pivot?: boolean; accent: string }) {
+    return (
+        <span
+            style={{
+                width: 14,
+                height: 14,
+                borderRadius: 999,
+                border: OUTLINE,
+                background: pivot ? accent : CREAM,
+                boxSizing: "border-box",
+                flex: "none",
+                position: "relative",
+                zIndex: 1,
+            }}
+        />
+    )
+}
+
 function ProcessStrip({
     steps,
     family,
@@ -1893,82 +1952,65 @@ function ProcessStrip({
     direction?: "horizontal" | "vertical"
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const vertical = direction === "vertical" || phone
+    const rail = direction === "vertical" || phone
+    if (rail) {
+        return (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+                {steps.map((step, i) => (
+                    <div key={step.label} style={{ display: "grid", gridTemplateColumns: "14px 1fr", columnGap: 16 }}>
+                        <div style={{ position: "relative", display: "flex", justifyContent: "center" }}>
+                            {i < steps.length - 1 ? (
+                                <div style={{ position: "absolute", top: 14, bottom: 0, left: "50%", borderLeft: OUTLINE }} />
+                            ) : null}
+                            <TimelineDot pivot={step.pivot} accent={accent} />
+                        </div>
+                        <div style={{ paddingBottom: i === steps.length - 1 ? 0 : 22 }}>
+                            <StepCopy step={step} index={i} family={family} displayFamily={displayFamily} ink={ink} accent={accent} align="left" />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        )
+    }
+    const cols = `repeat(${steps.length}, minmax(0, 1fr))`
     return (
-        <div
-            style={{
-                display: "grid",
-                gridTemplateColumns: vertical ? "1fr" : `repeat(${steps.length > 5 ? 3 : steps.length}, minmax(0, 1fr))`,
-                gap: 12,
-            }}
-        >
-            {steps.map((step, i) => (
-                <div
-                    key={step.label}
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                        gap: 8,
-                        minWidth: 0,
-                        textAlign: "left",
-                        background: "transparent",
-                        borderRadius: FRAME_RADIUS,
-                        border: OUTLINE,
-                        padding: "16px 16px 18px",
-                        color: ink,
-                    }}
-                >
-                    <span
-                        style={{
-                            fontFamily: displayFamily,
-                            fontSize: 26,
-                            lineHeight: 1,
-                            color: step.pivot ? accent : ink,
-                        }}
-                    >
-                        {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span
-                        style={{
-                            fontFamily: family,
-                            fontSize: 14,
-                            fontWeight: 600,
-                            lineHeight: 1.35,
-                            color: step.pivot ? accent : ink,
-                        }}
-                    >
-                        {step.label}
-                    </span>
-                    {step.pivot ? (
-                        <span
-                            style={{
-                                fontFamily: family,
-                                fontSize: 11,
-                                fontWeight: 600,
-                                letterSpacing: "0.12em",
-                                textTransform: "uppercase",
-                                color: accent,
-                            }}
-                        >
-                            Pivot
-                        </span>
-                    ) : null}
-                    {step.detail ? (
-                        <span
-                            style={{
-                                fontFamily: family,
-                                fontSize: 14,
-                                fontWeight: 400,
-                                lineHeight: 1.45,
-                                color: BODY_INK,
-                            }}
-                        >
-                            {step.detail}
-                        </span>
-                    ) : null}
-                </div>
-            ))}
+        <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ display: "grid", gridTemplateColumns: cols, alignItems: "end" }}>
+                {steps.map((step, i) => (
+                    <div key={step.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 8px" }}>
+                        {i % 2 === 0 ? (
+                            <>
+                                <StepCopy step={step} index={i} family={family} displayFamily={displayFamily} ink={ink} accent={accent} align="center" />
+                                <span style={{ width: 1.5, height: 16, background: "#111111" }} />
+                            </>
+                        ) : (
+                            <span style={{ height: 16 }} />
+                        )}
+                    </div>
+                ))}
+            </div>
+            <div style={{ position: "relative", display: "grid", gridTemplateColumns: cols, alignItems: "center", height: 18 }}>
+                <div style={{ position: "absolute", left: 0, right: 0, top: "50%", borderTop: OUTLINE }} />
+                {steps.map((step) => (
+                    <div key={step.label} style={{ display: "flex", justifyContent: "center" }}>
+                        <TimelineDot pivot={step.pivot} accent={accent} />
+                    </div>
+                ))}
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: cols, alignItems: "start" }}>
+                {steps.map((step, i) => (
+                    <div key={step.label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, padding: "0 8px" }}>
+                        {i % 2 === 1 ? (
+                            <>
+                                <span style={{ width: 1.5, height: 16, background: "#111111" }} />
+                                <StepCopy step={step} index={i} family={family} displayFamily={displayFamily} ink={ink} accent={accent} align="center" />
+                            </>
+                        ) : (
+                            <span style={{ height: 16 }} />
+                        )}
+                    </div>
+                ))}
+            </div>
         </div>
     )
 }
@@ -2668,14 +2710,31 @@ function SoorajSections({
                         </p>
                     </div>
                 </div>
+                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-end", paddingRight: phone ? 0 : "18%" }}>
+                    <svg width="148" height="64" viewBox="0 0 148 64" fill="none" aria-hidden>
+                        <path d="M12 12 C 46 8, 52 52, 90 34 C 112 24, 124 28, 130 50" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" />
+                        <path d="M118 42 L132 54 L116 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                </div>
                 <PullQuote
-                    quote="I'm leaving the country before it kills me."
+                    quote={"“I'm leaving the country before it kills me.”"}
                     displayFamily={displayFamily}
                     ink={ink}
                 />
-                <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 18px 18px" }}>
-                    <p style={{ margin: 0, fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.5, color: ink }}>
-                        How might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
+                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-start", paddingLeft: phone ? 0 : "12%" }}>
+                    <svg width="148" height="64" viewBox="0 0 148 64" fill="none" aria-hidden style={{ transform: "scaleX(-1)" }}>
+                        <path d="M12 12 C 46 8, 52 52, 90 34 C 112 24, 124 28, 130 50" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" />
+                        <path d="M118 42 L132 54 L116 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                    </svg>
+                </div>
+                <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: phone ? "20px 18px" : "28px 32px" }}>
+                    <p style={{ margin: 0, maxWidth: 720 }}>
+                        <span style={{ display: "block", fontFamily: displayFamily, fontSize: phone ? 36 : 48, lineHeight: 1.05, color: accent, marginBottom: 10 }}>
+                            How might we
+                        </span>
+                        <span style={{ display: "block", fontFamily: family, fontSize: phone ? 18 : 22, fontWeight: 500, lineHeight: 1.4, color: ink }}>
+                            let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
+                        </span>
                     </p>
                 </div>
             </CaseSection>
