@@ -2234,14 +2234,31 @@ function TierTable({
                     <div
                         style={{
                             flex: "none",
-                            width: phone ? 84 : 108,
-                            fontFamily: displayFamily,
-                            fontSize: phone ? 32 : 40,
-                            lineHeight: 0.95,
+                            width: phone ? 88 : 112,
+                            lineHeight: 0.9,
                             color: tone === "cool" ? COOL : HEAT,
                         }}
                     >
-                        {action.delta}
+                        <span
+                            style={{
+                                fontFamily: displayFamily,
+                                fontSize: phone ? 32 : 40,
+                            }}
+                        >
+                            {action.delta.endsWith("°C") ? action.delta.slice(0, -2) : action.delta}
+                        </span>
+                        {action.delta.endsWith("°C") ? (
+                            <span
+                                style={{
+                                    fontFamily: family,
+                                    fontSize: 13,
+                                    fontWeight: 600,
+                                    marginLeft: 2,
+                                }}
+                            >
+                                °C
+                            </span>
+                        ) : null}
                     </div>
                     <div style={{ minWidth: 0 }}>
                         <div
