@@ -261,7 +261,7 @@
     )
 
     var SANS =
-        '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+        '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
     function isHome() {
         var p = (location.pathname || "/").replace(/\/+$/, "") || "/"

@@ -74,7 +74,7 @@ function markDeskIntroSeen() {
 
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const INTER =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#444444"
@@ -427,7 +427,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
         radioTrackUrl = DEFAULT_RADIO_TRACK,
         tickSound = "",
     } = props
-    const family = props.font?.fontFamily || INTER
+    const family = INTER
     const displayFamily = props.displayFont?.fontFamily || ANNIE
     const deskScaleSafe = Math.max(0.7, Math.min(1.4, Number(deskScale) || 1))
     const trackUrl = resolveRadioUrl(radioTrackUrl) || DEFAULT_RADIO_TRACK
@@ -728,7 +728,7 @@ export default function DeskWorkspace(props: DeskWorkspaceProps) {
             }}
         >
             <link
-                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@300;400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
 

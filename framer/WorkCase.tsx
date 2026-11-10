@@ -19,7 +19,7 @@ import {
 } from "framer"
 
 const SANS =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const DEFAULT_ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 const CREAM = "#F3EFE6"
 const INK = "#111111"
@@ -234,8 +234,8 @@ export default function WorkCase(props: WorkCaseProps) {
         footerLinkedinUrl = "https://linkedin.com/",
         footerEmail = "hello@example.com",
     } = props
-    const family = props.font?.fontFamily || SANS
-    const displayFamily = props.displayFont?.fontFamily || DEFAULT_ANNIE
+    const family = SANS
+    const displayFamily = SANS
     const isStatic = useIsStaticRenderer()
     const isPhone = useMediaQuery(PHONE_MQ)
     const backHref = resolveLink(backLink, "/work")
@@ -538,7 +538,7 @@ export default function WorkCase(props: WorkCaseProps) {
     return (
         <div id="nabia-work-case" style={shellStyle}>
             <link
-                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
 
@@ -552,9 +552,6 @@ export default function WorkCase(props: WorkCaseProps) {
             {isPhone ? (
                 <MobileCase
                     project={project}
-                    nav={nav}
-                    activeSection={activeSection}
-                    onNavigate={scrollToSection}
                     setSectionRef={setSectionRef}
                     related={related}
                     basePath={basePath}
@@ -578,9 +575,6 @@ export default function WorkCase(props: WorkCaseProps) {
             ) : (
                 <DesktopCase
                     project={project}
-                    nav={nav}
-                    activeSection={activeSection}
-                    onNavigate={scrollToSection}
                     scrollerRef={scrollerRef}
                     setSectionRef={setSectionRef}
                     related={related}
@@ -603,6 +597,13 @@ export default function WorkCase(props: WorkCaseProps) {
                     }}
                 />
             )}
+            <SectionSheet
+                nav={nav}
+                activeId={activeSection}
+                onNavigate={scrollToSection}
+                phone={isPhone}
+                family={family}
+            />
         </div>
     )
 }
@@ -681,11 +682,168 @@ function DeskBack({
     return null
 }
 
+function SectionSheet({
+    nav,
+    activeId,
+    onNavigate,
+    phone,
+    family,
+}: {
+    nav: CaseNavItem[]
+    activeId: string
+    onNavigate: (id: string) => void
+    phone: boolean
+    family: string
+}) {
+    const [open, setOpen] = useState(false)
+    const active = nav.find((item) => item.id === activeId) || nav[0]
+    if (!active) return null
+    // Sit in the left column, using the same side insets as the sidebar type.
+    const place: CSSProperties = phone
+        ? { left: 12, right: 12 }
+        : { left: 40, width: 272 }
+    return (
+        <>
+            {open ? (
+                <button
+                    type="button"
+                    aria-label="Close sections"
+                    onClick={() => setOpen(false)}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 30,
+                        border: "none",
+                        background: "rgba(28, 27, 24, 0.08)",
+                        cursor: "pointer",
+                    }}
+                />
+            ) : null}
+            <div
+                style={{
+                    position: "fixed",
+                    ...place,
+                    bottom: 20,
+                    zIndex: 40,
+                    background: "#FBF9F5",
+                    border: "1px solid #DAD4C8",
+                    borderRadius: 20,
+                    boxShadow: "0 16px 40px rgba(28, 27, 24, 0.12)",
+                    overflow: "hidden",
+                    display: "grid",
+                    gridTemplateRows: open ? "auto 1fr" : "auto 0fr",
+                    transition: "grid-template-rows 0.32s ease",
+                }}
+            >
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls="case-section-sheet"
+                    onClick={() => setOpen((value) => !value)}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 10,
+                        width: "100%",
+                        minWidth: 0,
+                        minHeight: 52,
+                        padding: "10px 14px",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        fontFamily: family,
+                        color: "#1C1B18",
+                        textAlign: "left",
+                    }}
+                >
+                    <span
+                        aria-hidden
+                        style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 99,
+                            background: "#E3E9FA",
+                            color: "#2C6BE0",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flex: "none",
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "transform 0.32s ease",
+                        }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M3 9 L7 5 L11 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: "#6A665D" }}>
+                        Sections
+                    </span>
+                    <span style={{ marginLeft: "auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 15, fontWeight: 600 }}>{active.label}</span>
+                </button>
+                <div style={{ overflow: "hidden" }}>
+                    <div
+                        id="case-section-sheet"
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            padding: "4px 8px 12px",
+                            maxHeight: "46vh",
+                            overflowY: "auto",
+                        }}
+                    >
+                        {nav.map((item) => {
+                            const on = item.id === activeId
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        onNavigate(item.id)
+                                        setOpen(false)
+                                    }}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        minHeight: 44,
+                                        padding: "8px 10px",
+                                        border: "none",
+                                        borderRadius: 12,
+                                        background: on ? "#E3E9FA" : "transparent",
+                                        cursor: "pointer",
+                                        fontFamily: family,
+                                        fontSize: 15,
+                                        fontWeight: on ? 600 : 400,
+                                        color: on ? "#1C1B18" : "#6A665D",
+                                        textAlign: "left",
+                                    }}
+                                >
+                                    <span
+                                        aria-hidden
+                                        style={{
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: 99,
+                                            background: on ? "#2C6BE0" : "transparent",
+                                            border: on ? "none" : "1px solid #DAD4C8",
+                                            flex: "none",
+                                        }}
+                                    />
+                                    {item.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
 function DesktopCase({
     project,
-    nav,
-    activeSection,
-    onNavigate,
     scrollerRef,
     setSectionRef,
     related,
@@ -699,9 +857,6 @@ function DesktopCase({
     footer,
 }: {
     project: ProjectRecord
-    nav: CaseNavItem[]
-    activeSection: string
-    onNavigate: (id: string) => void
     scrollerRef: RefObject<HTMLDivElement | null>
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     related: ProjectRecord[]
@@ -729,43 +884,39 @@ function DesktopCase({
                     position: "absolute",
                     top: 0,
                     left: 0,
-                    bottom: 0,
+                    bottom: 92,
                     zIndex: 3,
-                    width: LEFT_COL,
+                    width: 340,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: project.longform ? "flex-start" : "space-between",
-                    padding: project.longform
-                        ? "108px 2.2vw 28px 3.2vw"
-                        : "108px 2.2vw 40px 3.2vw",
+                    justifyContent: "flex-start",
+                    padding: "108px 28px 28px 40px",
                     boxSizing: "border-box",
-                    overflow: "hidden",
+                    overflow: "auto",
                     background: CREAM,
                     backgroundColor: CREAM,
                     pointerEvents: "none",
                 }}
             >
                 <div
-                    data-case-aside={project.longform ? "true" : undefined}
+                    data-case-aside="true"
                     style={{
                         position: "relative",
                         zIndex: 1,
                         pointerEvents: "auto",
-                        flex: project.longform ? "1 1 auto" : undefined,
-                        minHeight: project.longform ? 0 : undefined,
-                        overflowY: project.longform ? "auto" : "visible",
+                        flex: "none",
+                        minHeight: undefined,
+                        overflowY: "visible",
                     }}
                 >
                     <h1
                         style={{
-                            margin: "0 0 18px",
-                            fontFamily: displayFamily,
-                            fontSize: project.longform
-                                ? "clamp(32px, 3vw, 42px)"
-                                : "clamp(34px, 3.6vw, 52px)",
-                            fontWeight: 400,
-                            letterSpacing: "-0.01em",
-                            lineHeight: 1.05,
+                            margin: "0 0 12px",
+                            fontFamily: family,
+                            fontSize: 40,
+                            fontWeight: 700,
+                            letterSpacing: "-1.2px",
+                            lineHeight: 1.1,
                             color: ink,
                         }}
                     >
@@ -774,16 +925,23 @@ function DesktopCase({
                     {project.overview ? (
                         <p
                             style={{
-                                margin: project.longform ? "0 0 14px" : "0 0 28px",
+                                margin: "0 0 10px",
                                 fontFamily: family,
-                                fontSize: project.longform ? 14 : BODY_SIZE,
+                                fontSize: 15,
                                 fontWeight: 400,
-                                lineHeight: project.longform ? 1.45 : BODY_LH,
+                                lineHeight: 1.45,
                                 color: muted,
                                 maxWidth: 340,
                             }}
                         >
-                            {project.overview}
+                            {project.longform && project.overview.startsWith("92% of young Karachiites I surveyed") ? (
+                                <>
+                                    <span style={{ fontWeight: 600, color: ink }}>92% of young Karachiites I surveyed </span>
+                                    {project.overview.slice("92% of young Karachiites I surveyed".length)}
+                                </>
+                            ) : (
+                                project.overview
+                            )}
                         </p>
                     ) : null}
                     <MetaChips
@@ -792,61 +950,9 @@ function DesktopCase({
                         displayFamily={displayFamily}
                         muted={muted}
                         ink={ink}
-                        compact={project.longform}
+                        compact
                     />
                 </div>
-
-                <nav
-                    aria-label="Case sections"
-                    style={{
-                        position: "relative",
-                        zIndex: 1,
-                        pointerEvents: "auto",
-                        flex: "none",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: nav.length > 7 ? 4 : 10,
-                        paddingTop: nav.length > 7 ? 16 : 24,
-                    }}
-                >
-                    {nav.map((item) => {
-                        const active = item.id === activeSection
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => onNavigate(item.id)}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    background: "transparent",
-                                    border: "none",
-                                    padding: 0,
-                                    cursor: "pointer",
-                                    fontFamily: family,
-                                    fontSize: 14,
-                                    fontWeight: 400,
-                                    letterSpacing: "0",
-                                    color: active ? ink : LABEL,
-                                    textAlign: "left",
-                                }}
-                            >
-                                <span
-                                    aria-hidden
-                                    style={{
-                                        width: 6,
-                                        height: 6,
-                                        background: active ? ink : "transparent",
-                                        border: active ? "none" : `1px solid ${LABEL}`,
-                                        flex: "none",
-                                    }}
-                                />
-                                {item.label}
-                            </button>
-                        )
-                    })}
-                </nav>
             </aside>
 
             <div
@@ -854,23 +960,23 @@ function DesktopCase({
                 data-case-scroller="true"
                 style={{
                     position: "absolute",
-                    top: 0,
+                    top: 88,
                     right: 0,
                     bottom: 0,
-                    left: LEFT_COL,
+                    left: 340,
                     zIndex: 2,
                     overflowX: "hidden",
                     overflowY: "auto",
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
-                    padding: "88px 28px 80px 20px",
+                    padding: "20px 40px 56px 40px",
                     boxSizing: "border-box",
                     background: CREAM,
                     backgroundColor: CREAM,
                     display: "flex",
                     flexDirection: "column",
-                    gap: project.longform ? 28 : SECTION_GAP,
+                    gap: 0,
                 }}
             >
                 <CaseNarrative
@@ -908,9 +1014,6 @@ function DesktopCase({
 
 function MobileCase({
     project,
-    nav,
-    activeSection,
-    onNavigate,
     setSectionRef,
     related,
     basePath,
@@ -923,9 +1026,6 @@ function MobileCase({
     footer,
 }: {
     project: ProjectRecord
-    nav: CaseNavItem[]
-    activeSection: string
-    onNavigate: (id: string) => void
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     related: ProjectRecord[]
     basePath: string
@@ -942,19 +1042,19 @@ function MobileCase({
             style={{
                 position: "relative",
                 zIndex: 2,
-                padding: "140px 18px 48px",
+                padding: "140px 18px 140px",
                 boxSizing: "border-box",
                 background: CREAM,
             }}
         >
             <h1
                 style={{
-                    margin: "0 0 16px",
-                    fontFamily: displayFamily,
-                    fontSize: 36,
-                    fontWeight: 400,
-                    letterSpacing: "-0.01em",
-                    lineHeight: 1.05,
+                    margin: "0 0 12px",
+                    fontFamily: family,
+                    fontSize: 40,
+                    fontWeight: 700,
+                    letterSpacing: "-1.2px",
+                    lineHeight: 1.1,
                     color: ink,
                 }}
             >
@@ -963,15 +1063,22 @@ function MobileCase({
             {project.overview ? (
                 <p
                     style={{
-                        margin: "0 0 24px",
+                        margin: "0 0 10px",
                         fontFamily: family,
-                        fontSize: BODY_SIZE,
+                        fontSize: 15,
                         fontWeight: 400,
-                        lineHeight: BODY_LH,
+                        lineHeight: 1.45,
                         color: muted,
                     }}
                 >
-                    {project.overview}
+                    {project.longform && project.overview.startsWith("92% of young Karachiites I surveyed") ? (
+                        <>
+                            <span style={{ fontWeight: 600, color: ink }}>92% of young Karachiites I surveyed </span>
+                            {project.overview.slice("92% of young Karachiites I surveyed".length)}
+                        </>
+                    ) : (
+                        project.overview
+                    )}
                 </p>
             ) : null}
             <MetaChips
@@ -980,61 +1087,15 @@ function MobileCase({
                 displayFamily={displayFamily}
                 muted={muted}
                 ink={ink}
+                compact
             />
-
-            <nav
-                aria-label="Case sections"
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    margin: "28px 0 40px",
-                }}
-            >
-                {nav.map((item) => {
-                    const active = item.id === activeSection
-                    return (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => onNavigate(item.id)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                background: "transparent",
-                                border: "none",
-                                minHeight: 44,
-                                padding: "12px 0",
-                                cursor: "pointer",
-                                fontFamily: family,
-                                fontSize: 14,
-                                fontWeight: 400,
-                                color: active ? ink : LABEL,
-                                textAlign: "left",
-                            }}
-                        >
-                            <span
-                                aria-hidden
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    background: active ? ink : "transparent",
-                                    border: active ? "none" : `1px solid ${LABEL}`,
-                                    flex: "none",
-                                }}
-                            />
-                            {item.label}
-                        </button>
-                    )
-                })}
-            </nav>
 
             <div
                 style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: project.longform ? 28 : SECTION_GAP,
+                    gap: 0,
+                    marginTop: 36,
                 }}
             >
                 <CaseNarrative
@@ -1097,25 +1158,26 @@ function MetaChips({
     ink: string
     compact?: boolean
 }) {
+    const when = [project.year, project.timeline].filter(Boolean).join(" · ")
     const bits = [
-        project.year && { k: "Date", v: project.year },
-        project.timeline && { k: "Duration", v: project.timeline },
+        when && { k: "Date", v: when },
         project.role && { k: "Role", v: project.role },
         project.tools && { k: "Tools", v: project.tools },
         project.collaborators && { k: "Collaborators", v: project.collaborators },
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 8 : 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 12 : 16 }}>
             {bits.map((b) => (
                 <div key={b.k}>
                     <div
                         style={{
-                            fontFamily: displayFamily,
-                            fontSize: 18,
-                            fontWeight: 400,
-                            letterSpacing: "0",
-                            color: LABEL,
+                            fontFamily: compact ? family : displayFamily,
+                            fontSize: compact ? 12 : 18,
+                            fontWeight: compact ? 600 : 400,
+                            letterSpacing: compact ? "0.96px" : "0",
+                            textTransform: compact ? "uppercase" : "none",
+                            color: compact ? "#6A665D" : LABEL,
                             marginBottom: 4,
                             lineHeight: 1.2,
                         }}
@@ -1123,22 +1185,22 @@ function MetaChips({
                         {b.k}
                     </div>
                     {b.k === "Tools" ? (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: compact ? 4 : 6 }}>
                             {b.v
                                 .split(",")
                                 .map((part) => part.trim().replace(/^and\s+/i, ""))
-                                .filter(Boolean)
+                                .filter((part) => part && !/physical button panel/i.test(part))
                                 .map((part) => (
                                     <span
                                         key={part}
                                         style={{
                                             fontFamily: family,
-                                            fontSize: 12,
+                                            fontSize: compact ? 13 : 12,
                                             lineHeight: 1.3,
-                                            color: ink,
+                                            color: compact ? "#6A665D" : ink,
                                             border: "1px solid rgba(17,17,17,0.16)",
                                             borderRadius: 999,
-                                            padding: "5px 10px",
+                                            padding: compact ? "3px 8px" : "5px 10px",
                                         }}
                                     >
                                         {part}
@@ -1149,7 +1211,7 @@ function MetaChips({
                     <div
                         style={{
                             fontFamily: family,
-                            fontSize: compact ? 13 : 14,
+                            fontSize: compact ? 15 : 14,
                             fontWeight: 400,
                             lineHeight: compact ? 1.35 : 1.45,
                             color: ink,
@@ -1164,6 +1226,27 @@ function MetaChips({
     )
 }
 
+const STACK_INSET = 40
+const STACK_INSET_PHONE = 18
+
+function stackStyle(lead: boolean, phone: boolean): CSSProperties {
+    const inset = phone ? STACK_INSET_PHONE : STACK_INSET
+    return {
+        position: "relative",
+        zIndex: 2,
+        background: CREAM,
+        marginTop: lead ? 0 : phone ? -48 : -72,
+        marginLeft: -inset,
+        marginRight: -inset,
+        paddingTop: lead ? 0 : phone ? 28 : 40,
+        paddingBottom: phone ? 112 : 168,
+        paddingLeft: inset,
+        paddingRight: inset,
+        borderTop: lead ? "none" : `1px solid ${JOURNAL_LINE}`,
+        boxShadow: lead ? "none" : "0 -16px 28px rgba(28, 27, 24, 0.05)",
+    }
+}
+
 function CaseSection({
     id,
     setSectionRef,
@@ -1176,21 +1259,12 @@ function CaseSection({
     children: ReactNode
 }) {
     const motion = useContext(CaseMotion)
+    const phone = useMediaQuery(PHONE_MQ)
     return (
         <section
             ref={setSectionRef(id)}
             id={id}
-            style={
-                motion.cover
-                    ? {
-                          position: "relative",
-                          zIndex: 1,
-                          background: CREAM,
-                          marginTop: lead ? 0 : -72,
-                          paddingBottom: 96,
-                      }
-                    : undefined
-            }
+            style={motion.cover ? stackStyle(Boolean(lead), phone) : undefined}
         >
             <Parallax amount={motion.section} lift={motion.lift}>
                 <div
@@ -1246,11 +1320,12 @@ function CaseNarrative({
     const decisionBody = [p.decision1, p.decision2, p.decision3, p.decision4].filter(
         (d) => hasText(d),
     )
+    const phone = useMediaQuery(PHONE_MQ)
     const motion = {
-        lift: Boolean(p.longform),
-        section: p.longform ? 64 : 80,
+        lift: true,
+        section: 48,
         media: p.longform ? 110 : 64,
-        cover: Boolean(p.longform),
+        cover: true,
     }
     const showFinal = [
         p.finalImage1,
@@ -1488,20 +1563,29 @@ function CaseNarrative({
             )}
 
             {related.length > 0 && (
-                <section style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 8 }}>
+                <section
+                    style={{
+                        ...stackStyle(false, phone),
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                    }}
+                >
                     <p
                         style={{
                             margin: 0,
-                            fontFamily: displayFamily,
-                            fontSize: 22,
-                            fontWeight: 400,
-                            color: ink,
-                            lineHeight: 1.2,
+                            fontFamily: family,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: "0.96px",
+                            textTransform: "uppercase",
+                            color: JOURNAL_MUTED,
+                            lineHeight: 1.3,
                         }}
                     >
                         More work
                     </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div style={{ display: "flex", flexDirection: "column", borderTop: `1px solid ${JOURNAL_LINE}` }}>
                         {related.map((r) => (
                             <a
                                 key={r.slug}
@@ -1514,17 +1598,17 @@ function CaseNarrative({
                                     textDecoration: "none",
                                     color: ink,
                                     background: "transparent",
-                                    border: OUTLINE,
-                                    borderRadius: FRAME_RADIUS,
-                                    padding: "14px 16px",
+                                    borderBottom: `1px solid ${JOURNAL_LINE}`,
+                                    padding: "20px 4px",
                                 }}
                             >
                                 <span
                                     style={{
-                                        fontFamily: displayFamily,
+                                        fontFamily: family,
                                         fontSize: 24,
-                                        fontWeight: 400,
-                                        lineHeight: 1.15,
+                                        fontWeight: 600,
+                                        letterSpacing: "-0.36px",
+                                        lineHeight: 1.2,
                                     }}
                                 >
                                     {r.title}
@@ -1628,11 +1712,11 @@ function Parallax({
             const below = elMid - viewMid
             let shift = 0
             if (lift) {
-                // A chapter rises only once it is at the bottom edge, and
-                // only through the empty padding of the chapter above it.
+                // The next chapter lags while it is still low in the view,
+                // then catches the one above it so the sheets stack.
                 const entering = rect.top - viewTop
-                if (entering > viewH - 24) {
-                    shift = -Math.min(amount, (entering - (viewH - 24)) * 0.5)
+                if (entering > viewH * 0.42) {
+                    shift = Math.min(amount, (entering - viewH * 0.42) * 0.45)
                 }
             } else {
                 const progress = Math.max(0, Math.min(1, below / (viewH * 0.55)))
@@ -1813,11 +1897,11 @@ function SectionKicker({
             <div
                 style={{
                     fontFamily: displayFamily,
-                    fontSize: 40,
-                    fontWeight: 400,
-                    letterSpacing: "0",
-                    lineHeight: 1.05,
-                    color: ink,
+                    fontWeight: 600,
+                    fontSize: "clamp(36px, 4.2vw, 52px)",
+                    letterSpacing: "-1.56px",
+                    lineHeight: 1.1,
+                    color: "#1C1B18",
                 }}
             >
                 {kicker}
@@ -2272,16 +2356,15 @@ function ZineFlip({
     })
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-            <div style={{ position: "relative", width: "min(100%, 768px)", aspectRatio: "2276 / 1638", touchAction: "manipulation" }}>
+            <div style={{ position: "relative", width: "100%", aspectRatio: "2276 / 1638", touchAction: "manipulation" }}>
                 <div
                     style={{
                         position: "absolute",
                         inset: 0,
                         perspective: "2200px",
-                        border: OUTLINE,
-                        borderRadius: 4,
-                        background: CREAM,
-                        boxShadow: "0 12px 28px rgba(17,17,17,0.1)",
+                        border: "1px solid #DAD4C8",
+                        borderRadius: 14,
+                        background: "#FBF9F5",
                     }}
                 >
                     <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "50%", overflow: "hidden" }}>
@@ -2336,10 +2419,10 @@ function ZineFlip({
                 <button type="button" aria-disabled={shown === 0 || Boolean(turn)} {...press(-1)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1, cursor: shown === 0 || turn ? "default" : "pointer" }}>
                     Previous
                 </button>
-                <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 112, textAlign: "center" }}>
+                <span aria-live="polite" style={{ fontFamily: family, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: ink, minWidth: 64, textAlign: "center" }}>
                     {`${String(shown * 2 + 1).padStart(2, "0")}–${String(shown * 2 + 2).padStart(2, "0")}`}
                 </span>
-                <button type="button" aria-disabled={shown === last || Boolean(turn)} {...press(1)} style={{ ...pill, opacity: shown === last ? 0.35 : 1, cursor: shown === last || turn ? "default" : "pointer" }}>
+                <button type="button" aria-disabled={shown === last || Boolean(turn)} {...press(1)} style={{ ...pill, color: "#fff", background: accent, borderColor: accent, opacity: shown === last ? 0.35 : 1, cursor: shown === last || turn ? "default" : "pointer" }}>
                     Next
                 </button>
             </div>
@@ -2650,6 +2733,253 @@ function TierTable({
     )
 }
 
+const JOURNAL_LINE = "#DAD4C8"
+const JOURNAL_SURFACE = "#FBF9F5"
+const JOURNAL_MUTED = "#6A665D"
+const JOURNAL_RENEW = "#1E7A49"
+const JOURNAL_RENEW_SOFT = "#DDEFE3"
+const JOURNAL_HEAT = "#B3361D"
+const JOURNAL_HEAT_SOFT = "#F6E0D9"
+
+function JournalBlock({
+    id,
+    setSectionRef,
+    phone,
+    lead,
+    children,
+}: {
+    id: string
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    phone: boolean
+    lead?: boolean
+    children: ReactNode
+}) {
+    const motion = useContext(CaseMotion)
+    return (
+        <section
+            ref={setSectionRef(id)}
+            id={id}
+            style={stackStyle(Boolean(lead), phone)}
+        >
+            <Parallax amount={motion.section} lift={motion.lift}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: phone ? 24 : 36,
+                    }}
+                >
+                    {children}
+                </div>
+            </Parallax>
+        </section>
+    )
+}
+
+function JournalTitle({ family, children }: { family: string; children: ReactNode }) {
+    return (
+        <h2
+            style={{
+                margin: 0,
+                fontFamily: family,
+                fontWeight: 600,
+                fontSize: "clamp(36px, 4.2vw, 52px)",
+                lineHeight: 1.1,
+                letterSpacing: "-1.56px",
+                color: "#1C1B18",
+            }}
+        >
+            {children}
+        </h2>
+    )
+}
+
+function JournalLede({ family, children, quiet }: { family: string; children: ReactNode; quiet?: boolean }) {
+    return (
+        <p
+            style={{
+                margin: 0,
+                fontFamily: family,
+                fontWeight: 400,
+                fontSize: quiet ? 17 : 20,
+                lineHeight: quiet ? 1.55 : 1.5,
+                color: quiet ? JOURNAL_MUTED : "#1C1B18",
+            }}
+        >
+            {children}
+        </p>
+    )
+}
+
+function JournalCard({ children, pad }: { children: ReactNode; pad?: string }) {
+    return (
+        <div
+            style={{
+                background: JOURNAL_SURFACE,
+                border: `1px solid ${JOURNAL_LINE}`,
+                borderRadius: 14,
+                padding: pad || "24px",
+                minWidth: 0,
+            }}
+        >
+            {children}
+        </div>
+    )
+}
+
+function NaturalStill({ src, alt }: { src: string; alt: string }) {
+    if (!src) return null
+    return (
+        <img
+            src={src}
+            alt={alt}
+            style={{
+                display: "block",
+                width: "100%",
+                height: "auto",
+                borderRadius: 14,
+                border: `1px solid ${JOURNAL_LINE}`,
+                background: JOURNAL_SURFACE,
+            }}
+        />
+    )
+}
+
+function NaturalFilm({ src, label }: { src: string; label: string }) {
+    if (!src) return null
+    return (
+        <video
+            src={src}
+            aria-label={label}
+            muted
+            playsInline
+            loop
+            autoPlay
+            controls
+            preload="metadata"
+            style={{
+                display: "block",
+                width: "100%",
+                height: "auto",
+                borderRadius: 14,
+                background: "#111",
+            }}
+        />
+    )
+}
+
+function RoadScene({ on, heat }: { on: string[]; heat: number }) {
+    const has = (name: string) => on.includes(name)
+    const sky = heat > 0.62 ? "#F6C9A4" : heat < 0.4 ? "#B9D8E6" : "#D7E4D8"
+    const palms = has("Palm trees")
+    const forest = has("Urban reforestation")
+    const solar = has("Solar and wind")
+    const roofs = has("Rooftop gardens")
+    const gardens = has("Neighbourhood gardens")
+    const smart = has("Smart city policy")
+    const bus = has("Travel by bus")
+    const cars = has("Travel by car")
+    const ac = has("Central air conditioning")
+    const tree = (x: number, scale = 1) => (
+        <g key={`t-${x}`} transform={`translate(${x} 168)`}>
+            <rect x={-2 * scale} y={-28 * scale} width={4 * scale} height={28 * scale} rx={2} fill="#6B5344" />
+            <circle cy={-34 * scale} r={14 * scale} fill="#2F8A4A" />
+            <circle cx={10 * scale} cy={-28 * scale} r={10 * scale} fill="#3E9A5C" />
+        </g>
+    )
+    const palm = (x: number) => (
+        <g key={`p-${x}`} transform={`translate(${x} 182)`}>
+            <rect x="-2" y="-36" width="4" height="36" rx="2" fill="#C4A574" />
+            <ellipse cy="-38" rx="16" ry="4" fill="#3E9A5C" />
+            <ellipse cy="-44" rx="11" ry="4" fill="#2F8A4A" />
+            <ellipse cy="-42" rx="4" ry="10" fill="#2A7A45" />
+        </g>
+    )
+    return (
+        <svg viewBox="0 0 472 224" width="100%" role="img" aria-label="Shahra-e-Faisal, responding to the actions" style={{ display: "block", width: "100%", height: "auto" }}>
+            <rect width="472" height="224" rx="12" fill={sky} />
+            <rect width="472" height="224" fill="#F1B27C" opacity={0.08 + Math.max(0, heat - 0.45) * 0.85} />
+            <circle cx="404" cy="40" r={ac ? 24 : 18} fill={ac || heat > 0.6 ? "#F08A3C" : "#F6C56B"} />
+            <rect x="18" y={smart ? 118 : 90} width="70" height={smart ? 66 : 94} fill="#D9D2C3" />
+            <rect x="100" y={smart ? 96 : 48} width="82" height={smart ? 88 : 136} fill={forest ? "#D5E6D2" : "#C9C1B0"} />
+            <rect x="196" y="102" width="58" height="82" fill="#E2DCCF" />
+            <rect x="266" y={smart ? 108 : 66} width="76" height={smart ? 76 : 118} fill="#D9D2C3" />
+            <rect x="354" y="84" width="88" height="100" fill={forest ? "#D5E6D2" : "#C9C1B0"} />
+            {smart ? (
+                <g stroke="#8A8478" strokeWidth="1.6" fill="none">
+                    <path d="M100 96 H182 M112 78 V96 M170 70 V96" />
+                    <path d="M266 108 H342 M280 90 V108 M328 86 V108" />
+                </g>
+            ) : null}
+            {(solar || forest) && (
+                <g fill="#27468A">
+                    <rect x="24" y="84" width="26" height="5" rx="1" />
+                    <rect x="54" y="84" width="26" height="5" rx="1" />
+                    <rect x="204" y="96" width="40" height="5" rx="1" />
+                    {[96, 250, 340, 430].map((x) => (
+                        <g key={x}>
+                            <rect x={x} y="164" width="2" height="18" fill="#1C1B18" opacity="0.55" />
+                            <rect x={x - 6} y="158" width="14" height="6" rx="1" />
+                        </g>
+                    ))}
+                </g>
+            )}
+            {roofs && (
+                <g>
+                    {[
+                        [100, 44, 82],
+                        [266, 62, 76],
+                        [354, 80, 88],
+                    ].map(([x, y, w]) => (
+                        <g key={x}>
+                            <rect x={x} y={y} width={w} height="6" rx="2" fill="#3E9A5C" />
+                            <circle cx={x + 16} cy={y} r="5" fill="#2A7A45" />
+                            <circle cx={x + w / 2} cy={y} r="5" fill="#2A7A45" />
+                            <circle cx={x + w - 16} cy={y} r="5" fill="#2A7A45" />
+                        </g>
+                    ))}
+                </g>
+            )}
+            {gardens && (
+                <g fill="#3E9A5C">
+                    <rect x="28" y="118" width="16" height="8" rx="2" />
+                    <rect x="52" y="140" width="16" height="8" rx="2" />
+                    <rect x="210" y="128" width="16" height="8" rx="2" />
+                    <rect x="372" y="120" width="16" height="8" rx="2" />
+                    <rect x="400" y="146" width="16" height="8" rx="2" />
+                </g>
+            )}
+            {forest && (
+                <g>
+                    <path d="M300 150 l8 -18 h-4 l6 -12 h-20 l6 12 h-4 z" fill="#8FA3A8" />
+                    <rect x="306" y="150" width="3" height="22" fill="#8A8478" />
+                </g>
+            )}
+            {ac && (
+                <g fill="#F4F1EA" stroke="#8A8478" strokeWidth="1">
+                    <rect x="30" y="96" width="18" height="8" />
+                    <rect x="214" y="112" width="18" height="8" />
+                    <rect x="380" y="96" width="18" height="8" />
+                </g>
+            )}
+            <rect y="182" width="472" height="8" fill="#CFC8B8" />
+            <rect y="190" width="472" height="34" fill="#5A5852" />
+            <path d="M0 206 H472" stroke="#EDE8DC" strokeDasharray="12 10" strokeWidth="1.6" />
+            {(palms ? [70, 160, 250] : [70, 160, 250]).map((x) => (palms ? palm(x) : tree(x)))}
+            {forest && [40, 210, 390].map((x) => tree(x, 0.85))}
+            {bus && <rect x="300" y="168" width="54" height="20" rx="4" fill="#2C6BE0" />}
+            {cars && (
+                <g>
+                    <rect x="40" y="172" width="36" height="16" rx="4" fill="#B3361D" />
+                    <rect x="120" y="174" width="32" height="14" rx="4" fill="#8E2E1C" />
+                    <ellipse cx="58" cy="166" rx="10" ry="4" fill="#D9D2C3" opacity="0.7" />
+                </g>
+            )}
+            {!cars && !bus && <rect x="180" y="174" width="28" height="12" rx="3" fill="#E7E1D6" opacity="0.8" />}
+        </svg>
+    )
+}
+
 function SoorajSections({
     project,
     setSectionRef,
@@ -2676,364 +3006,510 @@ function SoorajSections({
     const futures = pic("experience")
     const roomFilm = pic("experience", true)
     const website = pic("beyond")
-    const statRow = (items: StatItem[]) => (
-        <div
+    const [method, setMethod] = useState(0)
+    const [step, setStep] = useState(2)
+    const [pressed, setPressed] = useState<string[]>([])
+    const [touch, setTouch] = useState(0)
+    const [openDecision, setOpenDecision] = useState<number | null>(0)
+    void displayFamily
+
+    const catalog = SOORAJ_UI.tiers.flatMap((group) => [
+        ...group.renewal.map((action) => ({ ...action, tone: "cool" as const, role: group.role })),
+        ...group.collapse.map((action) => ({ ...action, tone: "heat" as const, role: group.role })),
+    ])
+    const on = catalog.filter((action) => pressed.includes(action.name))
+    const numbered = on.map((action) => deltaNumber(action.delta)).filter((n): n is number => n != null)
+    const sum = numbered.reduce((total, n) => total + n, 0)
+    const coolWords = on.filter((action) => deltaNumber(action.delta) == null && action.tone === "cool").length
+    const heatWords = on.filter((action) => deltaNumber(action.delta) == null && action.tone === "heat").length
+    const gaugeScore = sum + coolWords * -2 + heatWords * 2
+    const heat = Math.max(0, Math.min(1, (gaugeScore + 12) / 24))
+    const hasCool = on.some((action) => action.tone === "cool")
+    const hasHeat = on.some((action) => action.tone === "heat")
+    const mixed = hasCool && hasHeat
+    const figure = numbered.length
+        ? formatRoad(sum)
+        : coolWords && !heatWords
+          ? "Cools"
+          : heatWords && !coolWords
+            ? "Heats"
+            : on.length
+              ? "Mixed"
+              : "0°C"
+    const figureColor = !on.length ? ink : mixed ? ink : hasCool ? JOURNAL_RENEW : JOURNAL_HEAT
+    const verdict = !on.length ? "The road is still" : mixed ? "A mixed future" : hasCool ? "A cooler road" : "A hotter road"
+    const verdictCopy = !on.length
+        ? "Press an action. The road, the scale and the note respond."
+        : mixed
+          ? `${on.length} ${on.length === 1 ? "action" : "actions"} pressed. Cooling and heating are pulling against each other.`
+          : hasCool
+            ? "The cooling actions are winning."
+            : "The heating actions are winning."
+    const dialogues = SOORAJ_UI.notes.filter((note) =>
+        note.title.startsWith("Palms") ? pressed.includes("Palm trees") : pressed.includes("Smart city policy"),
+    )
+    const toggle = (name: string) =>
+        setPressed((cur) => (cur.includes(name) ? cur.filter((item) => item !== name) : [...cur, name]))
+
+    const methodFigures = ["65", "", "32", "2", "5"]
+    const steps = SOORAJ_UI.approach
+    const touchpoints = [
+        { title: "Zine", body: "A printed guide to the real action behind each button, plus a manifesto kit.", image: "" },
+        { title: "Website", body: "Future's Archive, a newsroom from 2120 that switches between collapse and renewal.", image: website?.src || "" },
+        {
+            title: "Instagram",
+            body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.",
+            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/instagram.jpg",
+        },
+    ]
+    const pill = (label: string, active: boolean, onClick: () => void) => (
+        <button
+            type="button"
+            onClick={onClick}
             style={{
-                display: "grid",
-                gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))",
-                gap: 12,
+                fontFamily: family,
+                fontSize: 15,
+                fontWeight: 500,
+                lineHeight: 1.3,
+                color: active ? "#F3EFE8" : ink,
+                background: active ? ink : "transparent",
+                border: active ? `1.5px solid ${ink}` : `1.5px solid ${JOURNAL_LINE}`,
+                borderRadius: 99,
+                padding: "8px 16px",
+                cursor: "pointer",
             }}
         >
-            {items.map((item) => (
-                <div
-                    key={item.caption}
-                    style={{
-                        background: "transparent",
-                        border: OUTLINE,
-                        borderRadius: FRAME_RADIUS,
-                        padding: "16px 16px 18px",
-                        minWidth: 0,
-                    }}
-                >
-                <StatBlock
-                    key={item.caption}
-                    value={item.value}
-                    caption={item.caption}
-                    family={family}
-                    displayFamily={displayFamily}
-                    ink={ink}
-                />
-                </div>
-            ))}
-        </div>
+            {label}
+        </button>
     )
+
     return (
         <>
-            <CaseSection id="overview" lead setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Overview" displayFamily={displayFamily} ink={ink} />
-                <BodyCopy family={family}>
-                    Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions. The actions sit across three roles: government, community and individual. Every press shifts the road toward one of two futures in the year 2120, a future of collapse or a future of renewal.
-                </BodyCopy>
-                <BodyCopy family={family}>
+            <JournalBlock id="overview" setSectionRef={setSectionRef} phone={phone} lead>
+                <JournalTitle family={family}>Overview</JournalTitle>
+                <JournalLede family={family}>
+                    Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions across three roles: government, community and individual. Every press shifts the road toward one of two futures in 2120, collapse or renewal.
+                </JournalLede>
+                <JournalLede family={family} quiet>
                     The project started with a question. If every headline says we are doomed, what does that belief do to how we act today? Nine months of research later, it became an immersive experience, a future-news website, a take-home zine and an online community, all designed to turn climate dread into agency.
-                </BodyCopy>
-                <ProcessStrip
-                    steps={SOORAJ_UI.process}
-                    family={family}
-                    displayFamily={displayFamily}
-                    ink={ink}
-                    accent={accent}
-                />
-                <VideoFrame src={project.storyVideo || ""} accent={accent} label="Case study film" />
-            </CaseSection>
-
-            <CaseSection id="challenge" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Challenge" displayFamily={displayFamily} ink={ink} />
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
-                        </p>
-                    </div>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
-                        </p>
-                    </div>
-                </div>
-                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-end", margin: "-8px 0", paddingRight: phone ? 0 : "22%" }}>
-                    <svg width="168" height="64" viewBox="0 0 168 64" fill="none" aria-hidden>
-                        <defs>
-                            <marker id="sooraj-arrow-a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                                <path d="M1.5 1.5 L10 6 L1.5 10.5" fill="none" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </marker>
-                        </defs>
-                        <path d="M148 8 C 132 22, 78 28, 28 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" markerEnd="url(#sooraj-arrow-a)" />
-                    </svg>
-                </div>
-                <PullQuote
-                    quote={"“I'm leaving the country before it kills me.”"}
-                    displayFamily={displayFamily}
-                    ink={ink}
-                />
-                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-start", margin: "-8px 0", paddingLeft: phone ? 0 : "6%" }}>
-                    <svg width="168" height="64" viewBox="0 0 168 64" fill="none" aria-hidden>
-                        <defs>
-                            <marker id="sooraj-arrow-b" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
-                                <path d="M1.5 1.5 L10 6 L1.5 10.5" fill="none" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </marker>
-                        </defs>
-                        <path d="M20 8 C 36 22, 90 28, 140 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" markerEnd="url(#sooraj-arrow-b)" />
-                    </svg>
-                </div>
-                <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: phone ? "20px 18px" : "28px 32px" }}>
-                    <p style={{ margin: 0, maxWidth: 720 }}>
-                        <span style={{ display: "block", fontFamily: displayFamily, fontSize: phone ? 36 : 48, lineHeight: 1.05, color: accent, marginBottom: 10 }}>
-                            How might we
-                        </span>
-                        <span style={{ display: "block", fontFamily: family, fontSize: phone ? 18 : 22, fontWeight: 500, lineHeight: 1.4, color: ink }}>
-                            let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
-                        </span>
-                    </p>
-                </div>
-            </CaseSection>
-
-            <CaseSection id="research" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Research" displayFamily={displayFamily} ink={ink} />
-                <BodyCopy family={family}>
-                    Six months of mixed-method research shaped every decision in the build. I designed and ran each stream myself, then brought it together on one FigJam board.
-                </BodyCopy>
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))",
-                        gap: phone ? "20px 16px" : "8px 28px",
-                    }}
-                >
-                    {SOORAJ_UI.stats.map((item) => (
-                        <StatBlock
-                            key={item.caption}
-                            value={item.value}
-                            caption={item.caption}
-                            family={family}
-                            displayFamily={displayFamily}
-                            ink={ink}
-                        />
+                </JournalLede>
+                <div style={{ display: "flex", position: "relative", paddingTop: 8 }}>
+                    <div style={{ position: "absolute", left: "8%", right: "8%", top: 15, height: 2, background: JOURNAL_LINE }} />
+                    {[
+                        ["Question", "If it's doomed, why act?"],
+                        ["Research", "Surveys, workshops, interviews"],
+                        ["Pivot", "TouchDesigner prototype"],
+                        ["Karachi build", "Shahra-e-Faisal in Unity"],
+                        ["Public installation", "Exhibited at IVSAA"],
+                    ].map(([title, detail]) => (
+                        <div key={title} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 10, textAlign: "center", position: "relative" }}>
+                            <i style={{ width: 16, height: 16, borderRadius: 99, background: CREAM, border: `2px solid ${JOURNAL_LINE}`, display: "block" }} />
+                            <b style={{ fontFamily: family, fontSize: 15, fontWeight: 600, lineHeight: 1.4 }}>{title}</b>
+                            <span style={{ fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{detail}</span>
+                        </div>
                     ))}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                    <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: ink }}>Methods</div>
-                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", columnGap: 40, rowGap: 22 }}>
-                        {SOORAJ_UI.methods.map((card) => (
-                            <div key={card.title}>
-                                <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>{card.title}</div>
-                                <p style={{ margin: "6px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>{card.body}</p>
-                            </div>
+                <NaturalFilm src={project.storyVideo || ""} label="Case study film" />
+            </JournalBlock>
+
+            <JournalBlock id="challenge" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Challenge</JournalTitle>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
+                    <JournalCard>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55 }}>
+                            Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
+                        </p>
+                    </JournalCard>
+                    <JournalCard>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55 }}>
+                            Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
+                        </p>
+                    </JournalCard>
+                </div>
+                <p style={{ margin: 0, maxWidth: 620, fontFamily: family, fontSize: phone ? 28 : 34, fontWeight: 500, lineHeight: 1.25, letterSpacing: "-0.68px" }}>
+                    “I'm leaving the country before it kills me.”
+                </p>
+                <div style={{ background: accent, color: "#fff", borderRadius: 20, padding: phone ? "28px 22px" : "48px", display: "flex", flexDirection: "column", gap: 12 }}>
+                    <p style={{ margin: 0, fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", opacity: 0.75 }}>How might we</p>
+                    <p style={{ margin: 0, maxWidth: 760, fontFamily: family, fontSize: phone ? 26 : 34, fontWeight: 500, lineHeight: 1.25, letterSpacing: "-0.68px" }}>
+                        let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
+                    </p>
+                </div>
+            </JournalBlock>
+
+            <JournalBlock id="research" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Research</JournalTitle>
+                <JournalLede family={family}>
+                    Six months of mixed-method research shaped every decision in the build. I designed and ran each stream myself, then brought it together on one FigJam board.
+                </JournalLede>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))", gap: 16 }}>
+                    {SOORAJ_UI.stats.map((item) => (
+                        <div key={item.caption} style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: "22px 22px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+                            <b style={{ fontFamily: family, fontSize: phone ? 48 : 72, fontWeight: 600, lineHeight: 1, letterSpacing: "-2.88px" }}>{item.value}</b>
+                            {item.value === "92%" ? (
+                                <div style={{ height: 6, borderRadius: 3, background: JOURNAL_LINE, position: "relative" }}>
+                                    <i style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "92%", borderRadius: 3, background: accent }} />
+                                </div>
+                            ) : null}
+                            <span style={{ fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{item.caption}</span>
+                        </div>
+                    ))}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                    <h3 style={{ margin: 0, fontFamily: family, fontSize: 24, fontWeight: 600, letterSpacing: "-0.36px", lineHeight: 1.2 }}>Methods</h3>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                        {SOORAJ_UI.methods.map((item, index) => (
+                            <span key={item.title}>{pill(item.title, method === index, () => setMethod(index))}</span>
                         ))}
                     </div>
+                    <div style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: phone ? 20 : 32, display: "flex", gap: 32, alignItems: "center", flexWrap: "wrap" }}>
+                        {methodFigures[method] ? (
+                            <b style={{ fontFamily: family, fontSize: 72, fontWeight: 600, lineHeight: 1, letterSpacing: "-2.88px" }}>{methodFigures[method]}</b>
+                        ) : null}
+                        <p style={{ margin: 0, flex: "1 1 240px", fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>{SOORAJ_UI.methods[method].body}</p>
+                    </div>
                 </div>
-                {researchImg ? <MediaFrame src={researchImg.src} accent={accent} label={researchImg.label || "Research board"} tall /> : null}
+                <NaturalStill src={researchImg?.src || ""} alt={researchImg?.label || "Research board"} />
                 <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-                    <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent }}>Findings</div>
-                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: phone ? 18 : 28 }}>
+                    <h3 style={{ margin: 0, fontFamily: family, fontSize: 24, fontWeight: 600, letterSpacing: "-0.36px" }}>Findings</h3>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 32 }}>
                         {[
                             "For the West, climate change is a near future. We are going through it.",
                             "People need to see how bad things can get.",
                         ].map((quote) => (
-                            <blockquote key={quote} style={{ margin: 0 }}>
-                                <p style={{ margin: 0, fontFamily: displayFamily, fontSize: 28, lineHeight: 1.2, color: ink }}>
-                                    {`“${quote}”`}
-                                </p>
-                            </blockquote>
+                            <p key={quote} style={{ margin: 0, fontFamily: family, fontSize: 22, fontWeight: 500, lineHeight: 1.25, letterSpacing: "-0.22px" }}>{`“${quote}”`}</p>
                         ))}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", columnGap: 40, rowGap: 26 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
                         {SOORAJ_UI.findings.map((card) => (
-                            <div key={card.title}>
-                                <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1.15, color: ink }}>{card.title}</div>
-                                <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>{card.body}</p>
-                            </div>
+                            <JournalCard key={card.title}>
+                                <b style={{ display: "block", fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25 }}>{card.title}</b>
+                                <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{card.body}</p>
+                            </JournalCard>
                         ))}
                     </div>
                 </div>
-                <BodyCopy family={family}>
+                <JournalLede family={family} quiet>
                     Asphalt, waste heat, lost vegetation and glass towers drive the heat. The cooling that fits this city is green corridors, neighbourhood gardens and urban reforestation. Across the precedents, almost no hopeful future is set in Pakistan.
-                </BodyCopy>
-            </CaseSection>
+                </JournalLede>
+            </JournalBlock>
 
-            <CaseSection id="approach" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Approach" displayFamily={displayFamily} ink={ink} />
-                <ProcessStrip
-                    steps={SOORAJ_UI.approach}
-                    family={family}
-                    displayFamily={displayFamily}
-                    ink={ink}
-                    accent={accent}
-                />
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Goals</div>
-                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            Make a hopeful Karachi feel physically real. Give visitors agency over the outcome. Teach which actions cool a city, and which only look green. Leave a next step they can take that week.
-                        </p>
-                    </div>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Constraints</div>
-                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds. Research took six months, the installation six weeks, branding four weeks, the website a week, and the zine a week.
-                        </p>
-                    </div>
-                </div>
-                {architecture ? <MediaFrame src={architecture.src} accent={accent} label={architecture.label || "Project architecture"} tall /> : null}
-            </CaseSection>
-
-            <CaseSection id="system" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="System" displayFamily={displayFamily} ink={ink} />
-                <BodyCopy family={family}>
-                    Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.
-                </BodyCopy>
-                <BodyCopy family={family}>
-                    I split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.
-                </BodyCopy>
-                <TierTable
-                    groups={SOORAJ_UI.tiers}
-                    notes={SOORAJ_UI.notes}
-                    legend="Press an action to put it on the road. Renewal cools, collapse heats, and the figure is the change for each press."
-                    family={family}
-                    ink={ink}
-                    accent={accent}
-                />
-            </CaseSection>
-
-            <CaseSection id="experience" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Experience" displayFamily={displayFamily} ink={ink} />
-                {room ? <MediaFrame src={room.src} accent={accent} label={room.label || "The room"} tall /> : null}
-                <ProcessStrip
-                    steps={SOORAJ_UI.flow}
-                    family={family}
-                    displayFamily={displayFamily}
-                    ink={ink}
-                    accent={accent}
-                />
-                <BodyCopy family={family}>
-                    Using the Futures Wheel and the Experiential Futures Ladder, I built two versions of Shahra-e-Faisal. Collapse is toxic air, cracked asphalt and a permanent heat fog. Renewal is 30% green cover, rooftop gardens, walkable streets, wind and solar.
-                </BodyCopy>
-                <CardGrid
-                    columns={3}
-                    family={family}
-                    ink={ink}
-                    cards={[
-                        {
-                            title: "Two futures",
-                            body: "One road in 2120, pulled between renewal and collapse.",
-                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/split.jpg",
-                        },
-                        {
-                            title: "Collapse",
-                            body: "Toxic air, cracked asphalt and a permanent heat fog.",
-                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/collapse.jpg",
-                        },
-                        {
-                            title: "Renewal",
-                            body: "30% green cover, rooftop gardens, walkable streets, wind and solar.",
-                            image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/renewal.jpg",
-                        },
-                    ]}
-                />
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
-                        </p>
-                    </div>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            Every press answered through the glowing button, a message, a line rooted in real life, a sound, and a temperature that climbed or fell. Visitors could end in a mixed future, because that is closer to how real change happens.
-                        </p>
-                    </div>
-                </div>
-                {roomFilm ? <VideoFrame src={roomFilm.src} accent={accent} label={roomFilm.label || "Room mockup"} /> : null}
-            </CaseSection>
-
-            <CaseSection id="beyond" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Beyond the room" displayFamily={displayFamily} ink={ink} />
-                <BodyCopy family={family}>
-                    An installation lasts an afternoon. I designed three touchpoints so the idea kept working after people left.
-                </BodyCopy>
-                <CardGrid
-                    columns={3}
-                    family={family}
-                    ink={ink}
-                    displayFamily={displayFamily}
-                    plates
-                    cards={[
-                        { title: "Zine", body: "A printed guide to the real action behind each button, plus a manifesto kit.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/zine.jpg" },
-                        { title: "Website", body: "Future's Archive, a newsroom from 2120 that switches between collapse and renewal.", image: website?.src || "" },
-                        { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/instagram.jpg" },
-                    ].map((card) => ({ ...card, image: card.image || undefined }))}
-                />
-                <ZineFlip family={family} displayFamily={displayFamily} ink={ink} accent={accent} />
-            </CaseSection>
-
-            <CaseSection id="decisions" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Decisions" displayFamily={displayFamily} ink={ink} />
-                <div>
-                    {SOORAJ_UI.decisions.map((item, i) => (
-                        <DecisionRow
-                            key={item.title}
-                            index={i + 1}
-                            title={item.title}
-                            parts={item.parts}
-                            family={family}
-                            displayFamily={displayFamily}
-                            ink={ink}
-                            accent={accent}
-                        />
-                    ))}
-                </div>
-            </CaseSection>
-
-            <CaseSection id="outcome" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Outcome" displayFamily={displayFamily} ink={ink} />
-                {statRow(SOORAJ_UI.outcomeStats)}
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
-                        </p>
-                    </div>
-                    <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
-                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
-                            A research-led, locally rooted experience can move young people from "Karachi is doomed" to "here is what would change it". The same method can travel to any city facing extreme heat.
-                        </p>
-                    </div>
-                </div>
-                {futures ? <MediaFrame src={futures.src} accent={accent} label="Two futures" tall /> : null}
-            </CaseSection>
-
-            <CaseSection id="reflection" setSectionRef={setSectionRef}>
-                <SectionKicker kicker="Reflection" displayFamily={displayFamily} ink={ink} />
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: phone ? "1fr" : "1fr 1fr 1fr",
-                        gap: 28,
-                    }}
-                >
-                    {SOORAJ_UI.reflections.map((item) => (
-                        <div
-                            key={item.title}
-                            style={{
-                                display: "flex",
-                                flexDirection: "column",
-                                gap: 10,
-                                minWidth: 0,
-                                textAlign: "left",
-                                background: "transparent",
-                                border: OUTLINE,
-                                borderRadius: FRAME_RADIUS,
-                                padding: "16px 16px 18px",
-                                color: ink,
-                            }}
-                        >
-                            <div
+            <JournalBlock id="approach" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Approach</JournalTitle>
+                <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(6, minmax(0, 1fr))", gap: 8 }}>
+                        {steps.map((item, index) => (
+                            <button
+                                key={item.label}
+                                type="button"
+                                onClick={() => setStep(index)}
                                 style={{
-                                    fontFamily: displayFamily,
-                                    fontSize: 28,
-                                    fontWeight: 400,
-                                    lineHeight: 1.15,
-                                    color: ink,
+                                    textAlign: "left",
+                                    background: "none",
+                                    border: 0,
+                                    borderTop: `3px solid ${index === step ? accent : index < step ? "#E3E9FA" : JOURNAL_LINE}`,
+                                    padding: "14px 8px 0 0",
+                                    cursor: "pointer",
+                                    fontFamily: family,
                                 }}
                             >
-                                {item.title}
+                                <span style={{ display: "block", fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", color: JOURNAL_MUTED }}>{String(index + 1).padStart(2, "0")}</span>
+                                <span style={{ display: "block", marginTop: 2, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: index === step ? ink : JOURNAL_MUTED }}>{item.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <div style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: phone ? 20 : 28 }}>
+                        <p style={{ margin: 0, maxWidth: 640, fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>{steps[step].detail}</p>
+                    </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
+                    <JournalCard>
+                        <b style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px" }}>Goals</b>
+                        <ul style={{ margin: "8px 0 0", paddingLeft: 18, fontFamily: family, fontSize: 15, lineHeight: 1.45 }}>
+                            <li>Make a hopeful Karachi feel physically real.</li>
+                            <li>Give visitors agency over the outcome.</li>
+                            <li>Teach which actions cool a city, and which only look green.</li>
+                            <li>Leave a next step they can take that week.</li>
+                        </ul>
+                    </JournalCard>
+                    <JournalCard>
+                        <b style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px" }}>Constraints</b>
+                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>
+                            One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds.
+                        </p>
+                    </JournalCard>
+                </div>
+                <div>
+                    <p style={{ margin: "0 0 12px", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: JOURNAL_MUTED }}>Where the time went</p>
+                    <div style={{ display: "flex", gap: 3 }}>
+                        <span style={{ flex: 26, height: 44, borderRadius: 6, background: accent, color: "#fff", display: "flex", alignItems: "center", padding: "0 12px", fontFamily: family, fontSize: 15, whiteSpace: "nowrap" }}>Research · 6 months</span>
+                        <span style={{ flex: 6, height: 44, borderRadius: 6, background: "#E3E9FA", display: "flex", alignItems: "center", padding: "0 12px", fontFamily: family, fontSize: 15, whiteSpace: "nowrap" }}>Installation · 6 wk</span>
+                        <span style={{ flex: 4, height: 44, borderRadius: 6, background: "#E3E9FA", display: "flex", alignItems: "center", padding: "0 12px", fontFamily: family, fontSize: 15, whiteSpace: "nowrap" }}>Brand · 4 wk</span>
+                        <span style={{ flex: 1, height: 44, borderRadius: 6, background: "#E3E9FA" }} />
+                        <span style={{ flex: 1, height: 44, borderRadius: 6, background: "#E3E9FA" }} />
+                    </div>
+                    <p style={{ margin: "12px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>Research 6 months · Installation 6 weeks · Branding 4 weeks · Website 1 week · Zine 1 week</p>
+                </div>
+                <NaturalStill src={architecture?.src || ""} alt={architecture?.label || "Project architecture"} />
+            </JournalBlock>
+
+            <JournalBlock id="system" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>System</JournalTitle>
+                <JournalLede family={family}>
+                    Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.
+                </JournalLede>
+                <JournalLede family={family} quiet>
+                    I split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.
+                </JournalLede>
+                <div style={{ display: "flex", flexDirection: phone ? "column" : "row", gap: 28, alignItems: "flex-start" }}>
+                    <div style={{ flex: phone ? "none" : "0 0 46%", width: phone ? "100%" : undefined, background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 20, padding: 14, display: "flex", flexDirection: "column", gap: 14 }}>
+                        <div style={{ borderRadius: 12, overflow: "hidden" }}>
+                            <RoadScene on={pressed} heat={heat} />
+                        </div>
+                        <div style={{ display: "flex", gap: 18, alignItems: "center", padding: "0 8px" }}>
+                            <p style={{ margin: 0, fontFamily: family, fontSize: phone ? 56 : 72, fontWeight: 600, lineHeight: 0.95, letterSpacing: "-3px", color: figureColor }}>{figure}</p>
+                            <div>
+                                <b style={{ display: "block", fontFamily: family, fontSize: 24, fontWeight: 600, letterSpacing: "-0.36px", lineHeight: 1.2 }}>{verdict}</b>
+                                <p style={{ margin: "6px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{verdictCopy}</p>
                             </div>
-                            <p style={{ margin: 0, fontFamily: family, fontSize: 16, lineHeight: 1.6, color: BODY_INK }}>
-                                {item.body}
-                            </p>
+                        </div>
+                        <div style={{ position: "relative", height: 22, margin: "0 8px" }}>
+                            <div style={{ position: "absolute", left: 0, right: 0, top: 8, height: 6, borderRadius: 3, background: "linear-gradient(90deg, #1E7A49, #E7C15A, #B3361D)" }} />
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    top: 2,
+                                    width: 18,
+                                    height: 18,
+                                    borderRadius: 99,
+                                    background: JOURNAL_SURFACE,
+                                    border: "2px solid #1C1B18",
+                                    left: `calc(${heat * 100}% - 9px)`,
+                                    transition: "left 0.25s ease",
+                                }}
+                            />
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", padding: "0 8px", fontFamily: family, fontSize: 15, color: JOURNAL_MUTED }}>
+                            <span>Renewal</span><span>2120</span><span>Collapse</span>
+                        </div>
+                        {dialogues.map((note) => (
+                            <div key={note.title} style={{ background: JOURNAL_HEAT_SOFT, borderRadius: 12, padding: "14px 16px" }}>
+                                <b style={{ display: "block", fontFamily: family, fontSize: 15, fontWeight: 600, lineHeight: 1.4, color: JOURNAL_HEAT }}>{note.title}</b>
+                                <p style={{ margin: "2px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45 }}>{note.body}</p>
+                            </div>
+                        ))}
+                    </div>
+                    <div style={{ flex: "1 1 auto", width: phone ? "100%" : undefined, minWidth: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                            <p style={{ margin: 0, flex: 1, fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>Role based actions</p>
+                            <button
+                                type="button"
+                                disabled={!on.length}
+                                onClick={() => setPressed([])}
+                                style={{
+                                    fontFamily: family,
+                                    fontSize: 15,
+                                    fontWeight: 500,
+                                    lineHeight: 1.3,
+                                    color: on.length ? "#fff" : "#8A8478",
+                                    background: on.length ? accent : "#E6E0D4",
+                                    border: "none",
+                                    borderRadius: 99,
+                                    padding: "8px 18px",
+                                    cursor: on.length ? "pointer" : "default",
+                                }}
+                            >
+                                Reset road
+                            </button>
+                        </div>
+                        {SOORAJ_UI.tiers.map((group) => (
+                            <div key={group.role}>
+                                <p style={{ margin: "8px 0", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: JOURNAL_MUTED }}>{group.role}</p>
+                                <div className="sooraj-role-grid">
+                                    {[...group.renewal.map((action) => ({ ...action, tone: "cool" as const })), ...group.collapse.map((action) => ({ ...action, tone: "heat" as const }))].map((action) => {
+                                        const active = pressed.includes(action.name)
+                                        const tone = action.tone === "cool" ? JOURNAL_RENEW : JOURNAL_HEAT
+                                        return (
+                                            <button
+                                                key={action.name}
+                                                type="button"
+                                                aria-pressed={active}
+                                                onClick={() => toggle(action.name)}
+                                                style={{
+                                                    fontFamily: family,
+                                                    textAlign: "left",
+                                                    cursor: "pointer",
+                                                    color: ink,
+                                                    background: active ? (action.tone === "cool" ? JOURNAL_RENEW_SOFT : JOURNAL_HEAT_SOFT) : JOURNAL_SURFACE,
+                                                    border: `1.5px solid ${active ? tone : JOURNAL_LINE}`,
+                                                    borderRadius: 14,
+                                                    padding: "14px 14px 12px",
+                                                }}
+                                            >
+                                                <span style={{ display: "block" }}>
+                                                    <b style={{ display: "block", fontSize: 15, fontWeight: 600, lineHeight: 1.35 }}>{action.name}</b>
+                                                    <span style={{ display: "block", marginTop: 4, fontSize: 15, fontWeight: 400, lineHeight: 1.45, color: JOURNAL_MUTED }}>{action.detail}</span>
+                                                </span>
+                                                <em style={{ marginTop: 14, fontStyle: "normal", fontSize: 15, fontWeight: 500, lineHeight: 1.3, color: tone, border: `1.5px solid ${tone}`, borderRadius: 99, padding: "3px 11px" }}>{action.delta}</em>
+                                            </button>
+                                        )
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                <style>
+                    {`.sooraj-role-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:stretch}.sooraj-role-grid>button{height:100%;min-height:188px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start}@media (max-width:809.98px){.sooraj-role-grid{grid-template-columns:1fr}.sooraj-role-grid>button{min-height:0}}`}
+                </style>
+            </JournalBlock>
+
+            <JournalBlock id="experience" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Experience</JournalTitle>
+                <NaturalStill src={room?.src || ""} alt={room?.label || "The room"} />
+                <NaturalFilm src={roomFilm?.src || ""} label={roomFilm?.label || "Room mockup"} />
+                <div style={{ display: "flex", gap: 10, alignItems: "stretch", flexDirection: phone ? "column" : "row" }}>
+                    {SOORAJ_UI.flow.map((item, index) => (
+                        <div key={item.label} style={{ display: "contents" }}>
+                            <div style={{ flex: 1, borderRadius: 14, border: `1.5px solid ${index === 0 ? accent : JOURNAL_LINE}`, background: index === 0 ? "#E3E9FA" : JOURNAL_SURFACE, padding: 18 }}>
+                                <span style={{ display: "block", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", color: JOURNAL_MUTED }}>{String(index + 1).padStart(2, "0")}</span>
+                                <b style={{ display: "block", marginTop: 2, fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px" }}>{item.label}</b>
+                                <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{item.detail}</p>
+                            </div>
+                            {index < SOORAJ_UI.flow.length - 1 && !phone ? <span style={{ alignSelf: "center", fontFamily: family, fontSize: 24, color: JOURNAL_MUTED }}>→</span> : null}
                         </div>
                     ))}
                 </div>
-            </CaseSection>
+                <JournalLede family={family}>
+                    Using the Futures Wheel and the Experiential Futures Ladder, I built two versions of Shahra-e-Faisal. Collapse is toxic air, cracked asphalt and a permanent heat fog. Renewal is 30% green cover, rooftop gardens, walkable streets, wind and solar.
+                </JournalLede>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr 1fr", gap: 16 }}>
+                    {[
+                        ["Two futures", "One road in 2120, pulled between renewal and collapse.", "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/split.jpg", ink],
+                        ["Collapse", "Toxic air, cracked asphalt and a permanent heat fog.", "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/collapse.jpg", JOURNAL_HEAT],
+                        ["Renewal", "30% green cover, rooftop gardens, walkable streets, wind and solar.", "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@408031853393997955fd80b3b058d3439be054e2/framer/case/sooraj/renewal.jpg", JOURNAL_RENEW],
+                    ].map(([title, body, src, color]) => (
+                        <div key={title} style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                            <img src={src} alt={title} style={{ display: "block", width: "100%", height: "auto", borderRadius: 14 }} />
+                            <div style={{ padding: "8px 8px 8px" }}>
+                                <b style={{ display: "block", fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", color }}>{title}</b>
+                                <p style={{ margin: "6px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{body}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
+                    <JournalCard>
+                        <b style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px" }}>Why I threw the prototype away</b>
+                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>
+                            The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
+                        </p>
+                    </JournalCard>
+                    <JournalCard>
+                        <b style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px" }}>Every press answers five ways</b>
+                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>
+                            Visitors could end in a mixed future, because that is closer to how real change happens.
+                        </p>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
+                            {["Glowing button", "A message", "A line rooted in real life", "A sound", "A temperature"].map((chip) => (
+                                <span key={chip} style={{ background: "#E3E9FA", borderRadius: 99, padding: "6px 14px", fontFamily: family, fontSize: 15, lineHeight: 1.45 }}>{chip}</span>
+                            ))}
+                        </div>
+                    </JournalCard>
+                </div>
+            </JournalBlock>
+
+            <JournalBlock id="beyond" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Beyond the room</JournalTitle>
+                <JournalLede family={family}>
+                    An installation lasts an afternoon. I designed three touchpoints so the idea kept working after people left.
+                </JournalLede>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {touchpoints.map((item, index) => (
+                        <span key={item.title}>{pill(item.title, touch === index, () => setTouch(index))}</span>
+                    ))}
+                </div>
+                <div style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: phone ? 16 : 28, display: "grid", gridTemplateColumns: phone || touch !== 0 ? "1fr" : "0.8fr 1.2fr", gap: 28, alignItems: "center" }}>
+                    <div>
+                        <h3 style={{ margin: 0, fontFamily: family, fontSize: 24, fontWeight: 600, letterSpacing: "-0.36px" }}>{touchpoints[touch].title}</h3>
+                        <p style={{ margin: "10px 0 0", fontFamily: family, fontSize: 20, lineHeight: 1.5, color: JOURNAL_MUTED }}>{touchpoints[touch].body}</p>
+                    </div>
+                    {touch === 0 ? (
+                        <ZineFlip family={family} displayFamily={family} ink={ink} accent={accent} />
+                    ) : (
+                        <NaturalStill src={touchpoints[touch].image || ""} alt={touchpoints[touch].title} />
+                    )}
+                </div>
+            </JournalBlock>
+
+            <JournalBlock id="decisions" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Decisions</JournalTitle>
+                <div style={{ borderTop: `1px solid ${JOURNAL_LINE}` }}>
+                    {SOORAJ_UI.decisions.map((item, index) => {
+                        const open = openDecision === index
+                        return (
+                            <article key={item.title} style={{ borderBottom: `1px solid ${JOURNAL_LINE}` }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setOpenDecision(open ? null : index)}
+                                    style={{ width: "100%", display: "flex", gap: 16, alignItems: "center", padding: "22px 4px", background: "none", border: 0, cursor: "pointer", textAlign: "left", fontFamily: family }}
+                                >
+                                    <span style={{ width: 56, fontSize: 30, fontWeight: 300, lineHeight: 1.1, letterSpacing: "-0.6px", color: JOURNAL_MUTED }}>{String(index + 1).padStart(2, "0")}</span>
+                                    <b style={{ flex: 1, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25 }}>{item.title}</b>
+                                    <span style={{ width: 32, height: 32, borderRadius: 99, display: "grid", placeItems: "center", fontSize: 18, background: open ? ink : "transparent", color: open ? "#F3EFE8" : ink, border: open ? "none" : `1.5px solid ${JOURNAL_LINE}` }}>{open ? "−" : "+"}</span>
+                                </button>
+                                {open ? (
+                                    <div style={{ padding: "0 4px 26px 76px" }}>
+                                        {item.parts.map((part) => (
+                                            <div key={part.label} style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "110px 1fr", gap: phone ? 4 : 20, padding: "14px 0", borderTop: part.label === "Decision" ? "none" : `1px solid ${JOURNAL_LINE}` }}>
+                                                <small style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: JOURNAL_MUTED }}>{part.label}</small>
+                                                <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55, color: part.label === "Trade-off" ? JOURNAL_HEAT : ink }}>{part.text}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+                            </article>
+                        )
+                    })}
+                </div>
+            </JournalBlock>
+
+            <JournalBlock id="outcome" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Outcome</JournalTitle>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))", gap: 16 }}>
+                    {SOORAJ_UI.outcomeStats.map((item) => (
+                        <div key={item.caption} style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: "22px 22px 20px", display: "flex", flexDirection: "column", gap: 10 }}>
+                            <b style={{ fontFamily: family, fontSize: phone ? 48 : 72, fontWeight: 600, lineHeight: 1, letterSpacing: "-2.88px" }}>{item.value}</b>
+                            <span style={{ fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{item.caption}</span>
+                        </div>
+                    ))}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
+                    <JournalCard>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55 }}>
+                            Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
+                        </p>
+                    </JournalCard>
+                    <JournalCard>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55 }}>
+                            A research-led, locally rooted experience can move young people from “Karachi is doomed” to “here is what would change it”. The same method can travel to any city facing extreme heat.
+                        </p>
+                    </JournalCard>
+                </div>
+                <NaturalStill src={futures?.src || ""} alt="Two futures" />
+            </JournalBlock>
+
+            <JournalBlock id="reflection" setSectionRef={setSectionRef} phone={phone}>
+                <JournalTitle family={family}>Reflection</JournalTitle>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr 1fr", gap: 16 }}>
+                    {SOORAJ_UI.reflections.map((item) => (
+                        <JournalCard key={item.title}>
+                            <b style={{ display: "block", fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25 }}>{item.title}</b>
+                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.45, color: JOURNAL_MUTED }}>{item.body}</p>
+                        </JournalCard>
+                    ))}
+                </div>
+            </JournalBlock>
         </>
     )
 }
@@ -3093,12 +3569,12 @@ function StoryBlock({
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
             <div
                 style={{
-                    fontFamily: displayFamily,
-                    fontSize: 40,
-                    fontWeight: 400,
-                    letterSpacing: "0",
-                    lineHeight: 1.05,
-                    color: ink,
+                    fontFamily: family,
+                    fontWeight: 600,
+                    fontSize: "clamp(36px, 4.2vw, 52px)",
+                    letterSpacing: "-1.56px",
+                    lineHeight: 1.1,
+                    color: "#1C1B18",
                 }}
             >
                 {kicker}
@@ -3114,12 +3590,12 @@ function StoryBlock({
                     return (
                         <div key={piece.key} style={{ display: "flex", flexDirection: "column", gap: block.subhead && block.text ? 6 : 0 }}>
                             {block.subhead ? (
-                                <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                <div style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25, color: ink }}>
                                     {block.subhead}
                                 </div>
                             ) : null}
                             {block.text ? (
-                                <p style={{ margin: 0, fontFamily: family, fontSize: BODY_SIZE, lineHeight: BODY_LH, color: BODY_INK }}>
+                                <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55, color: "#1C1B18" }}>
                                     {linkify(block.text)}
                                 </p>
                             ) : null}
@@ -3143,18 +3619,18 @@ function StoryBlock({
                                     flexDirection: "column",
                                     gap: 8,
                                     textAlign: "left",
-                                    background: "transparent",
-                                    border: OUTLINE,
-                                    borderRadius: FRAME_RADIUS,
-                                    padding: "16px 16px 18px",
+                                    background: JOURNAL_SURFACE,
+                                    border: `1px solid ${JOURNAL_LINE}`,
+                                    borderRadius: 14,
+                                    padding: "24px",
                                     minWidth: 0,
                                 }}
                             >
-                                <span style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                <span style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25, color: ink }}>
                                     {item.subhead}
                                 </span>
                                 {item.text ? (
-                                    <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.55, color: BODY_INK }}>
+                                    <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.45, color: JOURNAL_MUTED }}>
                                         {linkify(item.text)}
                                     </span>
                                 ) : null}
@@ -3514,8 +3990,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         contained = false,
         style,
     } = props
-    const family =
-        props.font?.fontFamily || props.bodyFont?.fontFamily || SANS
+    const family = SANS
     const scaleMul = Math.max(
         0.7,
         Math.min(1.4, Number(deskScale ?? objectScale) || 1),
@@ -3548,7 +4023,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
         >
             <style>{FOOTER_JIGGLE_CSS}</style>
             <link
-                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
             <div
@@ -3835,7 +4310,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         role: "Project Lead, Design Researcher and Experience Designer, undergraduate thesis at IVSAA",
         year: "2025",
         timeline: "9 months, from research to a public installation",
-        tools: "Participatory futures workshops, surveys, expert interviews, Futures Wheel, XF Ladder, LOOPY, Unity 3D, SketchUp, TouchDesigner, Figma, FigJam, and a physical button panel with projection",
+        tools: "Participatory futures workshops, surveys, expert interviews, Futures Wheel, XF Ladder, LOOPY, Unity 3D, SketchUp, TouchDesigner, Figma, FigJam",
         collaborators: "Nabeel Ashraf, 3D modelling. Umair Abbas, Unity development. Advisor: Fatin Nawaz.",
         overview: "92% of young Karachiites I surveyed believe their city's climate future is bleak. I led a year-long research and design project that let them press a button, watch Shahra-e-Faisal heat up or heal by 2120, and leave knowing which actions actually matter.",
         context: "Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions. The actions sit across three roles: government, community and individual. Every press shifts the road toward one of two futures in the year 2120, a future of collapse or a future of renewal.\n\nThe project started with a question. If every headline says we are doomed, what does that belief do to how we act today? Nine months of research later, it became an immersive experience, a future-news website, a take-home zine and an online community, all designed to turn climate dread into agency.",
