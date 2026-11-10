@@ -1,0 +1,1452 @@
+import {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type CSSProperties,
+    type MutableRefObject,
+    type RefObject,
+} from "react"
+import {
+    addPropertyControls,
+    ControlType,
+    RenderTarget,
+    useIsStaticRenderer,
+} from "framer"
+
+const SANS =
+    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+const CREAM = "#F3EFE6"
+const INK = "#111111"
+const MUTED = "#555555"
+const PHONE_MQ = "(max-width: 809.98px)"
+const VISUAL_RADIUS = 12
+const ACCENT = "#2C6BE0"
+const LAPTOP_ZOOM_KEY = "__nabiaLaptopZoom"
+const LEFT_COL = "max(220px, 26vw)"
+const GRID_BG =
+    "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
+/** Whisper-soft desk grid — same art as home/archive, barely there. */
+const GRID_OPACITY_DEFAULT = 0.028
+
+export interface WorkProject {
+    title: string
+    subtitle: string
+    description: string
+    slug: string
+    year: string
+    accent: string
+    coverUrl?: string
+    videoUrl?: string
+    moreCoverUrl?: string
+    moreVideoUrl?: string
+    href?: string
+}
+
+interface WorkIndexProps {
+    intro: string
+    sectionLabel: string
+    ctaLabel: string
+    archiveLabel: string
+    archiveLink: string
+    items: WorkProject[]
+    accent: string
+    cream: string
+    ink: string
+    muted: string
+    gridOpacity: number
+    font?: { fontFamily?: string }
+    displayFont?: { fontFamily?: string }
+    backLink: string
+    projectBasePath: string
+    style?: CSSProperties
+}
+
+function resolveLink(value: unknown, fallback = ""): string {
+    if (value == null || value === "") return fallback
+    if (typeof value === "string") {
+        const s = value.trim()
+        return s || fallback
+    }
+    if (typeof value === "object" && value && "href" in (value as object)) {
+        const h = String((value as { href?: unknown }).href || "").trim()
+        return h || fallback
+    }
+    return fallback
+}
+
+function useMediaQuery(query: string) {
+    const [matches, setMatches] = useState(false)
+    useEffect(() => {
+        if (typeof window === "undefined") return
+        const mq = window.matchMedia(query)
+        const sync = () => setMatches(mq.matches)
+        sync()
+        mq.addEventListener?.("change", sync)
+        window.addEventListener("resize", sync)
+        return () => {
+            mq.removeEventListener?.("change", sync)
+            window.removeEventListener("resize", sync)
+        }
+    }, [query])
+    return matches
+}
+
+function normalizeProjects(
+    items: WorkProject[] | undefined,
+    accent: string,
+    basePath: string,
+): WorkProject[] {
+    const normalized = (items || [])
+        .map((it: any, index: number) => {
+            const rawSlug =
+                String(it?.slug || "").replace(/^\//, "") || `project-${index + 1}`
+            const slug =
+                rawSlug === "chutney-studios"
+                    ? "voice-ai"
+                    : rawSlug === "fintech-app"
+                      ? "sooraj-nagar"
+                      : rawSlug
+            const custom = resolveLink(it?.href || it?.link, "")
+            const fallback =
+                DEFAULT_ITEMS.find((d) => d.slug === slug) ||
+                DEFAULT_ITEMS[index % DEFAULT_ITEMS.length]
+            const title = String(it?.title || fallback?.title || "Untitled")
+            const description = String(
+                it?.description || it?.overview || "",
+            ).trim()
+            const matchedDefault =
+                DEFAULT_ITEMS.find(
+                    (d) =>
+                        d.slug === slug ||
+                        d.title.toLowerCase() === title.toLowerCase(),
+                ) || null
+            // Prefer DEFAULT_ITEMS (synced from Framer Projects CMS) for known slugs
+            // so canvas instance props can't keep stale titles/copy.
+            return {
+                title: matchedDefault?.title || title,
+                subtitle: String(
+                    matchedDefault?.subtitle || it?.subtitle || "",
+                ),
+                description:
+                    matchedDefault?.description ||
+                    description ||
+                    "",
+                slug,
+                year: String(matchedDefault?.year || it?.year || ""),
+                accent:
+                    rawSlug === "chutney-studios"
+                        ? "#44586A"
+                        : String(it?.accent || accent || ACCENT),
+                coverUrl:
+                    rawSlug === "chutney-studios"
+                        ? matchedDefault?.coverUrl || ""
+                        : matchedDefault?.coverUrl ||
+                          (it?.coverUrl ? String(it.coverUrl) : ""),
+                videoUrl:
+                    rawSlug === "chutney-studios"
+                        ? matchedDefault?.videoUrl || ""
+                        : matchedDefault
+                          ? matchedDefault.videoUrl || ""
+                          : (it?.videoUrl ? String(it.videoUrl) : "") ||
+                            fallback?.videoUrl ||
+                            "",
+                moreCoverUrl: matchedDefault?.moreCoverUrl || "",
+                moreVideoUrl: matchedDefault?.moreVideoUrl || "",
+                href:
+                    rawSlug === "chutney-studios" || slug === "voice-ai"
+                        ? `${basePath}/chutney-studios`
+                        : slug === "sooraj-nagar"
+                          ? `${basePath}/sooraj-nagar`
+                          : custom || `${basePath}/${slug}`,
+            } satisfies WorkProject
+        })
+        .filter((it) => it.title)
+
+    const workOrder = ["sooraj-nagar", "voice-ai", "health-platform", "travel-app"]
+    normalized.sort((a, b) => {
+        const ai = workOrder.indexOf(a.slug)
+        const bi = workOrder.indexOf(b.slug)
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi)
+    })
+
+    if (normalized.length) return normalized
+    return DEFAULT_ITEMS.map((it) => ({
+        ...it,
+        href: `${basePath}/${it.slug}`,
+    }))
+}
+
+/**
+ * Work Index — scroll-driven project browser.
+ * Desktop: sticky left typography + right visual scroll on solid OUR offwhite
+ * (#F3EFE6, same as home — no pure white stage).
+ * Mobile: natural vertical project sequence on the same offwhite.
+ *
+ * @framerIntrinsicWidth 1200
+ * @framerIntrinsicHeight 900
+ * @framerSupportedLayoutWidth any-prefer-fixed
+ * @framerSupportedLayoutHeight any-prefer-fixed
+ */
+export default function WorkIndex(props: WorkIndexProps) {
+    const {
+        items = DEFAULT_ITEMS,
+        sectionLabel = "Selected work",
+        ctaLabel = "View case study",
+        accent = ACCENT,
+        cream = CREAM,
+        ink = INK,
+        muted = MUTED,
+        gridOpacity = GRID_OPACITY_DEFAULT,
+        backLink = "/",
+        projectBasePath = "/work",
+    } = props
+    const family = props.font?.fontFamily || SANS
+    const isStatic = useIsStaticRenderer()
+    const isPhone = useMediaQuery(PHONE_MQ)
+    const backHref = resolveLink(backLink, "/")
+    const basePath =
+        resolveLink(projectBasePath, "/work").replace(/\/$/, "") || "/work"
+    const gridAlpha = Math.max(
+        0,
+        Math.min(0.045, Number(gridOpacity) || GRID_OPACITY_DEFAULT),
+    )
+
+    const list = useMemo(
+        () => normalizeProjects(items, accent, basePath),
+        [items, accent, basePath],
+    )
+
+    const [activeIndex, setActiveIndex] = useState(0)
+    const [dims, setDims] = useState<number[]>(() =>
+        list.map((_, i) => (i === 0 ? 0 : 1)),
+    )
+    const [reveal, setReveal] = useState<"idle" | "from" | "to">("idle")
+    const scrollerRef = useRef<HTMLDivElement>(null)
+    const slideRefs = useRef<(HTMLElement | null)[]>([])
+    const activeRef = useRef(0)
+    const dimsRef = useRef<number[]>(dims)
+
+    useEffect(() => {
+        const next = list.map((_, i) => (i === 0 ? 0 : 1))
+        dimsRef.current = next
+        setDims(next)
+        activeRef.current = 0
+        setActiveIndex(0)
+    }, [list.length])
+
+    // Laptop zoom settle
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+        try {
+            document.getElementById("nabia-laptop-zoom")?.remove()
+        } catch (_) {}
+
+        let fromZoom = false
+        try {
+            fromZoom = sessionStorage.getItem(LAPTOP_ZOOM_KEY) === "1"
+            sessionStorage.removeItem(LAPTOP_ZOOM_KEY)
+        } catch (_) {}
+        if (!fromZoom) return
+        if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+            return
+        }
+
+        setReveal("from")
+        let toId = 0
+        const fromId = window.setTimeout(() => {
+            setReveal("to")
+            toId = window.setTimeout(() => setReveal("idle"), 700)
+        }, 30)
+        return () => {
+            window.clearTimeout(fromId)
+            window.clearTimeout(toId)
+        }
+    }, [isStatic])
+
+    // Desktop: lock the page; ONLY the right visual column scrolls (native overflow).
+    // Mobile: natural document scroll.
+    useEffect(() => {
+        if (typeof document === "undefined" || isStatic) return
+        document
+            .querySelectorAll("[data-nabia-work-lock], [data-nabia-work-scroll]")
+            .forEach((n) => n.remove())
+
+        const html = document.documentElement
+        const body = document.body
+        const prev = {
+            htmlOverflow: html.style.overflow,
+            bodyOverflow: body.style.overflow,
+            htmlHeight: html.style.height,
+            bodyHeight: body.style.height,
+        }
+
+        const style = document.createElement("style")
+        if (isPhone) {
+            html.style.overflow = ""
+            body.style.overflow = ""
+            html.style.height = ""
+            body.style.height = ""
+            style.setAttribute("data-nabia-work-scroll", "true")
+            style.textContent = `
+              html, body {
+                overflow-x: clip;
+                overflow-y: auto !important;
+                height: auto !important;
+                max-height: none !important;
+              }
+              html, body, #nabia-work-index {
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
+              }
+              #nabia-work-index {
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+              }
+              /* Hide Framer page-level grid duplicates — we paint our own soft grid */
+              [data-framer-name="Grid"],
+              [data-framer-name="grid"] {
+                opacity: 0 !important;
+                visibility: hidden !important;
+              }
+              @keyframes nabia-work-fade {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `
+        } else {
+            html.style.overflow = "hidden"
+            body.style.overflow = "hidden"
+            html.style.height = "100%"
+            body.style.height = "100%"
+            window.scrollTo(0, 0)
+            style.setAttribute("data-nabia-work-lock", "true")
+            style.textContent = `
+              html, body {
+                overflow: hidden !important;
+                height: 100% !important;
+                overscroll-behavior: none !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
+              }
+              body > div, #main, [data-framer-root], [data-framer-page-container] {
+                overflow: hidden !important;
+                max-height: 100vh !important;
+                height: 100% !important;
+              }
+              #nabia-work-index {
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100vw !important;
+                height: 100vh !important;
+                max-height: 100vh !important;
+                overflow: hidden !important;
+                background: #F3EFE6 !important;
+                background-color: #F3EFE6 !important;
+              }
+              /* Left + right sit over cream + soft grid (no opaque cream wash) */
+              [data-work-info-col] {
+                background: transparent !important;
+                background-color: transparent !important;
+              }
+              [data-nabia-cream-strip] {
+                position: fixed !important;
+                inset: 0 !important;
+                width: 100vw !important;
+                background: #F3EFE6 !important;
+                z-index: 1 !important;
+                pointer-events: none !important;
+              }
+              [data-work-scroller] {
+                -webkit-overflow-scrolling: touch;
+                overscroll-behavior-y: contain;
+                scrollbar-width: none;
+                background: transparent !important;
+                background-color: transparent !important;
+              }
+              [data-work-scroller]::-webkit-scrollbar { width: 0; height: 0; display: none; }
+              @keyframes nabia-work-fade {
+                from { opacity: 0; transform: translateY(6px); }
+                to { opacity: 1; transform: translateY(0); }
+              }
+            `
+
+            // Body-level cream strip so off-white always sits behind typography
+            document.querySelectorAll("[data-nabia-cream-strip]").forEach((n) => n.remove())
+            const strip = document.createElement("div")
+            strip.setAttribute("data-nabia-cream-strip", "true")
+            strip.setAttribute("aria-hidden", "true")
+            document.body.appendChild(strip)
+        }
+        document.head.appendChild(style)
+
+        return () => {
+            style.remove()
+            document.querySelectorAll("[data-nabia-cream-strip]").forEach((n) => n.remove())
+            html.style.overflow = prev.htmlOverflow
+            body.style.overflow = prev.bodyOverflow
+            html.style.height = prev.htmlHeight
+            body.style.height = prev.bodyHeight
+        }
+    }, [isStatic, isPhone])
+
+    // Desktop wheel: never fight the right scroller's native momentum.
+    // When the pointer is over the left panel / chrome, forward delta into the scroller.
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic || isPhone) return
+        const onWheel = (e: WheelEvent) => {
+            const el = scrollerRef.current
+            if (!el) return
+            const target = e.target as Node | null
+            // Over the scroller → let the browser handle it (smooth / inertial)
+            if (target && el.contains(target)) return
+            // Elsewhere (left copy, back pill, empty chrome) → drive the scroller
+            e.preventDefault()
+            el.scrollTop += e.deltaY
+        }
+        window.addEventListener("wheel", onWheel, { passive: false })
+        return () => window.removeEventListener("wheel", onWheel)
+    }, [isStatic, isPhone])
+
+    // Scroll-driven active project + continuous dim for white overlays
+    useEffect(() => {
+        if (typeof window === "undefined" || isStatic) return
+
+        const pickActive = () => {
+            const nodes = slideRefs.current.filter(Boolean) as HTMLElement[]
+            if (!nodes.length) return
+
+            const root = isPhone ? null : scrollerRef.current
+            const viewTop = root ? root.getBoundingClientRect().top : 0
+            const viewH = root ? root.clientHeight : window.innerHeight
+            const center = viewTop + viewH * 0.42
+            const nextDims = nodes.map(() => 1)
+            let best = 0
+            let bestDist = Infinity
+
+            nodes.forEach((node, i) => {
+                const r = node.getBoundingClientRect()
+                const mid = r.top + r.height / 2
+                const dist = Math.abs(mid - center)
+                if (dist < bestDist) {
+                    bestDist = dist
+                    const project = Number(node.dataset.project)
+                    best = Number.isFinite(project) ? project : i
+                }
+                const t = Math.min(
+                    1,
+                    Math.max(0, (dist - viewH * 0.08) / (viewH * 0.38)),
+                )
+                nextDims[i] = t
+            })
+
+            const prev = dimsRef.current
+            let changed = prev.length !== nextDims.length
+            if (!changed) {
+                for (let i = 0; i < nextDims.length; i++) {
+                    if (Math.abs((prev[i] || 0) - nextDims[i]) > 0.02) {
+                        changed = true
+                        break
+                    }
+                }
+            }
+            if (changed) {
+                dimsRef.current = nextDims
+                setDims(nextDims)
+            }
+
+            if (best !== activeRef.current) {
+                activeRef.current = best
+                setActiveIndex(best)
+            }
+        }
+
+        let raf = 0
+        const onScroll = () => {
+            cancelAnimationFrame(raf)
+            raf = requestAnimationFrame(pickActive)
+        }
+
+        pickActive()
+        const root = scrollerRef.current
+        if (!isPhone && root) {
+            root.addEventListener("scroll", onScroll, { passive: true })
+        }
+        window.addEventListener("scroll", onScroll, { passive: true })
+        window.addEventListener("resize", onScroll)
+        return () => {
+            cancelAnimationFrame(raf)
+            root?.removeEventListener("scroll", onScroll)
+            window.removeEventListener("scroll", onScroll)
+            window.removeEventListener("resize", onScroll)
+        }
+    }, [isStatic, isPhone, list.length])
+
+    if (RenderTarget.current() === RenderTarget.thumbnail) {
+        return (
+            <div
+                style={{
+                    width: "100%",
+                    height: "100%",
+                    background: CREAM,
+                    padding: 16,
+                    fontFamily: SANS,
+                    color: INK,
+                }}
+            >
+                <div style={{ fontSize: 22, fontWeight: 600 }}>work</div>
+            </div>
+        )
+    }
+
+    const framerStyle = { ...(props.style || {}) } as CSSProperties
+    delete framerStyle.width
+    delete framerStyle.height
+    delete framerStyle.minWidth
+    delete framerStyle.minHeight
+    delete framerStyle.maxWidth
+    delete framerStyle.maxHeight
+
+    const revealScale = reveal === "from" ? 1.04 : 1
+    const revealOpacity = reveal === "from" ? 0.88 : 1
+    const active = list[Math.min(activeIndex, list.length - 1)] || list[0]
+
+    const leftW = "max(220px, 26vw)"
+    const shellStyle: CSSProperties = {
+        ...framerStyle,
+        position: isStatic || isPhone ? "relative" : "fixed",
+        inset: isStatic || isPhone ? undefined : 0,
+        width: isStatic || isPhone ? "100%" : "100vw",
+        height: isStatic || isPhone ? undefined : "100vh",
+        minHeight: isPhone || isStatic ? "100vh" : undefined,
+        maxWidth: "100vw",
+        maxHeight: isStatic || isPhone ? undefined : "100vh",
+        minWidth: 0,
+        zIndex: isStatic ? undefined : 2,
+        // Solid OUR offwhite behind the whole Work stage (type + frames)
+        background: CREAM,
+        backgroundColor: CREAM,
+        color: ink,
+        fontFamily: family,
+        boxSizing: "border-box",
+        overflow: isPhone ? "visible" : "hidden",
+        ...(reveal !== "idle"
+            ? {
+                  transform: `scale(${revealScale})`,
+                  transformOrigin: "center center",
+                  opacity: revealOpacity,
+                  transition:
+                      reveal === "from"
+                          ? "none"
+                          : "transform 0.7s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.45s ease",
+              }
+            : {
+                  transform: "none",
+                  opacity: 1,
+              }),
+    }
+
+    return (
+        <div id="nabia-work-index" style={shellStyle}>
+            <link
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                rel="stylesheet"
+            />
+
+            <SoftDeskGrid opacity={gridAlpha} />
+
+            <DeskBack
+                href={backHref}
+                label="Back"
+                ariaLabel="Back to home"
+                accent={accent}
+            />
+
+            {isPhone ? (
+                <MobileSequence
+                    list={list}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    sectionLabel={sectionLabel}
+                    ctaLabel={ctaLabel}
+                    slideRefs={slideRefs}
+                    activeIndex={activeIndex}
+                />
+            ) : (
+                <DesktopBrowser
+                    list={list}
+                    active={active}
+                    activeIndex={activeIndex}
+                    dims={dims}
+                    accent={accent}
+                    ink={ink}
+                    muted={muted}
+                    cream={cream}
+                    family={family}
+                    sectionLabel={sectionLabel}
+                    ctaLabel={ctaLabel}
+                    scrollerRef={scrollerRef}
+                    slideRefs={slideRefs}
+                />
+            )}
+        </div>
+    )
+}
+
+/** Same desk grid art as home / archive — whisper opacity over OUR cream. */
+function SoftDeskGrid({ opacity }: { opacity: number }) {
+    if (opacity <= 0) return null
+    return (
+        <div
+            aria-hidden
+            data-nabia-work-grid="true"
+            style={{
+                position: "absolute",
+                inset: 0,
+                zIndex: 1,
+                pointerEvents: "none",
+                backgroundImage: `url(${GRID_BG})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                opacity,
+                filter: "grayscale(1) brightness(1.05) contrast(0.92)",
+            }}
+        />
+    )
+}
+
+function framesOf(item: WorkProject): WorkProject[] {
+    if (!item.moreVideoUrl) return [item]
+    return [
+        item,
+        {
+            ...item,
+            videoUrl: item.moreVideoUrl,
+            coverUrl: item.moreCoverUrl,
+        },
+    ]
+}
+
+function workSlides(list: WorkProject[]) {
+    return list.flatMap((item, projectIndex) =>
+        framesOf(item).map((frame) => ({ item: frame, projectIndex })),
+    )
+}
+
+function DesktopBrowser({
+    list,
+    active,
+    activeIndex,
+    dims,
+    accent,
+    ink,
+    muted,
+    cream,
+    family,
+    sectionLabel,
+    ctaLabel,
+    scrollerRef,
+    slideRefs,
+}: {
+    list: WorkProject[]
+    active: WorkProject
+    activeIndex: number
+    dims: number[]
+    accent: string
+    ink: string
+    muted: string
+    cream: string
+    family: string
+    sectionLabel: string
+    ctaLabel: string
+    scrollerRef: RefObject<HTMLDivElement | null>
+    slideRefs: MutableRefObject<(HTMLElement | null)[]>
+}) {
+    return (
+        <div
+            style={{
+                position: "relative",
+                zIndex: 2,
+                width: "100%",
+                height: "100%",
+                boxSizing: "border-box",
+            }}
+        >
+            {/* Left typography — transparent so soft desk grid reads through */}
+            <aside
+                data-work-info-col="true"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    bottom: 0,
+                    zIndex: 3,
+                    width: "max(220px, 26vw)",
+                    display: "flex",
+                    flexDirection: "column",
+                    padding: "108px 2.5vw 48px 3.5vw",
+                    boxSizing: "border-box",
+                    overflow: "hidden",
+                    backgroundColor: "transparent",
+                    background: "transparent",
+                    pointerEvents: "none",
+                }}
+            >
+                <div
+                    key={`top-${active.slug}`}
+                    style={{
+                        position: "relative",
+                        zIndex: 1,
+                        pointerEvents: "auto",
+                        animation:
+                            "nabia-work-fade 0.7s cubic-bezier(0.16, 1, 0.3, 1) both",
+                    }}
+                >
+                    <span
+                        style={{
+                            display: "inline-block",
+                            padding: "6px 12px",
+                            background: accent,
+                            color: "#fff",
+                            fontFamily: family,
+                            fontSize: 11,
+                            fontWeight: 600,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            borderRadius: 4,
+                            marginBottom: 20,
+                        }}
+                    >
+                        {sectionLabel}
+                    </span>
+
+                    <h1
+                        style={{
+                            margin: "0 0 16px",
+                            fontFamily: family,
+                            fontSize: "clamp(26px, 3.2vw, 48px)",
+                            fontWeight: 700,
+                            letterSpacing: "-0.045em",
+                            lineHeight: 0.98,
+                            textTransform: "uppercase",
+                            color: ink,
+                        }}
+                    >
+                        {active.title}
+                    </h1>
+
+                    {(active.subtitle || active.year) && (
+                        <p
+                            style={{
+                                margin: 0,
+                                fontFamily: family,
+                                fontSize: 12,
+                                fontWeight: 500,
+                                letterSpacing: "0.05em",
+                                textTransform: "uppercase",
+                                color: muted,
+                            }}
+                        >
+                            {[active.subtitle, active.year]
+                                .filter(Boolean)
+                                .join(" · ")}
+                        </p>
+                    )}
+                </div>
+
+                <div
+                    key={`bot-${active.slug}`}
+                    style={{
+                        position: "relative",
+                        zIndex: 1,
+                        pointerEvents: "auto",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 24,
+                        marginTop: "auto",
+                        paddingBottom: 28,
+                        animation:
+                            "nabia-work-fade 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both",
+                    }}
+                >
+                    {active.description ? (
+                        <p
+                            style={{
+                                margin: 0,
+                                maxWidth: 320,
+                                fontFamily: family,
+                                fontSize: 15,
+                                fontWeight: 400,
+                                lineHeight: 1.55,
+                                color: ink,
+                            }}
+                        >
+                            {active.description}
+                        </p>
+                    ) : null}
+
+                    <a
+                        href={active.href}
+                        style={{
+                            alignSelf: "flex-start",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "12px 22px",
+                            background: accent,
+                            color: "#fff",
+                            textDecoration: "none",
+                            fontFamily: family,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            letterSpacing: "-0.02em",
+                            textTransform: "uppercase",
+                            borderRadius: 999,
+                            border: `1.5px solid ${accent}`,
+                        }}
+                    >
+                        {ctaLabel}
+                        <span aria-hidden>→</span>
+                    </a>
+                </div>
+            </aside>
+
+            {/* Right visual scroller — native overflow over OUR offwhite stage */}
+            <div
+                ref={scrollerRef}
+                data-work-scroller="true"
+                style={{
+                    position: "absolute",
+                    top: 0,
+                    right: 0,
+                    bottom: 0,
+                    left: "max(220px, 26vw)",
+                    zIndex: 2,
+                    overflowX: "hidden",
+                    overflowY: "auto",
+                    WebkitOverflowScrolling: "touch",
+                    overscrollBehavior: "contain",
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    padding: "72px 16px 120px 16px",
+                    boxSizing: "border-box",
+                    background: "transparent",
+                    backgroundColor: "transparent",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 14,
+                }}
+            >
+                {workSlides(list).map((slide, slideIndex) => (
+                    <VisualSlide
+                        key={`${slide.item.slug}-${slideIndex}`}
+                        item={slide.item}
+                        index={slide.projectIndex}
+                        active={slide.projectIndex === activeIndex}
+                        dim={
+                            dims[slideIndex] ??
+                            (slide.projectIndex === activeIndex ? 0 : 1)
+                        }
+                        accent={accent}
+                        cream={cream}
+                        setRef={(el) => {
+                            slideRefs.current[slideIndex] = el
+                        }}
+                    />
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function MobileSequence({
+    list,
+    accent,
+    ink,
+    muted,
+    cream,
+    family,
+    sectionLabel,
+    ctaLabel,
+    slideRefs,
+    activeIndex,
+}: {
+    list: WorkProject[]
+    accent: string
+    ink: string
+    muted: string
+    cream: string
+    family: string
+    sectionLabel: string
+    ctaLabel: string
+    slideRefs: MutableRefObject<(HTMLElement | null)[]>
+    activeIndex: number
+}) {
+    return (
+        <div
+            style={{
+                position: "relative",
+                zIndex: 2,
+                display: "flex",
+                flexDirection: "column",
+                gap: 56,
+                padding: "140px 18px 80px",
+                boxSizing: "border-box",
+            }}
+        >
+            <header style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <span
+                    style={{
+                        alignSelf: "flex-start",
+                        padding: "6px 12px",
+                        background: accent,
+                        color: "#fff",
+                        fontFamily: family,
+                        fontSize: 11,
+                        fontWeight: 600,
+                        letterSpacing: "0.06em",
+                        textTransform: "uppercase",
+                        borderRadius: 6,
+                    }}
+                >
+                    {sectionLabel}
+                </span>
+            </header>
+
+            {list.map((item, index) => (
+                <article
+                    key={item.slug}
+                    ref={(el) => {
+                        slideRefs.current[index] = el
+                    }}
+                    data-work-slide={index}
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 18,
+                        opacity: Math.abs(index - activeIndex) <= 1 ? 1 : 0.78,
+                        transition: "opacity 0.4s ease",
+                    }}
+                >
+                    <a
+                        href={item.href}
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 14,
+                            textDecoration: "none",
+                            color: "inherit",
+                        }}
+                    >
+                        <ProjectVisual
+                            item={item}
+                            accent={accent}
+                            cream={cream}
+                            tall
+                        />
+                        {item.moreVideoUrl ? (
+                            <ProjectVisual
+                                item={{
+                                    ...item,
+                                    videoUrl: item.moreVideoUrl,
+                                    coverUrl: item.moreCoverUrl,
+                                }}
+                                accent={accent}
+                                cream={cream}
+                                tall
+                            />
+                        ) : null}
+                    </a>
+                    <h2
+                        style={{
+                            margin: 0,
+                            fontFamily: family,
+                            fontSize: 28,
+                            fontWeight: 700,
+                            letterSpacing: "-0.04em",
+                            lineHeight: 1,
+                            textTransform: "uppercase",
+                            color: ink,
+                        }}
+                    >
+                        {item.title}
+                    </h2>
+                    {(item.subtitle || item.year) && (
+                        <p
+                            style={{
+                                margin: 0,
+                                fontFamily: family,
+                                fontSize: 12,
+                                fontWeight: 500,
+                                letterSpacing: "0.04em",
+                                textTransform: "uppercase",
+                                color: muted,
+                            }}
+                        >
+                            {[item.subtitle, item.year].filter(Boolean).join(" · ")}
+                        </p>
+                    )}
+                    {item.description ? (
+                        <p
+                            style={{
+                                margin: 0,
+                                fontFamily: family,
+                                fontSize: 15,
+                                lineHeight: 1.55,
+                                color: ink,
+                            }}
+                        >
+                            {item.description}
+                        </p>
+                    ) : null}
+                    <a
+                        href={item.href}
+                        style={{
+                            alignSelf: "flex-start",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 8,
+                            padding: "12px 20px",
+                            background: accent,
+                            color: "#fff",
+                            textDecoration: "none",
+                            fontFamily: family,
+                            fontSize: 13,
+                            fontWeight: 600,
+                            letterSpacing: "-0.02em",
+                            textTransform: "uppercase",
+                            borderRadius: 999,
+                        }}
+                    >
+                        {ctaLabel}
+                        <span aria-hidden>→</span>
+                    </a>
+                </article>
+            ))}
+        </div>
+    )
+}
+
+function VisualSlide({
+    item,
+    index,
+    dim,
+    accent,
+    cream,
+    setRef,
+}: {
+    item: WorkProject
+    index: number
+    active?: boolean
+    dim: number
+    accent: string
+    cream: string
+    setRef: (el: HTMLElement | null) => void
+}) {
+    // Nevermind-style milky white veil on out-of-focus frames
+    const overlay = Math.min(1, Math.max(0, dim)) * 0.55
+
+    return (
+        <section
+            ref={setRef}
+            data-work-slide={index}
+            data-project={index}
+            aria-label={item.title}
+            style={{
+                display: "block",
+                boxSizing: "border-box",
+            }}
+        >
+            <a
+                href={item.href}
+                aria-label={`View ${item.title}`}
+                style={{
+                    position: "relative",
+                    display: "block",
+                    width: "100%",
+                    // Nevermind-like landscape ratio (was too tall before)
+                    aspectRatio: "16 / 9",
+                    textDecoration: "none",
+                    color: "inherit",
+                    cursor: "pointer",
+                    borderRadius: VISUAL_RADIUS,
+                    overflow: "hidden",
+                }}
+            >
+                <ProjectVisual item={item} accent={accent} cream={cream} fill />
+                <div
+                    aria-hidden
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        // Cream veil (not pure white) so dimmed frames stay on OUR offwhite
+                        background: CREAM,
+                        opacity: overlay,
+                        pointerEvents: "none",
+                        transition: "opacity 0.35s ease",
+                        zIndex: 2,
+                    }}
+                />
+            </a>
+        </section>
+    )
+}
+
+function ProjectVisual({
+    item,
+    accent,
+    cream,
+    fill,
+    tall,
+}: {
+    item: WorkProject
+    accent: string
+    cream: string
+    fill?: boolean
+    tall?: boolean
+}) {
+    const videoRef = useRef<HTMLVideoElement>(null)
+
+    useEffect(() => {
+        const v = videoRef.current
+        if (!v) return
+        const play = () => {
+            v.play().catch(() => {})
+        }
+        play()
+        v.addEventListener("loadeddata", play)
+        return () => v.removeEventListener("loadeddata", play)
+    }, [item.videoUrl])
+
+    return (
+        <div
+            style={{
+                position: "relative",
+                width: "100%",
+                height: fill ? "100%" : undefined,
+                aspectRatio: fill
+                    ? undefined
+                    : item.videoUrl || item.coverUrl
+                      ? "16 / 9"
+                      : tall
+                        ? "4 / 5"
+                        : "16 / 10",
+                borderRadius: VISUAL_RADIUS,
+                overflow: "hidden",
+                // Neutral dark under video — no tinted accent fill flashing through
+                background: "#1a1a1a",
+            }}
+        >
+            {item.videoUrl ? (
+                <video
+                    ref={videoRef}
+                    src={item.videoUrl}
+                    poster={item.coverUrl || undefined}
+                    muted
+                    playsInline
+                    loop
+                    autoPlay
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        pointerEvents: "none",
+                    }}
+                />
+            ) : item.coverUrl ? (
+                <img
+                    src={item.coverUrl}
+                    alt=""
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        pointerEvents: "none",
+                    }}
+                />
+            ) : (
+                <div
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        display: "grid",
+                        placeItems: "center",
+                        padding: 24,
+                        textAlign: "center",
+                        color: "rgba(255,255,255,0.45)",
+                        fontFamily: SANS,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                        background: cream,
+                    }}
+                >
+                    {item.title}
+                </div>
+            )}
+        </div>
+    )
+}
+
+function DeskBack({
+    href,
+    label,
+    ariaLabel,
+    accent,
+}: {
+    href: string
+    label: string
+    ariaLabel?: string
+    accent: string
+}) {
+    useEffect(() => {
+        if (typeof document === "undefined") return
+        document.querySelectorAll("[data-desk-back]").forEach((n) => n.remove())
+
+        const a = document.createElement("a")
+        a.href = href
+        a.setAttribute("aria-label", ariaLabel || label)
+        a.dataset.deskBack = "true"
+        const applyChrome = () => {
+            const phone = window.matchMedia(PHONE_MQ).matches
+            Object.assign(a.style, {
+                position: "fixed",
+                top: phone ? "88px" : "48px",
+                left: phone ? "12px" : "24px",
+                zIndex: "1200",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "8px",
+                padding: phone ? "14px 16px" : "10px 22px",
+                minHeight: phone ? "44px" : "",
+                background: "rgba(255,255,255,0.92)",
+                border: "1.5px solid rgb(17,17,17)",
+                borderRadius: "999px",
+                color: "rgb(17,17,17)",
+                textDecoration: "none",
+                fontFamily: SANS,
+                fontWeight: "500",
+                fontSize: "13px",
+                letterSpacing: "-1px",
+                textTransform: "uppercase",
+                boxShadow: "0px 8px 24px rgba(0,0,0,0.12)",
+                cursor: "pointer",
+                pointerEvents: "auto",
+                boxSizing: "border-box",
+                lineHeight: "1",
+            } as Partial<CSSStyleDeclaration>)
+        }
+        applyChrome()
+        window.addEventListener("resize", applyChrome)
+
+        const arrow = document.createElement("span")
+        arrow.textContent = "←"
+        Object.assign(arrow.style, {
+            color: accent,
+            fontSize: "14px",
+            lineHeight: "1",
+        } as Partial<CSSStyleDeclaration>)
+
+        const text = document.createElement("span")
+        text.textContent = label
+
+        a.appendChild(arrow)
+        a.appendChild(text)
+        document.body.appendChild(a)
+
+        return () => {
+            window.removeEventListener("resize", applyChrome)
+            a.remove()
+        }
+    }, [href, label, ariaLabel, accent])
+
+    return null
+}
+
+const DEFAULT_ITEMS: WorkProject[] = [
+    {
+        title: "Sooraj Nagar",
+        subtitle: "Speculative climate installation",
+        description:
+            "92% of young Karachiites I surveyed believe their city's climate future is bleak. Sooraj Nagar lets them press a button and watch Shahra-e-Faisal heat up or heal by 2120.",
+        slug: "sooraj-nagar",
+        year: "2025",
+        accent: ACCENT,
+        coverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro-poster.jpg",
+        videoUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@00e309c2bb0e86bec64e76c477e6d3a086729b69/framer/films/sooraj-intro.mp4",
+    },
+    {
+        title: "FRED.AI",
+        subtitle:
+            "Designing how a real estate agent supervises an AI that calls their leads",
+        description:
+            "A voice AI assistant for real estate agents. It sorts their leads, makes the calls and follows up, from a chat-first mobile app and a web version on the same system.",
+        slug: "voice-ai",
+        year: "2025",
+        accent: "#44586A",
+        coverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@7a15d08e12f25b8c9f4e2575da6b8b0974aa4460/framer/films/fred-web-poster.jpg",
+        videoUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@7a15d08e12f25b8c9f4e2575da6b8b0974aa4460/framer/films/fred-web.mp4",
+    },
+    {
+        title: "Bridge",
+        subtitle: "Website & platform",
+        description:
+            "Bridge aims to reduce the gap between independent (indie) filmmakers and film-related personnel by connecting them efficiently and supporting them in their creative ventures.",
+        slug: "health-platform",
+        year: "2024",
+        accent: "#ED3B3F",
+        coverUrl:
+            "https://framerusercontent.com/images/o1o7XLmSOvwaUnIPgAgr38u4W6A.png",
+        videoUrl:
+            "https://framerusercontent.com/assets/aXOC788i48024F6WaK7ANZYjRcs.mp4",
+    },
+    {
+        title: "Safar-e-Asaan",
+        subtitle: "Making Karachi’s Bus System Legible",
+        description:
+            "A route-and-signage system for riders who currently have to ask strangers which bus to take.",
+        slug: "travel-app",
+        year: "2024",
+        accent: "#5E151C",
+        coverUrl:
+            "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@294195e0f1d243b7ef51276d7a8e21d7362149b2/framer/case/safar/exhibition.jpg",
+        videoUrl: "",
+    },
+]
+
+addPropertyControls(WorkIndex, {
+    intro: {
+        type: ControlType.String,
+        title: "Intro",
+        displayTextArea: true,
+        defaultValue:
+            "Selected work from product, brand, and editorial projects.",
+    },
+    sectionLabel: {
+        type: ControlType.String,
+        title: "Section Label",
+        defaultValue: "Selected work",
+    },
+    ctaLabel: {
+        type: ControlType.String,
+        title: "CTA Label",
+        defaultValue: "View case study",
+    },
+    archiveLabel: {
+        type: ControlType.String,
+        title: "Archive Label",
+        defaultValue: "View archive",
+    },
+    archiveLink: {
+        type: ControlType.Link,
+        title: "Archive Link",
+        defaultValue: "/archive",
+    },
+    items: {
+        type: ControlType.Array,
+        title: "Projects",
+        control: {
+            type: ControlType.Object,
+            controls: {
+                title: { type: ControlType.String, title: "Title" },
+                subtitle: { type: ControlType.String, title: "Subtitle" },
+                description: {
+                    type: ControlType.String,
+                    title: "Description",
+                    displayTextArea: true,
+                },
+                slug: { type: ControlType.String, title: "Slug" },
+                year: { type: ControlType.String, title: "Year" },
+                accent: {
+                    type: ControlType.Color,
+                    title: "Accent",
+                    defaultValue: ACCENT,
+                },
+                coverUrl: {
+                    type: ControlType.Image,
+                    title: "Cover",
+                },
+                videoUrl: {
+                    type: ControlType.String,
+                    title: "Video URL",
+                },
+                href: {
+                    type: ControlType.Link,
+                    title: "Link",
+                },
+            },
+        },
+    },
+    accent: {
+        type: ControlType.Color,
+        title: "Accent",
+        defaultValue: ACCENT,
+    },
+    cream: {
+        type: ControlType.Color,
+        title: "Cream",
+        defaultValue: CREAM,
+    },
+    ink: {
+        type: ControlType.Color,
+        title: "Ink",
+        defaultValue: INK,
+    },
+    muted: {
+        type: ControlType.Color,
+        title: "Muted",
+        defaultValue: MUTED,
+    },
+    backLink: {
+        type: ControlType.Link,
+        title: "Back Link",
+        defaultValue: "/",
+    },
+    projectBasePath: {
+        type: ControlType.String,
+        title: "Project Base",
+        defaultValue: "/work",
+    },
+    displayFont: {
+        type: ControlType.Font,
+        title: "Display Font",
+        controls: "extended",
+        defaultFontType: "sans-serif",
+        defaultValue: {
+            fontSize: "36px",
+            variant: "Regular",
+        },
+    },
+    font: {
+        type: ControlType.Font,
+        title: "Body Font",
+        controls: "extended",
+        defaultFontType: "sans-serif",
+        defaultValue: {
+            fontSize: "15px",
+            variant: "Regular",
+            lineHeight: "1.5em",
+        },
+    },
+    gridOpacity: {
+        type: ControlType.Number,
+        title: "Grid Opacity",
+        defaultValue: GRID_OPACITY_DEFAULT,
+        min: 0,
+        max: 0.045,
+        step: 0.005,
+    },
+})
