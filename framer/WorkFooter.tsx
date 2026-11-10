@@ -5,7 +5,7 @@ const STAGE_W = 1440
 const STAGE_H = 900
 const IMG = "https://framerusercontent.com/images/"
 const INTER =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const ANNIE = '"Annie Use Your Telescope", "Bradley Hand", cursive'
 
 
@@ -239,7 +239,7 @@ export default function DeskWorkFooter(props: DeskWorkFooterProps) {
         >
             <style>{FOOTER_JIGGLE_CSS}</style>
             <link
-                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
             <div

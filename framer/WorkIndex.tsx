@@ -15,7 +15,7 @@ import {
 } from "framer"
 
 const SANS =
-    '"Inter Display", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 const CREAM = "#F3EFE6"
 const INK = "#111111"
 const MUTED = "#555555"
@@ -550,7 +550,7 @@ export default function WorkIndex(props: WorkIndexProps) {
     return (
         <div id="nabia-work-index" style={shellStyle}>
             <link
-                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Inter:wght@400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Annie+Use+Your+Telescope&family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
 

@@ -1295,7 +1295,7 @@ function NavPopup({
                 </h3>
                 <p
                     style={{
-                        fontFamily: "Inter, system-ui, sans-serif",
+                        fontFamily: "Outfit, system-ui, sans-serif",
                         fontSize: 15,
                         lineHeight: 1.55,
                         margin: "0 auto 22px",

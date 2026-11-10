@@ -2,7 +2,7 @@
  * TopBar — DEPRECATED as a code component.
  *
  * The live site now uses an editable **design component** named "TopBar"
- * (Inter, all-caps, letter-spacing -1px, Contact as a text link like Work /
+ * (Outfit, all-caps, letter-spacing -1px, Contact as a text link like Work /
  * Archive). Kept here only so older instances don't break if referenced.
  *
  * Prefer the canvas design component for text / font / spacing edits.
@@ -11,7 +11,7 @@ import { type CSSProperties } from "react"
 import { addPropertyControls, ControlType } from "framer"
 
 const INTER =
-    '"Inter", "Inter Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
 interface TopBarProps {
     name: string
@@ -64,7 +64,7 @@ export default function TopBar(props: TopBarProps) {
                 ...props.style,
             }}
         >
-            <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+            <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
             <div
                 style={{
                     pointerEvents: "auto",

@@ -318,7 +318,7 @@ function About({
                         fontSize: 20,
                         lineHeight: 1.5,
                         fontFamily:
-                            "Inter, system-ui, sans-serif",
+                            "Outfit, system-ui, sans-serif",
                         maxWidth: 560,
                     }}
                 >
@@ -329,7 +329,7 @@ function About({
                 </Label>
                 <p
                     style={{
-                        fontFamily: "Inter, system-ui, sans-serif",
+                        fontFamily: "Outfit, system-ui, sans-serif",
                         fontSize: 16,
                         lineHeight: 1.6,
                         maxWidth: 520,
@@ -436,7 +436,7 @@ function Contact({
         <div style={{ maxWidth: 820 }}>
             <p
                 style={{
-                    fontFamily: "Inter, system-ui, sans-serif",
+                    fontFamily: "Outfit, system-ui, sans-serif",
                     fontSize: 20,
                     lineHeight: 1.5,
                     maxWidth: 560,
@@ -691,7 +691,7 @@ function Popup({
                 </h3>
                 <p
                     style={{
-                        fontFamily: "Inter, system-ui, sans-serif",
+                        fontFamily: "Outfit, system-ui, sans-serif",
                         fontSize: 15,
                         lineHeight: 1.55,
                         margin: 0,

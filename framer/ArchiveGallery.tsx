@@ -16,7 +16,7 @@ import {
 } from "framer"
 
 const SANS =
-    '"Inter", "Inter Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    '"Outfit", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
 
 const GRID_BG =
     "https://framerusercontent.com/images/uTiMeYZo7Cgq17Mt2w60JYMnptc.png"
@@ -382,7 +382,7 @@ export default function ArchiveGallery(props: ArchiveGalleryProps) {
             }}
         >
             <link
-                href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+                href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap"
                 rel="stylesheet"
             />
 
