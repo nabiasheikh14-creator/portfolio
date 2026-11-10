@@ -2074,7 +2074,7 @@ function CardGrid({
     )
 }
 
-const ZINE_SHA = "228cb8d4720e083b63cada079993e824431aff3a"
+const ZINE_SHA = "cdaf9598a8dea5b8e73b520582087770f62bdad5"
 const ZINE_PAGES: { src: string; alt: string }[] = [
     ["01", "Travelling By Cars"],
     ["02", "Public Buses"],
