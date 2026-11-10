@@ -701,8 +701,12 @@ function SectionSheet({
     const [open, setOpen] = useState(false)
     const active = nav.find((item) => item.id === activeId) || nav[0]
     if (!active) return null
-    const left = phone ? 12 : longform ? 356 : `calc(${LEFT_COL} + 16px)`
-    const right = phone ? 12 : 20
+    // Sit in the left column, using the same side insets as the sidebar type.
+    const place: CSSProperties = phone
+        ? { left: 12, right: 12 }
+        : longform
+          ? { left: 40, width: 272 }
+          : { left: "3.2vw", width: `calc(${LEFT_COL} - 5.4vw)` }
     return (
         <>
             {open ? (
@@ -723,9 +727,8 @@ function SectionSheet({
             <div
                 style={{
                     position: "fixed",
-                    left,
-                    right,
-                    bottom: 12,
+                    ...place,
+                    bottom: 20,
                     zIndex: 40,
                     background: "#FBF9F5",
                     border: "1px solid #DAD4C8",
@@ -745,10 +748,11 @@ function SectionSheet({
                     style={{
                         display: "flex",
                         alignItems: "center",
-                        gap: 12,
+                        gap: 10,
                         width: "100%",
+                        minWidth: 0,
                         minHeight: 52,
-                        padding: "10px 16px",
+                        padding: "10px 14px",
                         border: "none",
                         background: "transparent",
                         cursor: "pointer",
@@ -780,7 +784,7 @@ function SectionSheet({
                     <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: "#6A665D" }}>
                         Sections
                     </span>
-                    <span style={{ marginLeft: "auto", fontSize: 15, fontWeight: 600 }}>{active.label}</span>
+                    <span style={{ marginLeft: "auto", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontSize: 15, fontWeight: 600 }}>{active.label}</span>
                 </button>
                 <div style={{ overflow: "hidden" }}>
                     <div
@@ -885,7 +889,7 @@ function DesktopCase({
                     position: "absolute",
                     top: 0,
                     left: 0,
-                    bottom: 0,
+                    bottom: 92,
                     zIndex: 3,
                     width: project.longform ? 340 : LEFT_COL,
                     display: "flex",
@@ -893,9 +897,9 @@ function DesktopCase({
                     justifyContent: "flex-start",
                     padding: project.longform
                         ? "108px 28px 28px 40px"
-                        : "108px 2.2vw 40px 3.2vw",
+                        : "108px 2.2vw 28px 3.2vw",
                     boxSizing: "border-box",
-                    overflow: project.longform ? "auto" : "hidden",
+                    overflow: "auto",
                     background: CREAM,
                     backgroundColor: CREAM,
                     pointerEvents: "none",
@@ -914,7 +918,7 @@ function DesktopCase({
                 >
                     <h1
                         style={{
-                            margin: "0 0 18px",
+                            margin: project.longform ? "0 0 12px" : "0 0 18px",
                             fontFamily: project.longform ? family : displayFamily,
                             fontSize: project.longform
                                 ? 40
@@ -930,7 +934,7 @@ function DesktopCase({
                     {project.overview ? (
                         <p
                             style={{
-                                margin: project.longform ? "0 0 14px" : "0 0 28px",
+                                margin: project.longform ? "0 0 10px" : "0 0 28px",
                                 fontFamily: family,
                                 fontSize: project.longform ? 15 : BODY_SIZE,
                                 fontWeight: 400,
@@ -965,7 +969,7 @@ function DesktopCase({
                 data-case-scroller="true"
                 style={{
                     position: "absolute",
-                    top: 0,
+                    top: 76,
                     right: 0,
                     bottom: 0,
                     left: project.longform ? 340 : LEFT_COL,
@@ -975,7 +979,7 @@ function DesktopCase({
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
-                    padding: "88px 28px 140px 20px",
+                    padding: "32px 40px 56px 32px",
                     boxSizing: "border-box",
                     background: CREAM,
                     backgroundColor: CREAM,
@@ -1172,7 +1176,7 @@ function MetaChips({
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 8 : 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 6 : 14 }}>
             {bits.map((b) => (
                 <div key={b.k}>
                     <div
@@ -1190,7 +1194,7 @@ function MetaChips({
                         {b.k}
                     </div>
                     {b.k === "Tools" ? (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: compact ? 4 : 6 }}>
                             {b.v
                                 .split(",")
                                 .map((part) => part.trim().replace(/^and\s+/i, ""))
@@ -1200,12 +1204,12 @@ function MetaChips({
                                         key={part}
                                         style={{
                                             fontFamily: family,
-                                            fontSize: compact ? 15 : 12,
-                                            lineHeight: 1.45,
+                                            fontSize: compact ? 13 : 12,
+                                            lineHeight: 1.3,
                                             color: compact ? "#6A665D" : ink,
                                             border: "1px solid rgba(17,17,17,0.16)",
                                             borderRadius: 999,
-                                            padding: "5px 10px",
+                                            padding: compact ? "3px 8px" : "5px 10px",
                                         }}
                                     >
                                         {part}
@@ -1236,9 +1240,9 @@ function stackStyle(lead: boolean, phone: boolean): CSSProperties {
         position: "relative",
         zIndex: 2,
         background: CREAM,
-        marginTop: lead ? 0 : phone ? -88 : -160,
+        marginTop: lead ? 0 : phone ? -48 : -72,
         paddingTop: lead ? 0 : phone ? 28 : 40,
-        paddingBottom: phone ? 128 : 210,
+        paddingBottom: phone ? 112 : 168,
         borderTop: lead ? "none" : `1px solid ${JOURNAL_LINE}`,
         borderRadius: lead ? 0 : "22px 22px 0 0",
         boxShadow: lead ? "none" : "0 -28px 54px rgba(28, 27, 24, 0.09)",
@@ -1321,7 +1325,7 @@ function CaseNarrative({
     const phone = useMediaQuery(PHONE_MQ)
     const motion = {
         lift: true,
-        section: 160,
+        section: 48,
         media: p.longform ? 110 : 64,
         cover: true,
     }
@@ -3216,12 +3220,8 @@ function SoorajSections({
                             </button>
                         ))}
                     </div>
-                    <div style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: phone ? 20 : 28, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24, flexWrap: "wrap" }}>
-                        <p style={{ margin: 0, maxWidth: 520, fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>{steps[step].detail}</p>
-                        <div style={{ display: "flex", gap: 8 }}>
-                            <button type="button" onClick={() => setStep((n) => Math.max(0, n - 1))} style={{ fontFamily: family, fontSize: 15, fontWeight: 500, border: `1.5px solid ${JOURNAL_LINE}`, background: "transparent", borderRadius: 99, padding: "8px 18px", cursor: "pointer" }}>Previous</button>
-                            <button type="button" onClick={() => setStep((n) => Math.min(steps.length - 1, n + 1))} style={{ fontFamily: family, fontSize: 15, fontWeight: 500, border: `1.5px solid ${accent}`, background: accent, color: "#fff", borderRadius: 99, padding: "8px 18px", cursor: "pointer" }}>Next</button>
-                        </div>
+                    <div style={{ background: JOURNAL_SURFACE, border: `1px solid ${JOURNAL_LINE}`, borderRadius: 14, padding: phone ? 20 : 28 }}>
+                        <p style={{ margin: 0, maxWidth: 640, fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>{steps[step].detail}</p>
                     </div>
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
@@ -3306,8 +3306,20 @@ function SoorajSections({
                             <p style={{ margin: 0, flex: 1, fontFamily: family, fontSize: 20, lineHeight: 1.5 }}>Role based actions</p>
                             <button
                                 type="button"
+                                disabled={!on.length}
                                 onClick={() => setPressed([])}
-                                style={{ fontFamily: family, fontSize: 15, fontWeight: 500, lineHeight: 1.3, color: "#fff", background: accent, border: "none", borderRadius: 99, padding: "8px 18px", cursor: "pointer" }}
+                                style={{
+                                    fontFamily: family,
+                                    fontSize: 15,
+                                    fontWeight: 500,
+                                    lineHeight: 1.3,
+                                    color: on.length ? "#fff" : "#8A8478",
+                                    background: on.length ? accent : "#E6E0D4",
+                                    border: "none",
+                                    borderRadius: 99,
+                                    padding: "8px 18px",
+                                    cursor: on.length ? "pointer" : "default",
+                                }}
                             >
                                 Reset road
                             </button>
