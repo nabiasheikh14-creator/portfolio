@@ -2091,7 +2091,7 @@ const ZINE_PAGES: { src: string; alt: string }[] = [
     ["13", "Being a young adult in Karachi"],
     ["14", "UGH"],
     ["15", "The right trees"],
-    ["16", "This zine presents the nine actions"],
+    ["16", "by Nabia Shaikh"],
 ].map(([file, alt]) => ({
     src: `https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@${ZINE_SHA}/framer/case/sooraj/zine/${file}.jpg`,
     alt,
@@ -2231,7 +2231,6 @@ function ZineFlip({
         </div>
     )
 }
-
 function PullQuote({
     quote,
     displayFamily,
