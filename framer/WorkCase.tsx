@@ -1167,16 +1167,16 @@ function MetaChips({
     ink: string
     compact?: boolean
 }) {
+    const when = [project.year, project.timeline].filter(Boolean).join(" · ")
     const bits = [
-        project.year && { k: "Date", v: project.year },
-        project.timeline && { k: "Duration", v: project.timeline },
+        when && { k: "Date", v: when },
         project.role && { k: "Role", v: project.role },
         project.tools && { k: "Tools", v: project.tools },
         project.collaborators && { k: "Collaborators", v: project.collaborators },
     ].filter(Boolean) as { k: string; v: string }[]
     if (!bits.length) return null
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 6 : 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: compact ? 12 : 16 }}>
             {bits.map((b) => (
                 <div key={b.k}>
                     <div
