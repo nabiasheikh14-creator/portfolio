@@ -1119,7 +1119,7 @@ function MetaChips({
                     >
                         {b.k}
                     </div>
-                    {b.k === "Tools" && project.longform ? (
+                    {b.k === "Tools" ? (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                             {b.v
                                 .split(",")
@@ -1508,10 +1508,11 @@ function CaseNarrative({
                                     alignItems: "baseline",
                                     justifyContent: "space-between",
                                     gap: 16,
-                                    padding: "16px 0",
                                     textDecoration: "none",
                                     color: ink,
-                                    borderBottom: "1px solid rgba(17,17,17,0.1)",
+                                    background: "rgba(255,255,255,0.62)",
+                                    borderRadius: 14,
+                                    padding: "14px 16px",
                                 }}
                             >
                                 <span
@@ -1805,7 +1806,6 @@ function SectionKicker({
 }) {
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <span aria-hidden style={{ display: "block", width: 36, height: 1, background: ink }} />
             <div
                 style={{
                     fontFamily: displayFamily,
@@ -1892,35 +1892,37 @@ function ProcessStrip({
 }) {
     const phone = useMediaQuery(PHONE_MQ)
     const vertical = direction === "vertical" || phone
+    const [open, setOpen] = useState(steps.findIndex((step) => step.pivot))
+    const active = open >= 0 ? open : 0
     return (
         <div
             style={{
-                display: "flex",
-                flexDirection: vertical ? "column" : "row",
-                alignItems: "stretch",
-                gap: vertical ? 0 : 0,
+                display: "grid",
+                gridTemplateColumns: vertical ? "1fr" : `repeat(${steps.length > 5 ? 3 : steps.length}, minmax(0, 1fr))`,
+                gap: 12,
             }}
         >
-            {steps.map((step, i) => (
-                <div
-                    key={step.label}
-                    style={{
-                        flex: vertical ? undefined : 1,
-                        display: "flex",
-                        flexDirection: vertical ? "row" : "column",
-                        alignItems: "stretch",
-                        gap: vertical ? 14 : 8,
-                        minWidth: 0,
-                    }}
-                >
-                    <div
+            {steps.map((step, i) => {
+                const on = i === active
+                return (
+                    <button
+                        key={step.label}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setOpen(i)}
                         style={{
                             display: "flex",
-                            flexDirection: vertical ? "column" : "row",
-                            alignItems: "center",
+                            flexDirection: "column",
+                            alignItems: "flex-start",
                             gap: 8,
-                            width: vertical ? 36 : "auto",
-                            alignSelf: "stretch",
+                            minWidth: 0,
+                            textAlign: "left",
+                            cursor: "pointer",
+                            background: on ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.45)",
+                            borderRadius: 14,
+                            border: "none",
+                            padding: "16px 16px 18px",
+                            color: ink,
                         }}
                     >
                         <span
@@ -1928,38 +1930,25 @@ function ProcessStrip({
                                 fontFamily: displayFamily,
                                 fontSize: 26,
                                 lineHeight: 1,
-                                color: step.pivot ? accent : ink,
+                                color: step.pivot || on ? accent : ink,
                             }}
                         >
                             {String(i + 1).padStart(2, "0")}
                         </span>
-                        {i < steps.length - 1 ? (
-                            <span
-                                aria-hidden
-                                style={
-                                    vertical
-                                        ? { width: 1, flex: 1, minHeight: 12, background: "rgba(17,17,17,0.18)" }
-                                        : { height: 1, flex: 1, background: "rgba(17,17,17,0.18)" }
-                                }
-                            />
-                        ) : null}
-                    </div>
-                    <div style={{ padding: vertical ? "0 0 18px" : "0 16px 0 0", minWidth: 0 }}>
-                        <div
+                        <span
                             style={{
                                 fontFamily: family,
                                 fontSize: 14,
                                 fontWeight: 600,
                                 lineHeight: 1.35,
-                                color: step.pivot ? accent : ink,
+                                color: step.pivot || on ? accent : ink,
                             }}
                         >
                             {step.label}
-                        </div>
+                        </span>
                         {step.pivot ? (
-                            <div
+                            <span
                                 style={{
-                                    marginTop: 4,
                                     fontFamily: family,
                                     fontSize: 11,
                                     fontWeight: 600,
@@ -1969,24 +1958,24 @@ function ProcessStrip({
                                 }}
                             >
                                 Pivot
-                            </div>
+                            </span>
                         ) : null}
                         {step.detail ? (
-                            <div
+                            <span
                                 style={{
-                                    marginTop: 4,
                                     fontFamily: family,
                                     fontSize: 14,
+                                    fontWeight: 400,
                                     lineHeight: 1.45,
                                     color: BODY_INK,
                                 }}
                             >
                                 {step.detail}
-                            </div>
+                            </span>
                         ) : null}
-                    </div>
-                </div>
-            ))}
+                    </button>
+                )
+            })}
         </div>
     )
 }
@@ -2023,10 +2012,9 @@ function CardGrid({
                         display: "flex",
                         flexDirection: "column",
                         gap: 8,
-                        border: "1px solid rgba(17,17,17,0.12)",
-                        borderRadius: FRAME_RADIUS,
+                        borderRadius: 14,
                         padding: card.image ? 10 : 16,
-                        background: "rgba(255,255,255,0.28)",
+                        background: "rgba(255,255,255,0.62)",
                         minWidth: 0,
                     }}
                 >
@@ -2138,14 +2126,18 @@ function DecisionRow({
     accent: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
+    const [part, setPart] = useState("All")
+    const shown = part === "All" ? parts : parts.filter((item) => item.label === part)
     return (
         <div
             style={{
                 display: "grid",
                 gridTemplateColumns: phone ? "1fr" : "76px 1fr",
                 gap: phone ? 8 : 18,
-                padding: "22px 0",
-                borderTop: "1px solid rgba(17,17,17,0.12)",
+                marginBottom: 12,
+                padding: "18px 18px 20px",
+                background: "rgba(255,255,255,0.62)",
+                borderRadius: 14,
             }}
         >
             <div
@@ -2170,9 +2162,35 @@ function DecisionRow({
                 >
                     {title}
                 </div>
-                {parts.map((part) => (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {["All", ...parts.map((item) => item.label)].map((label) => {
+                        const on = part === label
+                        return (
+                            <button
+                                key={label}
+                                type="button"
+                                aria-pressed={on}
+                                onClick={() => setPart(label)}
+                                style={{
+                                    fontFamily: family,
+                                    fontSize: 12,
+                                    lineHeight: 1.3,
+                                    color: on ? "#F3EFE6" : ink,
+                                    background: on ? ink : "transparent",
+                                    border: `1px solid ${on ? ink : "rgba(17,17,17,0.18)"}`,
+                                    borderRadius: 999,
+                                    padding: "5px 10px",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                {label}
+                            </button>
+                        )
+                    })}
+                </div>
+                {shown.map((item) => (
                     <div
-                        key={part.label}
+                        key={item.label}
                         style={{
                             display: "grid",
                             gridTemplateColumns: phone ? "1fr" : "96px 1fr",
@@ -2190,7 +2208,7 @@ function DecisionRow({
                                 paddingTop: phone ? 0 : 4,
                             }}
                         >
-                            {part.label}
+                            {item.label}
                         </div>
                         <div
                             style={{
@@ -2200,7 +2218,7 @@ function DecisionRow({
                                 color: BODY_INK,
                             }}
                         >
-                            {part.text}
+                            {item.text}
                         </div>
                     </div>
                 ))}
@@ -2373,10 +2391,10 @@ function TierTable({
                     {on.length ? chip("Clear", false, () => setPressed([])) : null}
                 </div>
             </div>
-            <div style={{ borderTop: `1px solid ${line}` }}>
+            <div>
                 {phone ? (
                     visible.map((group) => (
-                        <div key={group.role} style={{ borderBottom: `1px solid ${line}`, padding: "16px 0 8px" }}>
+                        <div key={group.role} style={{ padding: "16px 0 8px" }}>
                             <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: cream, marginBottom: 10 }}>
                                 {group.role}
                             </div>
@@ -2395,7 +2413,6 @@ function TierTable({
                             <div key={group.role} style={{ display: "contents" }}>
                                 <div
                                     style={{
-                                        borderTop: `1px solid ${line}`,
                                         paddingTop: 18,
                                         fontFamily: family,
                                         fontSize: 12,
@@ -2407,8 +2424,8 @@ function TierTable({
                                 >
                                     {group.role}
                                 </div>
-                                <div style={{ borderTop: `1px solid ${line}`, paddingTop: 8 }}>{group.renewal.map((action) => actionButton(action, "cool"))}</div>
-                                <div style={{ borderTop: `1px solid ${line}`, paddingTop: 8 }}>{group.collapse.map((action) => actionButton(action, "heat"))}</div>
+                                <div style={{ paddingTop: 8 }}>{group.renewal.map((action) => actionButton(action, "cool"))}</div>
+                                <div style={{ paddingTop: 8 }}>{group.collapse.map((action) => actionButton(action, "heat"))}</div>
                             </div>
                         ))}
                     </div>
@@ -2453,6 +2470,7 @@ function SoorajSections({
     displayFamily: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
+    const [reflection, setReflection] = useState(0)
     const frames = project.frames || []
     const pic = (section: string, video?: boolean) =>
         frames.find((f) => f.section === section && Boolean(f.video) === Boolean(video) && hasMedia(f.src))
@@ -2467,13 +2485,19 @@ function SoorajSections({
             style={{
                 display: "grid",
                 gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))",
-                gap: phone ? "22px 16px" : 20,
-                padding: "8px 0",
-                borderTop: "1px solid rgba(17,17,17,0.12)",
-                borderBottom: "1px solid rgba(17,17,17,0.12)",
+                gap: 12,
             }}
         >
             {items.map((item) => (
+                <div
+                    key={item.caption}
+                    style={{
+                        background: "rgba(255,255,255,0.62)",
+                        borderRadius: 14,
+                        padding: "16px 16px 18px",
+                        minWidth: 0,
+                    }}
+                >
                 <StatBlock
                     key={item.caption}
                     value={item.value}
@@ -2482,6 +2506,7 @@ function SoorajSections({
                     displayFamily={displayFamily}
                     ink={ink}
                 />
+                </div>
             ))}
         </div>
     )
@@ -2507,20 +2532,28 @@ function SoorajSections({
 
             <CaseSection id="challenge" setSectionRef={setSectionRef}>
                 <SectionKicker kicker="Challenge" displayFamily={displayFamily} ink={ink} />
-                <BodyCopy family={family}>
-                    Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
-                </BodyCopy>
-                <BodyCopy family={family}>
-                    Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
-                </BodyCopy>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
+                        </p>
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
+                        </p>
+                    </div>
+                </div>
                 <PullQuote
                     quote="I'm leaving the country before it kills me."
                     displayFamily={displayFamily}
                     ink={ink}
                 />
-                <BodyCopy family={family}>
-                    How might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
-                </BodyCopy>
+                <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 18px 18px" }}>
+                    <p style={{ margin: 0, fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.5, color: ink }}>
+                        How might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
+                    </p>
+                </div>
             </CaseSection>
 
             <CaseSection id="research" setSectionRef={setSectionRef}>
@@ -2531,9 +2564,18 @@ function SoorajSections({
                 {statRow(SOORAJ_UI.stats)}
                 <CardGrid cards={SOORAJ_UI.methods} columns={2} family={family} ink={ink} />
                 {researchImg ? <MediaFrame src={researchImg.src} accent={accent} label={researchImg.label || "Research board"} tall /> : null}
-                <BodyCopy family={family}>
-                    "For the West, climate change is a near future. We are going through it." "People need to see how bad things can get."
-                </BodyCopy>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    {[
+                        "For the West, climate change is a near future. We are going through it.",
+                        "People need to see how bad things can get.",
+                    ].map((quote) => (
+                        <blockquote key={quote} style={{ margin: 0, background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "18px 18px 20px" }}>
+                            <p style={{ margin: 0, fontFamily: displayFamily, fontSize: 26, lineHeight: 1.2, color: ink }}>
+                                {quote}
+                            </p>
+                        </blockquote>
+                    ))}
+                </div>
                 <CardGrid cards={SOORAJ_UI.findings} columns={2} family={family} ink={ink} />
                 <BodyCopy family={family}>
                     Asphalt, waste heat, lost vegetation and glass towers drive the heat. The cooling that fits this city is green corridors, neighbourhood gardens and urban reforestation. Across the precedents, almost no hopeful future is set in Pakistan.
@@ -2550,17 +2592,19 @@ function SoorajSections({
                     accent={accent}
                     direction="vertical"
                 />
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Goals</div>
-                    <BodyCopy family={family}>
-                        Make a hopeful Karachi feel physically real. Give visitors agency over the outcome. Teach which actions cool a city, and which only look green. Leave a next step they can take that week.
-                    </BodyCopy>
-                </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                    <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Constraints</div>
-                    <BodyCopy family={family}>
-                        One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds. Research took six months, the installation six weeks, branding four weeks, the website a week, and the zine a week.
-                    </BodyCopy>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Goals</div>
+                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            Make a hopeful Karachi feel physically real. Give visitors agency over the outcome. Teach which actions cool a city, and which only look green. Leave a next step they can take that week.
+                        </p>
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Constraints</div>
+                        <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds. Research took six months, the installation six weeks, branding four weeks, the website a week, and the zine a week.
+                        </p>
+                    </div>
                 </div>
                 {architecture ? <MediaFrame src={architecture.src} accent={accent} label={architecture.label || "Project architecture"} tall /> : null}
             </CaseSection>
@@ -2617,12 +2661,18 @@ function SoorajSections({
                         },
                     ]}
                 />
-                <BodyCopy family={family}>
-                    The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
-                </BodyCopy>
-                <BodyCopy family={family}>
-                    Every press answered through the glowing button, a message, a line rooted in real life, a sound, and a temperature that climbed or fell. Visitors could end in a mixed future, because that is closer to how real change happens.
-                </BodyCopy>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
+                        </p>
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            Every press answered through the glowing button, a message, a line rooted in real life, a sound, and a temperature that climbed or fell. Visitors could end in a mixed future, because that is closer to how real change happens.
+                        </p>
+                    </div>
+                </div>
                 {roomFilm ? <VideoFrame src={roomFilm.src} accent={accent} label={roomFilm.label || "Room mockup"} /> : null}
             </CaseSection>
 
@@ -2666,12 +2716,18 @@ function SoorajSections({
             <CaseSection id="outcome" setSectionRef={setSectionRef}>
                 <SectionKicker kicker="Outcome" displayFamily={displayFamily} ink={ink} />
                 {statRow(SOORAJ_UI.outcomeStats)}
-                <BodyCopy family={family}>
-                    Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
-                </BodyCopy>
-                <BodyCopy family={family}>
-                    A research-led, locally rooted experience can move young people from "Karachi is doomed" to "here is what would change it". The same method can travel to any city facing extreme heat.
-                </BodyCopy>
+                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
+                        </p>
+                    </div>
+                    <div style={{ background: "rgba(255,255,255,0.62)", borderRadius: 14, padding: "16px 16px 18px" }}>
+                        <p style={{ margin: 0, fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                            A research-led, locally rooted experience can move young people from "Karachi is doomed" to "here is what would change it". The same method can travel to any city facing extreme heat.
+                        </p>
+                    </div>
+                </div>
                 {futures ? <MediaFrame src={futures.src} accent={accent} label="Two futures" tall /> : null}
             </CaseSection>
 
@@ -2684,15 +2740,35 @@ function SoorajSections({
                         gap: 28,
                     }}
                 >
-                    {SOORAJ_UI.reflections.map((item) => (
-                        <div key={item.title} style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+                    {SOORAJ_UI.reflections.map((item, index) => {
+                        const on = reflection === index
+                        return (
+                        <button
+                            key={item.title}
+                            type="button"
+                            aria-pressed={on}
+                            onClick={() => setReflection(index)}
+                            style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 10,
+                                minWidth: 0,
+                                textAlign: "left",
+                                cursor: "pointer",
+                                background: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.55)",
+                                border: "none",
+                                borderRadius: 14,
+                                padding: "16px 16px 18px",
+                                color: ink,
+                            }}
+                        >
                             <div
                                 style={{
                                     fontFamily: displayFamily,
                                     fontSize: 28,
                                     fontWeight: 400,
                                     lineHeight: 1.15,
-                                    color: ink,
+                                    color: on ? accent : ink,
                                 }}
                             >
                                 {item.title}
@@ -2700,8 +2776,9 @@ function SoorajSections({
                             <p style={{ margin: 0, fontFamily: family, fontSize: 16, lineHeight: 1.6, color: BODY_INK }}>
                                 {item.body}
                             </p>
-                        </div>
-                    ))}
+                        </button>
+                        )
+                    })}
                 </div>
             </CaseSection>
         </>
@@ -2728,87 +2805,157 @@ function StoryBlock({
     section?: string
     accent?: string
 }) {
+    const phone = useMediaQuery(PHONE_MQ)
+    const [focus, setFocus] = useState("All")
     const blocks = hasText(body) ? storyBlocks(body) : []
     const inserts = (frames || []).filter(
         (f) => section && f.section === section && hasMedia(f.src),
     )
+    const labeled = blocks.filter((block) => block.subhead)
+    const asCards = labeled.length >= 2
+    type StoryPiece =
+        | { kind: "prose"; key: string; block: { subhead: string; text: string } }
+        | { kind: "cards"; key: string; items: { subhead: string; text: string }[] }
+        | { kind: "media"; key: string; frames: typeof inserts }
+    const pieces: StoryPiece[] = []
+    let run: { subhead: string; text: string }[] = []
+    const flush = () => {
+        if (!run.length) return
+        pieces.push({ kind: "cards", key: `c-${pieces.length}`, items: run })
+        run = []
+    }
+    blocks.forEach((block, i) => {
+        const here = inserts.filter((frame) => frame.after === i + 1)
+        if (asCards && block.subhead) run.push(block)
+        else {
+            flush()
+            pieces.push({ kind: "prose", key: `p-${i}`, block })
+        }
+        if (here.length) {
+            flush()
+            pieces.push({ kind: "media", key: `m-${i}`, frames: here })
+        }
+    })
+    flush()
+    const chip = (label: string, index: number) => {
+        const on = focus === label
+        return (
+            <button
+                key={`${label}-${index}`}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setFocus(label)}
+                style={{
+                    fontFamily: family,
+                    fontSize: 12,
+                    lineHeight: 1.3,
+                    color: on ? "#F3EFE6" : ink,
+                    background: on ? ink : "transparent",
+                    border: `1px solid ${on ? ink : "rgba(17,17,17,0.18)"}`,
+                    borderRadius: 999,
+                    padding: "5px 10px",
+                    cursor: "pointer",
+                }}
+            >
+                {label}
+            </button>
+        )
+    }
     return (
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <span
-                    aria-hidden
-                    style={{
-                        display: "block",
-                        width: 36,
-                        height: 1,
-                        background: ink,
-                    }}
-                />
-                <div
-                    style={{
-                        fontFamily: displayFamily,
-                        fontSize: 40,
-                        fontWeight: 400,
-                        letterSpacing: "0",
-                        lineHeight: 1.05,
-                        color: ink,
-                    }}
-                >
-                    {kicker}
-                </div>
+            <div
+                style={{
+                    fontFamily: displayFamily,
+                    fontSize: 40,
+                    fontWeight: 400,
+                    letterSpacing: "0",
+                    lineHeight: 1.05,
+                    color: ink,
+                }}
+            >
+                {kicker}
             </div>
-            {blocks.length ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-                    {blocks.flatMap((block, i) => {
-                        const here = inserts.filter((f) => f.after === i + 1)
-                        return [
-                            <div
-                                key={`b-${i}`}
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    gap: block.subhead && block.text ? 6 : 0,
-                                }}
-                            >
-                                {block.subhead ? (
-                                    <div
-                                        style={{
-                                            margin: 0,
-                                            fontFamily: family,
-                                            fontSize: 16,
-                                            fontWeight: 600,
-                                            letterSpacing: "0",
-                                            lineHeight: 1.35,
-                                            color: ink,
-                                        }}
-                                    >
-                                        {block.subhead}
-                                    </div>
-                                ) : null}
-                                {block.text ? (
-                                <p
-                                    style={{
-                                        margin: 0,
-                                        fontFamily: family,
-                                        fontSize: BODY_SIZE,
-                                        fontWeight: 400,
-                                        letterSpacing: "0",
-                                        lineHeight: BODY_LH,
-                                        color: BODY_INK,
-                                        maxWidth: "100%",
-                                    }}
-                                >
-                                    {linkify(block.text)}
-                                </p>
-                                ) : null}
-                            </div>,
-                            ...here.map((f, n) => (
-                                <FramePiece key={`m-${i}-${n}`} frame={f} accent={accent || ""} />
-                            )),
-                        ]
-                    })}
+            {asCards ? (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {chip("All", -1)}
+                    {labeled.map((block, index) => chip(block.subhead, index))}
                 </div>
             ) : null}
+            {pieces.map((piece) => {
+                if (piece.kind === "media") {
+                    return piece.frames.map((frame, n) => (
+                        <FramePiece key={`${piece.key}-${n}`} frame={frame} accent={accent || ""} />
+                    ))
+                }
+                if (piece.kind === "prose") {
+                    const block = piece.block
+                    return (
+                        <div key={piece.key} style={{ display: "flex", flexDirection: "column", gap: block.subhead && block.text ? 6 : 0 }}>
+                            {block.subhead ? (
+                                <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                    {block.subhead}
+                                </div>
+                            ) : null}
+                            {block.text ? (
+                                <p style={{ margin: 0, fontFamily: family, fontSize: BODY_SIZE, lineHeight: BODY_LH, color: BODY_INK }}>
+                                    {linkify(block.text)}
+                                </p>
+                            ) : null}
+                        </div>
+                    )
+                }
+                const items = focus === "All" ? piece.items : piece.items.filter((item) => item.subhead === focus)
+                if (!items.length) return null
+                return (
+                    <div
+                        key={piece.key}
+                        style={{
+                            display: "grid",
+                            gridTemplateColumns: phone ? "1fr" : "1fr 1fr",
+                            gap: 12,
+                        }}
+                    >
+                        {items.map((item, index) => {
+                            const on = focus === item.subhead
+                            return (
+                                <div
+                                    key={`${item.subhead}-${index}`}
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-pressed={on}
+                                    onClick={() => setFocus(on ? "All" : item.subhead)}
+                                    onKeyDown={(event) => {
+                                        if (event.key === "Enter" || event.key === " ") {
+                                            event.preventDefault()
+                                            setFocus(on ? "All" : item.subhead)
+                                        }
+                                    }}
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 8,
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        background: on ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.55)",
+                                        borderRadius: 14,
+                                        padding: "16px 16px 18px",
+                                        minWidth: 0,
+                                    }}
+                                >
+                                    <span style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                        {item.subhead}
+                                    </span>
+                                    {item.text ? (
+                                        <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.55, color: BODY_INK }}>
+                                            {linkify(item.text)}
+                                        </span>
+                                    ) : null}
+                                </div>
+                            )
+                        })}
+                    </div>
+                )
+            })}
         </div>
     )
 }
@@ -3203,7 +3350,7 @@ function DeskWorkFooter(props: DeskWorkFooterProps) {
                     width: "100%",
                     height: viewportH,
                     overflow: "hidden",
-                    borderTop: `1px solid ${ink}`,
+                    borderTop: contained ? "none" : `1px solid ${ink}`,
                 }}
             >
                 {/* Home desk stage — anchored to the right */}
