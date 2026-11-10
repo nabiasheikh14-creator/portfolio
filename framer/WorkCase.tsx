@@ -969,7 +969,7 @@ function DesktopCase({
                 data-case-scroller="true"
                 style={{
                     position: "absolute",
-                    top: 76,
+                    top: 88,
                     right: 0,
                     bottom: 0,
                     left: project.longform ? 340 : LEFT_COL,
@@ -979,7 +979,7 @@ function DesktopCase({
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
-                    padding: "32px 40px 56px 32px",
+                    padding: "20px 40px 56px 40px",
                     boxSizing: "border-box",
                     background: CREAM,
                     backgroundColor: CREAM,
@@ -1235,17 +1235,24 @@ function MetaChips({
     )
 }
 
+const STACK_INSET = 40
+const STACK_INSET_PHONE = 18
+
 function stackStyle(lead: boolean, phone: boolean): CSSProperties {
+    const inset = phone ? STACK_INSET_PHONE : STACK_INSET
     return {
         position: "relative",
         zIndex: 2,
         background: CREAM,
         marginTop: lead ? 0 : phone ? -48 : -72,
+        marginLeft: -inset,
+        marginRight: -inset,
         paddingTop: lead ? 0 : phone ? 28 : 40,
         paddingBottom: phone ? 112 : 168,
+        paddingLeft: inset,
+        paddingRight: inset,
         borderTop: lead ? "none" : `1px solid ${JOURNAL_LINE}`,
-        borderRadius: lead ? 0 : "22px 22px 0 0",
-        boxShadow: lead ? "none" : "0 -28px 54px rgba(28, 27, 24, 0.09)",
+        boxShadow: lead ? "none" : "0 -16px 28px rgba(28, 27, 24, 0.05)",
     }
 }
 
