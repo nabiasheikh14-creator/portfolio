@@ -2150,23 +2150,24 @@ function ZineFlip({
     ink: string
     accent: string
 }) {
-    const [index, setIndex] = useState(0)
+    const spreads = Math.ceil(ZINE_PAGES.length / 2)
+    const [spread, setSpread] = useState(0)
     const [turn, setTurn] = useState<{ from: number; to: number; hot: boolean } | null>(null)
     const turnRef = useRef(turn)
     turnRef.current = turn
-    const last = ZINE_PAGES.length - 1
+    const last = spreads - 1
     const finish = (to: number) => {
-        setIndex(to)
+        setSpread(to)
         setTurn(null)
     }
     const go = (to: number) => {
-        if (turnRef.current || to === index || to < 0 || to > last) return
+        if (turnRef.current || to === spread || to < 0 || to > last) return
         const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
         if (reduce) {
             finish(to)
             return
         }
-        setTurn({ from: index, to, hot: false })
+        setTurn({ from: spread, to, hot: false })
         window.setTimeout(() => {
             setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
         }, 40)
@@ -2174,11 +2175,23 @@ function ZineFlip({
             if (turnRef.current?.to === to) finish(to)
         }, 780)
     }
-    const forward = turn ? turn.to > turn.from : true
-    const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 0 : -180
-    const under = turn ? (forward ? ZINE_PAGES[turn.to] : ZINE_PAGES[turn.from]) : ZINE_PAGES[index]
-    const leaf = turn ? (forward ? ZINE_PAGES[turn.from] : ZINE_PAGES[turn.to]) : null
-    const shown = turn ? turn.to : index
+    const forward = !turn || turn.to > turn.from
+    const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 180 : 0
+    const from = turn ? turn.from : spread
+    const to = turn ? turn.to : spread
+    const leftPage = ZINE_PAGES[(forward ? from : to) * 2]
+    const rightPage = ZINE_PAGES[(forward ? to : from) * 2 + 1]
+    const leafFront = turn ? ZINE_PAGES[from * 2 + (forward ? 1 : 0)] : null
+    const leafBack = turn ? ZINE_PAGES[to * 2 + (forward ? 0 : 1)] : null
+    const shown = turn ? turn.to : spread
+    const face: CSSProperties = {
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",
+        backfaceVisibility: "hidden",
+    }
     const pill: CSSProperties = {
         fontFamily: family,
         fontSize: 13,
@@ -2187,30 +2200,45 @@ function ZineFlip({
         background: "transparent",
         border: OUTLINE,
         borderRadius: 999,
-        padding: "8px 14px",
+        padding: "10px 16px",
         cursor: "pointer",
     }
     return (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 14 }}>
-            <div style={{ width: "min(100%, 480px)" }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+            <div style={{ width: "min(100%, 768px)" }}>
                 <div
                     style={{
                         position: "relative",
                         width: "100%",
-                        aspectRatio: "1138 / 1638",
-                        perspective: "1600px",
+                        aspectRatio: "2276 / 1638",
+                        perspective: "2200px",
                         border: OUTLINE,
                         borderRadius: 4,
                         background: CREAM,
-                        boxShadow: "0 16px 36px rgba(17,17,17,0.12)",
+                        boxShadow: "0 12px 28px rgba(17,17,17,0.1)",
                     }}
                 >
-                    <img
-                        src={under.src}
-                        alt={leaf ? "" : under.alt}
-                        style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", borderRadius: 3 }}
+                    <div style={{ position: "absolute", top: 0, bottom: 0, left: 0, width: "50%", overflow: "hidden" }}>
+                        <img src={leftPage.src} alt={turn ? "" : leftPage.alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                    <div style={{ position: "absolute", top: 0, bottom: 0, right: 0, width: "50%", overflow: "hidden" }}>
+                        <img src={rightPage.src} alt={turn ? "" : rightPage.alt} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    </div>
+                    <div
+                        aria-hidden
+                        style={{
+                            position: "absolute",
+                            top: 0,
+                            bottom: 0,
+                            left: "50%",
+                            width: 28,
+                            transform: "translateX(-50%)",
+                            background: "linear-gradient(90deg, transparent, rgba(17,17,17,0.16) 46%, rgba(17,17,17,0.22) 50%, rgba(17,17,17,0.16) 54%, transparent)",
+                            pointerEvents: "none",
+                            zIndex: 2,
+                        }}
                     />
-                    {leaf ? (
+                    {leafFront && leafBack ? (
                         <div
                             onTransitionEnd={(event) => {
                                 if (event.propertyName !== "transform" || !turnRef.current?.hot) return
@@ -2218,55 +2246,46 @@ function ZineFlip({
                             }}
                             style={{
                                 position: "absolute",
-                                inset: 0,
-                                transformOrigin: "left center",
+                                top: 0,
+                                bottom: 0,
+                                width: "50%",
+                                left: forward ? "50%" : 0,
+                                transformOrigin: forward ? "left center" : "right center",
                                 transform: `rotateY(${angle}deg)`,
                                 transition: turn?.hot ? "transform 0.7s cubic-bezier(.2,.7,.2,1)" : "none",
                                 transformStyle: "preserve-3d",
+                                zIndex: 3,
+                                pointerEvents: "none",
                             }}
                         >
-                            <img
-                                src={leaf.src}
-                                alt=""
-                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "contain", backfaceVisibility: "hidden", borderRadius: 3 }}
-                            />
-                            <div
-                                style={{
-                                    position: "absolute",
-                                    inset: 0,
-                                    background: CREAM,
-                                    border: OUTLINE,
-                                    transform: "rotateY(180deg)",
-                                    backfaceVisibility: "hidden",
-                                    borderRadius: 3,
-                                }}
-                            />
+                            <img src={leafFront.src} alt="" style={face} />
+                            <img src={leafBack.src} alt="" style={{ ...face, transform: "rotateY(180deg)" }} />
                         </div>
                     ) : null}
                     <button
                         type="button"
-                        aria-label="Previous page"
+                        aria-label="Previous pages"
                         disabled={shown === 0 || Boolean(turn)}
-                        onClick={() => go(index - 1)}
-                        style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "32%", background: "transparent", border: 0, cursor: shown === 0 ? "default" : "pointer", zIndex: 2 }}
+                        onClick={() => go(spread - 1)}
+                        style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "50%", background: "transparent", border: 0, cursor: shown === 0 ? "default" : "pointer", zIndex: 4 }}
                     />
                     <button
                         type="button"
-                        aria-label="Next page"
+                        aria-label="Next pages"
                         disabled={shown === last || Boolean(turn)}
-                        onClick={() => go(index + 1)}
-                        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "68%", background: "transparent", border: 0, cursor: shown === last ? "default" : "pointer", zIndex: 2 }}
+                        onClick={() => go(spread + 1)}
+                        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "50%", background: "transparent", border: 0, cursor: shown === last ? "default" : "pointer", zIndex: 4 }}
                     />
                 </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                <button type="button" onClick={() => go(index - 1)} disabled={shown === 0 || Boolean(turn)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1 }}>
+                <button type="button" onClick={() => go(spread - 1)} disabled={shown === 0 || Boolean(turn)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1 }}>
                     Previous
                 </button>
-                <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 72, textAlign: "center" }}>
-                    {String(shown + 1).padStart(2, "0")}
+                <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 112, textAlign: "center" }}>
+                    {`${String(shown * 2 + 1).padStart(2, "0")}–${String(shown * 2 + 2).padStart(2, "0")}`}
                 </span>
-                <button type="button" onClick={() => go(index + 1)} disabled={shown === last || Boolean(turn)} style={{ ...pill, opacity: shown === last ? 0.35 : 1 }}>
+                <button type="button" onClick={() => go(spread + 1)} disabled={shown === last || Boolean(turn)} style={{ ...pill, opacity: shown === last ? 0.35 : 1 }}>
                     Next
                 </button>
             </div>
