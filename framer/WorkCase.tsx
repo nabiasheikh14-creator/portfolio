@@ -6,6 +6,8 @@ import {
     useRef,
     useState,
     type CSSProperties,
+    type MouseEvent as ReactMouseEvent,
+    type PointerEvent as ReactPointerEvent,
     type ReactNode,
     type RefObject,
 } from "react"
@@ -2154,26 +2156,75 @@ function ZineFlip({
     const [spread, setSpread] = useState(0)
     const [turn, setTurn] = useState<{ from: number; to: number; hot: boolean } | null>(null)
     const turnRef = useRef(turn)
+    const spreadRef = useRef(0)
+    const turnToken = useRef(0)
+    const downRef = useRef<{ x: number; y: number; pointerId: number; direction: number } | null>(null)
     turnRef.current = turn
     const last = spreads - 1
     const finish = (to: number) => {
+        turnToken.current += 1
+        spreadRef.current = to
+        turnRef.current = null
         setSpread(to)
         setTurn(null)
     }
     const go = (to: number) => {
-        if (turnRef.current || to === spread || to < 0 || to > last) return
+        const from = spreadRef.current
+        if (turnRef.current || to === from || to < 0 || to > last) return
         const reduce = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
         if (reduce) {
             finish(to)
             return
         }
-        setTurn({ from: spread, to, hot: false })
+        const token = ++turnToken.current
+        const next = { from, to, hot: false }
+        turnRef.current = next
+        setTurn(next)
+        window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(() => {
+                if (turnToken.current !== token) return
+                setTurn((current) => {
+                    if (!current || current.to !== to) return current
+                    const hot = { ...current, hot: true }
+                    turnRef.current = hot
+                    return hot
+                })
+            })
+        })
         window.setTimeout(() => {
-            setTurn((current) => (current && current.to === to ? { ...current, hot: true } : current))
-        }, 40)
-        window.setTimeout(() => {
-            if (turnRef.current?.to === to) finish(to)
-        }, 780)
+            if (turnToken.current === token && turnRef.current?.to === to) finish(to)
+        }, 760)
+    }
+    const press = (direction: number) => {
+        const begin = (event: ReactPointerEvent<HTMLButtonElement>) => {
+            if (event.pointerType === "mouse" && event.button !== 0) return
+            downRef.current = { x: event.clientX, y: event.clientY, pointerId: event.pointerId, direction }
+        }
+        const end = (event: ReactPointerEvent<HTMLButtonElement>) => {
+            if (event.pointerType === "mouse" && event.button !== 0) return
+            const start = downRef.current
+            downRef.current = null
+            if (!start || start.pointerId !== event.pointerId || start.direction !== direction) return
+            const dx = event.clientX - start.x
+            const dy = event.clientY - start.y
+            if (dx * dx + dy * dy > 196) return
+            event.preventDefault()
+            event.stopPropagation()
+            go(spreadRef.current + direction)
+        }
+        const click = (event: ReactMouseEvent<HTMLButtonElement>) => {
+            event.preventDefault()
+            event.stopPropagation()
+            go(spreadRef.current + direction)
+        }
+        return {
+            onPointerDown: begin,
+            onPointerUp: end,
+            onPointerCancel: () => {
+                downRef.current = null
+            },
+            onClick: click,
+        }
     }
     const forward = !turn || turn.to > turn.from
     const angle = !turn ? 0 : forward ? (turn.hot ? -180 : 0) : turn.hot ? 180 : 0
@@ -2202,15 +2253,30 @@ function ZineFlip({
         borderRadius: 999,
         padding: "10px 16px",
         cursor: "pointer",
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
     }
+    const hit = (side: "left" | "right", blocked: boolean): CSSProperties => ({
+        position: "absolute",
+        top: 0,
+        bottom: 0,
+        width: "50%",
+        [side]: 0,
+        background: "rgba(17,17,17,0.01)",
+        border: 0,
+        padding: 0,
+        zIndex: 4,
+        touchAction: "manipulation",
+        WebkitTapHighlightColor: "transparent",
+        cursor: blocked ? "default" : "pointer",
+    })
     return (
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-            <div style={{ width: "min(100%, 768px)" }}>
+            <div style={{ position: "relative", width: "min(100%, 768px)", aspectRatio: "2276 / 1638", touchAction: "manipulation" }}>
                 <div
                     style={{
-                        position: "relative",
-                        width: "100%",
-                        aspectRatio: "2276 / 1638",
+                        position: "absolute",
+                        inset: 0,
                         perspective: "2200px",
                         border: OUTLINE,
                         borderRadius: 4,
@@ -2241,7 +2307,7 @@ function ZineFlip({
                     {leafFront && leafBack ? (
                         <div
                             onTransitionEnd={(event) => {
-                                if (event.propertyName !== "transform" || !turnRef.current?.hot) return
+                                if (event.propertyName !== "transform" || event.target !== event.currentTarget || !turnRef.current?.hot) return
                                 finish(turnRef.current.to)
                             }}
                             style={{
@@ -2262,30 +2328,18 @@ function ZineFlip({
                             <img src={leafBack.src} alt="" style={{ ...face, transform: "rotateY(180deg)" }} />
                         </div>
                     ) : null}
-                    <button
-                        type="button"
-                        aria-label="Previous pages"
-                        disabled={shown === 0 || Boolean(turn)}
-                        onClick={() => go(spread - 1)}
-                        style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: "50%", background: "transparent", border: 0, cursor: shown === 0 ? "default" : "pointer", zIndex: 4 }}
-                    />
-                    <button
-                        type="button"
-                        aria-label="Next pages"
-                        disabled={shown === last || Boolean(turn)}
-                        onClick={() => go(spread + 1)}
-                        style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: "50%", background: "transparent", border: 0, cursor: shown === last ? "default" : "pointer", zIndex: 4 }}
-                    />
                 </div>
+                <button type="button" aria-label="Previous pages" aria-disabled={shown === 0 || Boolean(turn)} {...press(-1)} style={hit("left", shown === 0 || Boolean(turn))} />
+                <button type="button" aria-label="Next pages" aria-disabled={shown === last || Boolean(turn)} {...press(1)} style={hit("right", shown === last || Boolean(turn))} />
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16 }}>
-                <button type="button" onClick={() => go(spread - 1)} disabled={shown === 0 || Boolean(turn)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1 }}>
+                <button type="button" aria-disabled={shown === 0 || Boolean(turn)} {...press(-1)} style={{ ...pill, opacity: shown === 0 ? 0.35 : 1, cursor: shown === 0 || turn ? "default" : "pointer" }}>
                     Previous
                 </button>
                 <span aria-live="polite" style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent, minWidth: 112, textAlign: "center" }}>
                     {`${String(shown * 2 + 1).padStart(2, "0")}–${String(shown * 2 + 2).padStart(2, "0")}`}
                 </span>
-                <button type="button" onClick={() => go(spread + 1)} disabled={shown === last || Boolean(turn)} style={{ ...pill, opacity: shown === last ? 0.35 : 1 }}>
+                <button type="button" aria-disabled={shown === last || Boolean(turn)} {...press(1)} style={{ ...pill, opacity: shown === last ? 0.35 : 1, cursor: shown === last || turn ? "default" : "pointer" }}>
                     Next
                 </button>
             </div>
