@@ -2744,22 +2744,59 @@ function SoorajSections({
                 <BodyCopy family={family}>
                     Six months of mixed-method research shaped every decision in the build. I designed and ran each stream myself, then brought it together on one FigJam board.
                 </BodyCopy>
-                {statRow(SOORAJ_UI.stats)}
-                <CardGrid cards={SOORAJ_UI.methods} columns={2} family={family} ink={ink} />
-                {researchImg ? <MediaFrame src={researchImg.src} accent={accent} label={researchImg.label || "Research board"} tall /> : null}
-                <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
-                    {[
-                        "For the West, climate change is a near future. We are going through it.",
-                        "People need to see how bad things can get.",
-                    ].map((quote) => (
-                        <blockquote key={quote} style={{ margin: 0, background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "18px 18px 20px" }}>
-                            <p style={{ margin: 0, fontFamily: displayFamily, fontSize: 26, lineHeight: 1.2, color: ink }}>
-                                {quote}
-                            </p>
-                        </blockquote>
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))",
+                        gap: phone ? "20px 16px" : "8px 28px",
+                    }}
+                >
+                    {SOORAJ_UI.stats.map((item) => (
+                        <StatBlock
+                            key={item.caption}
+                            value={item.value}
+                            caption={item.caption}
+                            family={family}
+                            displayFamily={displayFamily}
+                            ink={ink}
+                        />
                     ))}
                 </div>
-                <CardGrid cards={SOORAJ_UI.findings} columns={2} family={family} ink={ink} />
+                <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                    <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: ink }}>Methods</div>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", columnGap: 40, rowGap: 22 }}>
+                        {SOORAJ_UI.methods.map((card) => (
+                            <div key={card.title}>
+                                <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>{card.title}</div>
+                                <p style={{ margin: "6px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>{card.body}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                {researchImg ? <MediaFrame src={researchImg.src} accent={accent} label={researchImg.label || "Research board"} tall /> : null}
+                <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+                    <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1, color: accent }}>Findings</div>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: phone ? 18 : 28 }}>
+                        {[
+                            "For the West, climate change is a near future. We are going through it.",
+                            "People need to see how bad things can get.",
+                        ].map((quote) => (
+                            <blockquote key={quote} style={{ margin: 0 }}>
+                                <p style={{ margin: 0, fontFamily: displayFamily, fontSize: 28, lineHeight: 1.2, color: ink }}>
+                                    {`“${quote}”`}
+                                </p>
+                            </blockquote>
+                        ))}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", columnGap: 40, rowGap: 26 }}>
+                        {SOORAJ_UI.findings.map((card) => (
+                            <div key={card.title}>
+                                <div style={{ fontFamily: displayFamily, fontSize: 28, lineHeight: 1.15, color: ink }}>{card.title}</div>
+                                <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>{card.body}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
                 <BodyCopy family={family}>
                     Asphalt, waste heat, lost vegetation and glass towers drive the heat. The cooling that fits this city is green corridors, neighbourhood gardens and urban reforestation. Across the precedents, almost no hopeful future is set in Pakistan.
                 </BodyCopy>
