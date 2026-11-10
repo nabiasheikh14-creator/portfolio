@@ -281,7 +281,7 @@ export default function WorkCase(props: WorkCaseProps) {
                 decision3: fb.decision3,
                 outcome: fb.outcome,
                 reflection: fb.reflection,
-                accent: replaced ? fb.accent : it.accent || fb.accent,
+                accent: slugKey === "sooraj-nagar" ? "#2C6BE0" : replaced ? fb.accent : it.accent || fb.accent,
                 slug: fb.slug,
                 heroImage: media(it.heroImage, fb.heroImage),
                 contextImage: media(it.contextImage, fb.contextImage),
@@ -2116,23 +2116,23 @@ function CardGrid({
     )
 }
 
-const ZINE_SHA = "c991bf93e9a8f4549789ebf9e9e236f215117b43"
+const ZINE_SHA = "0e72c1ff56aef3811e27ef6c699e0acbbbf739be"
 const ZINE_PAGES: { src: string; alt: string }[] = [
     ["01", "Sooraj Nagar"],
-    ["02", "Travelling By Cars"],
-    ["03", "Public Buses"],
-    ["04", "Rooftop Gardening"],
-    ["05", "Solar And Wind Energy"],
-    ["06", "Central Air Conditioning"],
-    ["07", "Palm Trees"],
-    ["08", "Smart City Policy"],
+    ["02", "Being a young adult in Karachi"],
+    ["03", "UGH"],
+    ["04", "So what should we do?"],
+    ["05", "Predictions"],
+    ["06", "Public Buses"],
+    ["07", "Rooftop Gardening"],
+    ["08", "Solar And Wind Energy"],
     ["09", "Neighbourhood Gardens"],
     ["10", "Urban Reforestation Policy"],
-    ["11", "Predictions"],
-    ["12", "So what should we do?"],
-    ["13", "Being a young adult in Karachi"],
-    ["14", "UGH"],
-    ["15", "The right trees"],
+    ["11", "The right trees"],
+    ["12", "Palm Trees"],
+    ["13", "Smart City Policy"],
+    ["14", "Central Air Conditioning"],
+    ["15", "Travelling By Cars"],
     ["16", "by Nabia Shaikh"],
 ].map(([file, alt]) => ({
     src: `https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@${ZINE_SHA}/framer/case/sooraj/zine/${file}.jpg`,
@@ -2433,22 +2433,19 @@ function TierTable({
     notes,
     legend,
     family,
+    ink,
+    accent,
 }: {
     groups: TierGroup[]
     notes: NoteItem[]
     legend: string
     family: string
     ink: string
+    accent: string
 }) {
     const phone = useMediaQuery(PHONE_MQ)
     const [role, setRole] = useState("All")
     const [pressed, setPressed] = useState<string[]>([])
-    const board = "#1A1916"
-    const cream = "#F4F0E6"
-    const quiet = "rgba(244,240,230,0.68)"
-    const line = "rgba(244,240,230,0.14)"
-    const coolInk = "#8ED4AE"
-    const heatInk = "#F0A090"
     const roles = ["All", ...groups.map((group) => group.role)]
     const visible = role === "All" ? groups : groups.filter((group) => group.role === role)
     const catalog = groups.flatMap((group) => [
@@ -2460,7 +2457,7 @@ function TierTable({
     const sum = numbered.reduce((total, n) => total + n, 0)
     const words = on.filter((action) => deltaNumber(action.delta) == null)
     const figure = numbered.length ? formatRoad(sum) : words.length ? (words.every((action) => action.tone === "cool") ? "Cools" : words.every((action) => action.tone === "heat") ? "Heats" : "Mixed") : "0°C"
-    const figureColor = figure === "Cools" || sum < 0 ? coolInk : figure === "Heats" || sum > 0 ? heatInk : cream
+    const figureColor = figure === "Cools" || sum < 0 ? COOL : figure === "Heats" || sum > 0 ? HEAT : ink
     const toggle = (name: string) => setPressed((cur) => (cur.includes(name) ? cur.filter((item) => item !== name) : [...cur, name]))
     const chip = (label: string, active: boolean, onClick: () => void): ReactNode => (
         <button
@@ -2470,13 +2467,13 @@ function TierTable({
             onClick={onClick}
             style={{
                 fontFamily: family,
-                fontSize: 12,
-                lineHeight: 1.3,
-                color: active ? board : cream,
-                background: active ? cream : "transparent",
-                border: `1px solid ${active ? cream : "rgba(244,240,230,0.32)"}`,
+                fontSize: 14,
+                lineHeight: 1.2,
+                color: active ? "#FFFFFF" : ink,
+                background: active ? accent : "transparent",
+                border: active ? `1.5px solid ${accent}` : OUTLINE,
                 borderRadius: 999,
-                padding: "5px 10px",
+                padding: "8px 14px",
                 cursor: "pointer",
             }}
         >
@@ -2485,7 +2482,7 @@ function TierTable({
     )
     const actionButton = (action: TierAction, tone: "cool" | "heat") => {
         const active = pressed.includes(action.name)
-        const toneColor = tone === "cool" ? coolInk : heatInk
+        const toneColor = tone === "cool" ? COOL : HEAT
         return (
             <button
                 key={action.name}
@@ -2499,122 +2496,82 @@ function TierTable({
                     alignItems: "flex-start",
                     width: "100%",
                     textAlign: "left",
-                    background: active ? "rgba(244,240,230,0.07)" : "transparent",
-                    border: 0,
-                    borderRadius: 10,
-                    padding: "12px 10px",
+                    background: active ? (tone === "cool" ? "rgba(27,107,69,0.08)" : "rgba(163,59,36,0.08)") : undefined,
+                    border: active ? `1.5px solid ${toneColor}` : OUTLINE,
+                    borderRadius: FRAME_RADIUS,
+                    padding: "12px 14px",
                     cursor: "pointer",
-                    color: cream,
+                    color: ink,
                 }}
             >
                 <span
                     style={{
                         flex: "none",
                         fontFamily: family,
-                        fontSize: 12,
+                        fontSize: 13,
                         fontWeight: 600,
-                        lineHeight: 1.3,
-                        color: active ? board : toneColor,
+                        lineHeight: 1.2,
+                        color: active ? "#FFFFFF" : toneColor,
                         background: active ? toneColor : "transparent",
-                        border: `1px solid ${toneColor}`,
+                        border: `1.5px solid ${toneColor}`,
                         borderRadius: 999,
-                        padding: "5px 10px",
+                        padding: "6px 10px",
                         marginTop: 1,
                     }}
                 >
                     {action.delta}
                 </span>
                 <span style={{ minWidth: 0 }}>
-                    <span style={{ display: "block", fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: cream }}>
+                    <span style={{ display: "block", fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
                         {action.name}
                     </span>
-                    <span style={{ display: "block", marginTop: 4, fontFamily: family, fontSize: 14, lineHeight: 1.45, color: quiet }}>
+                    <span style={{ display: "block", marginTop: 4, fontFamily: family, fontSize: 14, lineHeight: 1.45, color: BODY_INK }}>
                         {action.detail}
                     </span>
                 </span>
             </button>
         )
     }
-    const head = (label: string, color: string) => (
-        <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color, padding: "4px 10px 8px" }}>
-            {label}
+    const column = (label: string, color: string, items: ReactNode) => (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, minWidth: 0 }}>
+            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.3, color }}>{label}</div>
+            {items}
         </div>
     )
     return (
-        <div
-            style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 22,
-                background: board,
-                color: cream,
-                borderRadius: 18,
-                padding: phone ? 16 : 28,
-            }}
-        >
+        <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
             <style>
-                {`.sooraj-press:focus-visible,.sooraj-action:focus-visible{outline:2px solid rgba(244,240,230,0.7);outline-offset:2px}.sooraj-action:hover{background:rgba(244,240,230,0.05)}`}
+                {`.sooraj-press:focus-visible,.sooraj-action:focus-visible{outline:2px solid ${accent};outline-offset:2px}.sooraj-action:hover{background:rgba(17,17,17,0.03)}`}
             </style>
+            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 16, alignItems: "flex-end" }}>
+                <div>
+                    <div style={{ fontFamily: family, fontSize: 14, lineHeight: 1.3, color: LABEL }}>The road</div>
+                    <div style={{ fontFamily: family, fontSize: phone ? 40 : 48, fontWeight: 600, lineHeight: 1, color: figureColor, marginTop: 4 }}>
+                        {figure}
+                    </div>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", maxWidth: 460 }}>
+                    <span style={{ fontFamily: family, fontSize: 14, lineHeight: 1.45, color: BODY_INK }}>
+                        {on.length ? on.map((action) => action.name).join(", ") : legend}
+                    </span>
+                    {on.length ? chip("Clear", false, () => setPressed([])) : null}
+                </div>
+            </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 {roles.map((item) => (
                     <span key={item}>{chip(item, role === item, () => setRole(item))}</span>
                 ))}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 16, alignItems: "flex-end" }}>
-                <div>
-                    <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: quiet }}>
-                        The road
-                    </div>
-                    <div style={{ fontFamily: family, fontSize: phone ? 36 : 44, fontWeight: 600, lineHeight: 1.05, color: figureColor, marginTop: 4 }}>
-                        {figure}
-                    </div>
-                </div>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center", maxWidth: 420 }}>
-                    <span style={{ fontFamily: family, fontSize: 14, lineHeight: 1.45, color: quiet }}>
-                        {on.length ? `${on.length} pressed` : legend}
-                    </span>
-                    {on.length ? chip("Clear", false, () => setPressed([])) : null}
-                </div>
-            </div>
-            <div>
-                {phone ? (
-                    visible.map((group) => (
-                        <div key={group.role} style={{ padding: "16px 0 8px" }}>
-                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: cream, marginBottom: 10 }}>
-                                {group.role}
-                            </div>
-                            {head("Renewal", coolInk)}
-                            {group.renewal.map((action) => actionButton(action, "cool"))}
-                            {head("Collapse", heatInk)}
-                            {group.collapse.map((action) => actionButton(action, "heat"))}
+            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+                {visible.map((group) => (
+                    <div key={group.role} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                        <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.3, color: ink }}>{group.role}</div>
+                        <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 16 }}>
+                            {column("Renewal", COOL, <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{group.renewal.map((action) => actionButton(action, "cool"))}</div>)}
+                            {column("Collapse", HEAT, <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{group.collapse.map((action) => actionButton(action, "heat"))}</div>)}
                         </div>
-                    ))
-                ) : (
-                    <div style={{ display: "grid", gridTemplateColumns: "132px 1fr 1fr", columnGap: 18 }}>
-                        <div />
-                        {head("Renewal", coolInk)}
-                        {head("Collapse", heatInk)}
-                        {visible.map((group) => (
-                            <div key={group.role} style={{ display: "contents" }}>
-                                <div
-                                    style={{
-                                        paddingTop: 18,
-                                        fontFamily: family,
-                                        fontSize: 12,
-                                        fontWeight: 600,
-                                        letterSpacing: "0.1em",
-                                        textTransform: "uppercase",
-                                        color: cream,
-                                    }}
-                                >
-                                    {group.role}
-                                </div>
-                                <div style={{ paddingTop: 8 }}>{group.renewal.map((action) => actionButton(action, "cool"))}</div>
-                                <div style={{ paddingTop: 8 }}>{group.collapse.map((action) => actionButton(action, "heat"))}</div>
-                            </div>
-                        ))}
                     </div>
-                )}
+                ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
                 {notes.map((note) => {
@@ -2623,13 +2580,14 @@ function TierTable({
                         <div
                             key={note.title}
                             style={{
-                                border: `1px solid ${linked ? heatInk : line}`,
+                                border: linked ? `1.5px solid ${HEAT}` : OUTLINE,
                                 borderRadius: FRAME_RADIUS,
-                                padding: "16px 16px 16px 18px",
+                                padding: "16px 16px 18px",
+                                background: linked ? "rgba(163,59,36,0.06)" : "transparent",
                             }}
                         >
-                            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: cream }}>{note.title}</div>
-                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: quiet }}>{note.body}</p>
+                            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>{note.title}</div>
+                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>{note.body}</p>
                         </div>
                     )
                 })}
@@ -2729,10 +2687,14 @@ function SoorajSections({
                         </p>
                     </div>
                 </div>
-                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-end", paddingRight: phone ? 0 : "18%" }}>
-                    <svg width="148" height="64" viewBox="0 0 148 64" fill="none" aria-hidden>
-                        <path d="M12 12 C 46 8, 52 52, 90 34 C 112 24, 124 28, 130 50" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" />
-                        <path d="M118 42 L132 54 L116 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-end", margin: "-8px 0", paddingRight: phone ? 0 : "22%" }}>
+                    <svg width="168" height="64" viewBox="0 0 168 64" fill="none" aria-hidden>
+                        <defs>
+                            <marker id="sooraj-arrow-a" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+                                <path d="M1.5 1.5 L10 6 L1.5 10.5" fill="none" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </marker>
+                        </defs>
+                        <path d="M148 8 C 132 22, 78 28, 28 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" markerEnd="url(#sooraj-arrow-a)" />
                     </svg>
                 </div>
                 <PullQuote
@@ -2740,10 +2702,14 @@ function SoorajSections({
                     displayFamily={displayFamily}
                     ink={ink}
                 />
-                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-start", paddingLeft: phone ? 0 : "12%" }}>
-                    <svg width="148" height="64" viewBox="0 0 148 64" fill="none" aria-hidden style={{ transform: "scaleX(-1)" }}>
-                        <path d="M12 12 C 46 8, 52 52, 90 34 C 112 24, 124 28, 130 50" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" />
-                        <path d="M118 42 L132 54 L116 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                <div style={{ display: "flex", justifyContent: phone ? "center" : "flex-start", margin: "-8px 0", paddingLeft: phone ? 0 : "6%" }}>
+                    <svg width="168" height="64" viewBox="0 0 168 64" fill="none" aria-hidden>
+                        <defs>
+                            <marker id="sooraj-arrow-b" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+                                <path d="M1.5 1.5 L10 6 L1.5 10.5" fill="none" stroke={accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </marker>
+                        </defs>
+                        <path d="M20 8 C 36 22, 90 28, 140 54" stroke={accent} strokeWidth="1.75" strokeLinecap="round" fill="none" markerEnd="url(#sooraj-arrow-b)" />
                     </svg>
                 </div>
                 <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: phone ? "20px 18px" : "28px 32px" }}>
@@ -2829,7 +2795,6 @@ function SoorajSections({
                     displayFamily={displayFamily}
                     ink={ink}
                     accent={accent}
-                    direction="vertical"
                 />
                 <div style={{ display: "grid", gridTemplateColumns: phone ? "1fr" : "1fr 1fr", gap: 12 }}>
                     <div style={{ background: "transparent", border: OUTLINE, borderRadius: FRAME_RADIUS, padding: "16px 16px 18px" }}>
@@ -2862,6 +2827,7 @@ function SoorajSections({
                     legend="Press an action to put it on the road. Renewal cools, collapse heats, and the figure is the change for each press."
                     family={family}
                     ink={ink}
+                    accent={accent}
                 />
             </CaseSection>
 
@@ -3833,7 +3799,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         decision4: "Specialists, with me directing\nI brought in specialists rather than doing everything myself. I scoped the 3D modelling and the Unity development as separate workstreams, wrote the button-logic spec they built against, and kept research, narrative and the experience with me. That is how one person shipped an installation, a website, a zine and a community in one academic year.",
         outcome: "Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.\n\nWhat it proved\nA research-led, locally rooted experience can move young people from \"Karachi is doomed\" to \"here is what would change it\". The same method can travel to any city facing extreme heat.",
         reflection: "Measure the shift\nI would measure the change, not only watch it. Two questions before and after, \"How hopeful do you feel about Karachi's future?\", would have turned strong anecdotes into evidence.\n\nBring policy in earlier\nFarhan Anwar's interview changed the whole system. Organisations such as Karachi Urban Lab, or the Sindh government, could have co-owned the actions and carried them forward.\n\nA method, not a one-off\nSooraj Nagar is a method. Participatory futures research, a research-backed model of actions, and an immersive public touchpoint can be run for any heat-stressed city in the Global South.",
-        accent: "#7457C9",
+        accent: "#2C6BE0",
         slug: "sooraj-nagar",
         longform: true,
         ...EMPTY_MEDIA,
@@ -3869,7 +3835,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
                 after: 4,
                 label: "Room mockup",
                 video: true,
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@b1a76cacd48752c56ae28790e38fc9787ae6ad9b/framer/films/sooraj-room.mp4",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@0e72c1ff56aef3811e27ef6c699e0acbbbf739be/framer/films/sooraj-room.mp4",
             },
             {
                 section: "beyond",
