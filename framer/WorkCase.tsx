@@ -3535,7 +3535,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
                 after: 4,
                 label: "Room mockup",
                 video: true,
-                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@4c37c3eb14e3d39502043df5480f0dc1bf279894/framer/films/sooraj-room.mp4",
+                src: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@b1a76cacd48752c56ae28790e38fc9787ae6ad9b/framer/films/sooraj-room.mp4",
             },
             {
                 section: "beyond",
