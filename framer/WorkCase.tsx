@@ -602,7 +602,6 @@ export default function WorkCase(props: WorkCaseProps) {
                 activeId={activeSection}
                 onNavigate={scrollToSection}
                 phone={isPhone}
-                longform={Boolean(project.longform)}
                 family={family}
             />
         </div>
@@ -688,14 +687,12 @@ function SectionSheet({
     activeId,
     onNavigate,
     phone,
-    longform,
     family,
 }: {
     nav: CaseNavItem[]
     activeId: string
     onNavigate: (id: string) => void
     phone: boolean
-    longform: boolean
     family: string
 }) {
     const [open, setOpen] = useState(false)
@@ -704,9 +701,7 @@ function SectionSheet({
     // Sit in the left column, using the same side insets as the sidebar type.
     const place: CSSProperties = phone
         ? { left: 12, right: 12 }
-        : longform
-          ? { left: 40, width: 272 }
-          : { left: "3.2vw", width: `calc(${LEFT_COL} - 5.4vw)` }
+        : { left: 40, width: 272 }
     return (
         <>
             {open ? (
@@ -891,13 +886,11 @@ function DesktopCase({
                     left: 0,
                     bottom: 92,
                     zIndex: 3,
-                    width: project.longform ? 340 : LEFT_COL,
+                    width: 340,
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "flex-start",
-                    padding: project.longform
-                        ? "108px 28px 28px 40px"
-                        : "108px 2.2vw 28px 3.2vw",
+                    padding: "108px 28px 28px 40px",
                     boxSizing: "border-box",
                     overflow: "auto",
                     background: CREAM,
@@ -906,26 +899,24 @@ function DesktopCase({
                 }}
             >
                 <div
-                    data-case-aside={project.longform ? "true" : undefined}
+                    data-case-aside="true"
                     style={{
                         position: "relative",
                         zIndex: 1,
                         pointerEvents: "auto",
-                        flex: project.longform ? "none" : undefined,
+                        flex: "none",
                         minHeight: undefined,
                         overflowY: "visible",
                     }}
                 >
                     <h1
                         style={{
-                            margin: project.longform ? "0 0 12px" : "0 0 18px",
-                            fontFamily: project.longform ? family : displayFamily,
-                            fontSize: project.longform
-                                ? 40
-                                : "clamp(34px, 3.6vw, 52px)",
-                            fontWeight: project.longform ? 700 : 400,
-                            letterSpacing: project.longform ? "-1.2px" : "-0.01em",
-                            lineHeight: project.longform ? 1.1 : 1.05,
+                            margin: "0 0 12px",
+                            fontFamily: family,
+                            fontSize: 40,
+                            fontWeight: 700,
+                            letterSpacing: "-1.2px",
+                            lineHeight: 1.1,
                             color: ink,
                         }}
                     >
@@ -934,9 +925,9 @@ function DesktopCase({
                     {project.overview ? (
                         <p
                             style={{
-                                margin: project.longform ? "0 0 10px" : "0 0 28px",
+                                margin: "0 0 10px",
                                 fontFamily: family,
-                                fontSize: project.longform ? 15 : BODY_SIZE,
+                                fontSize: 15,
                                 fontWeight: 400,
                                 lineHeight: 1.45,
                                 color: muted,
@@ -959,7 +950,7 @@ function DesktopCase({
                         displayFamily={displayFamily}
                         muted={muted}
                         ink={ink}
-                        compact={project.longform}
+                        compact
                     />
                 </div>
             </aside>
@@ -972,7 +963,7 @@ function DesktopCase({
                     top: 88,
                     right: 0,
                     bottom: 0,
-                    left: project.longform ? 340 : LEFT_COL,
+                    left: 340,
                     zIndex: 2,
                     overflowX: "hidden",
                     overflowY: "auto",
@@ -1058,12 +1049,12 @@ function MobileCase({
         >
             <h1
                 style={{
-                    margin: "0 0 16px",
-                    fontFamily: project.longform ? family : displayFamily,
-                    fontSize: project.longform ? 40 : 36,
-                    fontWeight: project.longform ? 700 : 400,
-                    letterSpacing: project.longform ? "-1.2px" : "-0.01em",
-                    lineHeight: project.longform ? 1.1 : 1.05,
+                    margin: "0 0 12px",
+                    fontFamily: family,
+                    fontSize: 40,
+                    fontWeight: 700,
+                    letterSpacing: "-1.2px",
+                    lineHeight: 1.1,
                     color: ink,
                 }}
             >
@@ -1072,11 +1063,11 @@ function MobileCase({
             {project.overview ? (
                 <p
                     style={{
-                        margin: "0 0 24px",
+                        margin: "0 0 10px",
                         fontFamily: family,
-                        fontSize: BODY_SIZE,
+                        fontSize: 15,
                         fontWeight: 400,
-                        lineHeight: BODY_LH,
+                        lineHeight: 1.45,
                         color: muted,
                     }}
                 >
@@ -1096,7 +1087,7 @@ function MobileCase({
                 displayFamily={displayFamily}
                 muted={muted}
                 ink={ink}
-                compact={project.longform}
+                compact
             />
 
             <div
@@ -1906,11 +1897,11 @@ function SectionKicker({
             <div
                 style={{
                     fontFamily: displayFamily,
-                    fontSize: 40,
-                    fontWeight: 400,
-                    letterSpacing: "0",
-                    lineHeight: 1.05,
-                    color: ink,
+                    fontWeight: 600,
+                    fontSize: "clamp(36px, 4.2vw, 52px)",
+                    letterSpacing: "-1.56px",
+                    lineHeight: 1.1,
+                    color: "#1C1B18",
                 }}
             >
                 {kicker}
@@ -3578,12 +3569,12 @@ function StoryBlock({
         <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
             <div
                 style={{
-                    fontFamily: displayFamily,
-                    fontSize: 40,
-                    fontWeight: 400,
-                    letterSpacing: "0",
-                    lineHeight: 1.05,
-                    color: ink,
+                    fontFamily: family,
+                    fontWeight: 600,
+                    fontSize: "clamp(36px, 4.2vw, 52px)",
+                    letterSpacing: "-1.56px",
+                    lineHeight: 1.1,
+                    color: "#1C1B18",
                 }}
             >
                 {kicker}
@@ -3599,12 +3590,12 @@ function StoryBlock({
                     return (
                         <div key={piece.key} style={{ display: "flex", flexDirection: "column", gap: block.subhead && block.text ? 6 : 0 }}>
                             {block.subhead ? (
-                                <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                <div style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25, color: ink }}>
                                     {block.subhead}
                                 </div>
                             ) : null}
                             {block.text ? (
-                                <p style={{ margin: 0, fontFamily: family, fontSize: BODY_SIZE, lineHeight: BODY_LH, color: BODY_INK }}>
+                                <p style={{ margin: 0, fontFamily: family, fontSize: 17, lineHeight: 1.55, color: "#1C1B18" }}>
                                     {linkify(block.text)}
                                 </p>
                             ) : null}
@@ -3628,18 +3619,18 @@ function StoryBlock({
                                     flexDirection: "column",
                                     gap: 8,
                                     textAlign: "left",
-                                    background: "transparent",
-                                    border: OUTLINE,
-                                    borderRadius: FRAME_RADIUS,
-                                    padding: "16px 16px 18px",
+                                    background: JOURNAL_SURFACE,
+                                    border: `1px solid ${JOURNAL_LINE}`,
+                                    borderRadius: 14,
+                                    padding: "24px",
                                     minWidth: 0,
                                 }}
                             >
-                                <span style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                <span style={{ fontFamily: family, fontSize: 20, fontWeight: 600, letterSpacing: "-0.2px", lineHeight: 1.25, color: ink }}>
                                     {item.subhead}
                                 </span>
                                 {item.text ? (
-                                    <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.55, color: BODY_INK }}>
+                                    <span style={{ fontFamily: family, fontSize: 15, fontWeight: 400, lineHeight: 1.45, color: JOURNAL_MUTED }}>
                                         {linkify(item.text)}
                                     </span>
                                 ) : null}
