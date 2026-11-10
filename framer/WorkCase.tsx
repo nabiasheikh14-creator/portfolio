@@ -552,9 +552,6 @@ export default function WorkCase(props: WorkCaseProps) {
             {isPhone ? (
                 <MobileCase
                     project={project}
-                    nav={nav}
-                    activeSection={activeSection}
-                    onNavigate={scrollToSection}
                     setSectionRef={setSectionRef}
                     related={related}
                     basePath={basePath}
@@ -578,9 +575,6 @@ export default function WorkCase(props: WorkCaseProps) {
             ) : (
                 <DesktopCase
                     project={project}
-                    nav={nav}
-                    activeSection={activeSection}
-                    onNavigate={scrollToSection}
                     scrollerRef={scrollerRef}
                     setSectionRef={setSectionRef}
                     related={related}
@@ -603,6 +597,14 @@ export default function WorkCase(props: WorkCaseProps) {
                     }}
                 />
             )}
+            <SectionSheet
+                nav={nav}
+                activeId={activeSection}
+                onNavigate={scrollToSection}
+                phone={isPhone}
+                longform={Boolean(project.longform)}
+                family={family}
+            />
         </div>
     )
 }
@@ -681,11 +683,168 @@ function DeskBack({
     return null
 }
 
+function SectionSheet({
+    nav,
+    activeId,
+    onNavigate,
+    phone,
+    longform,
+    family,
+}: {
+    nav: CaseNavItem[]
+    activeId: string
+    onNavigate: (id: string) => void
+    phone: boolean
+    longform: boolean
+    family: string
+}) {
+    const [open, setOpen] = useState(false)
+    const active = nav.find((item) => item.id === activeId) || nav[0]
+    if (!active) return null
+    const left = phone ? 12 : longform ? 356 : `calc(${LEFT_COL} + 16px)`
+    const right = phone ? 12 : 20
+    return (
+        <>
+            {open ? (
+                <button
+                    type="button"
+                    aria-label="Close sections"
+                    onClick={() => setOpen(false)}
+                    style={{
+                        position: "fixed",
+                        inset: 0,
+                        zIndex: 30,
+                        border: "none",
+                        background: "rgba(28, 27, 24, 0.08)",
+                        cursor: "pointer",
+                    }}
+                />
+            ) : null}
+            <div
+                style={{
+                    position: "fixed",
+                    left,
+                    right,
+                    bottom: 12,
+                    zIndex: 40,
+                    background: "#FBF9F5",
+                    border: "1px solid #DAD4C8",
+                    borderRadius: 20,
+                    boxShadow: "0 16px 40px rgba(28, 27, 24, 0.12)",
+                    overflow: "hidden",
+                    display: "grid",
+                    gridTemplateRows: open ? "auto 1fr" : "auto 0fr",
+                    transition: "grid-template-rows 0.32s ease",
+                }}
+            >
+                <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls="case-section-sheet"
+                    onClick={() => setOpen((value) => !value)}
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 12,
+                        width: "100%",
+                        minHeight: 52,
+                        padding: "10px 16px",
+                        border: "none",
+                        background: "transparent",
+                        cursor: "pointer",
+                        fontFamily: family,
+                        color: "#1C1B18",
+                        textAlign: "left",
+                    }}
+                >
+                    <span
+                        aria-hidden
+                        style={{
+                            width: 28,
+                            height: 28,
+                            borderRadius: 99,
+                            background: "#E3E9FA",
+                            color: "#2C6BE0",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flex: "none",
+                            transform: open ? "rotate(180deg)" : "none",
+                            transition: "transform 0.32s ease",
+                        }}
+                    >
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                            <path d="M3 9 L7 5 L11 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </span>
+                    <span style={{ fontSize: 12, fontWeight: 600, letterSpacing: "0.96px", textTransform: "uppercase", color: "#6A665D" }}>
+                        Sections
+                    </span>
+                    <span style={{ marginLeft: "auto", fontSize: 15, fontWeight: 600 }}>{active.label}</span>
+                </button>
+                <div style={{ overflow: "hidden" }}>
+                    <div
+                        id="case-section-sheet"
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            padding: "4px 8px 12px",
+                            maxHeight: "46vh",
+                            overflowY: "auto",
+                        }}
+                    >
+                        {nav.map((item) => {
+                            const on = item.id === activeId
+                            return (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    onClick={() => {
+                                        onNavigate(item.id)
+                                        setOpen(false)
+                                    }}
+                                    style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 10,
+                                        minHeight: 44,
+                                        padding: "8px 10px",
+                                        border: "none",
+                                        borderRadius: 12,
+                                        background: on ? "#E3E9FA" : "transparent",
+                                        cursor: "pointer",
+                                        fontFamily: family,
+                                        fontSize: 15,
+                                        fontWeight: on ? 600 : 400,
+                                        color: on ? "#1C1B18" : "#6A665D",
+                                        textAlign: "left",
+                                    }}
+                                >
+                                    <span
+                                        aria-hidden
+                                        style={{
+                                            width: 8,
+                                            height: 8,
+                                            borderRadius: 99,
+                                            background: on ? "#2C6BE0" : "transparent",
+                                            border: on ? "none" : "1px solid #DAD4C8",
+                                            flex: "none",
+                                        }}
+                                    />
+                                    {item.label}
+                                </button>
+                            )
+                        })}
+                    </div>
+                </div>
+            </div>
+        </>
+    )
+}
+
 function DesktopCase({
     project,
-    nav,
-    activeSection,
-    onNavigate,
     scrollerRef,
     setSectionRef,
     related,
@@ -699,9 +858,6 @@ function DesktopCase({
     footer,
 }: {
     project: ProjectRecord
-    nav: CaseNavItem[]
-    activeSection: string
-    onNavigate: (id: string) => void
     scrollerRef: RefObject<HTMLDivElement | null>
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     related: ProjectRecord[]
@@ -734,7 +890,7 @@ function DesktopCase({
                     width: project.longform ? 340 : LEFT_COL,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: project.longform ? "flex-start" : "space-between",
+                    justifyContent: "flex-start",
                     padding: project.longform
                         ? "108px 28px 28px 40px"
                         : "108px 2.2vw 40px 3.2vw",
@@ -802,59 +958,6 @@ function DesktopCase({
                         compact={project.longform}
                     />
                 </div>
-
-                <nav
-                    aria-label="Case sections"
-                    style={{
-                        position: "relative",
-                        zIndex: 1,
-                        pointerEvents: "auto",
-                        flex: "none",
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: nav.length > 7 ? 4 : 10,
-                        paddingTop: nav.length > 7 ? 16 : 24,
-                    }}
-                >
-                    {nav.map((item) => {
-                        const active = item.id === activeSection
-                        return (
-                            <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => onNavigate(item.id)}
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 10,
-                                    background: "transparent",
-                                    border: "none",
-                                    padding: 0,
-                                    cursor: "pointer",
-                                    fontFamily: family,
-                                    fontSize: project.longform ? 15 : 14,
-                                    fontWeight: project.longform && active ? 600 : 400,
-                                    letterSpacing: "0",
-                                    color: active ? ink : project.longform ? "#6A665D" : LABEL,
-                                    textAlign: "left",
-                                }}
-                            >
-                                <span
-                                    aria-hidden
-                                    style={{
-                                        width: project.longform && active ? 10 : 6,
-                                        height: project.longform && active ? 10 : 6,
-                                        borderRadius: project.longform ? 99 : 0,
-                                        background: active ? ink : "transparent",
-                                        border: active ? "none" : `1px solid ${project.longform ? "#DAD4C8" : LABEL}`,
-                                        flex: "none",
-                                    }}
-                                />
-                                {item.label}
-                            </button>
-                        )
-                    })}
-                </nav>
             </aside>
 
             <div
@@ -872,13 +975,13 @@ function DesktopCase({
                     WebkitOverflowScrolling: "touch",
                     overscrollBehavior: "contain",
                     scrollbarWidth: "none",
-                    padding: "88px 28px 80px 20px",
+                    padding: "88px 28px 140px 20px",
                     boxSizing: "border-box",
                     background: CREAM,
                     backgroundColor: CREAM,
                     display: "flex",
                     flexDirection: "column",
-                    gap: project.slug === "sooraj-nagar" ? 0 : project.longform ? 28 : SECTION_GAP,
+                    gap: 0,
                 }}
             >
                 <CaseNarrative
@@ -916,9 +1019,6 @@ function DesktopCase({
 
 function MobileCase({
     project,
-    nav,
-    activeSection,
-    onNavigate,
     setSectionRef,
     related,
     basePath,
@@ -931,9 +1031,6 @@ function MobileCase({
     footer,
 }: {
     project: ProjectRecord
-    nav: CaseNavItem[]
-    activeSection: string
-    onNavigate: (id: string) => void
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     related: ProjectRecord[]
     basePath: string
@@ -950,7 +1047,7 @@ function MobileCase({
             style={{
                 position: "relative",
                 zIndex: 2,
-                padding: "140px 18px 48px",
+                padding: "140px 18px 140px",
                 boxSizing: "border-box",
                 background: CREAM,
             }}
@@ -998,59 +1095,12 @@ function MobileCase({
                 compact={project.longform}
             />
 
-            <nav
-                aria-label="Case sections"
-                style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 4,
-                    margin: "28px 0 40px",
-                }}
-            >
-                {nav.map((item) => {
-                    const active = item.id === activeSection
-                    return (
-                        <button
-                            key={item.id}
-                            type="button"
-                            onClick={() => onNavigate(item.id)}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 10,
-                                background: "transparent",
-                                border: "none",
-                                minHeight: 44,
-                                padding: "12px 0",
-                                cursor: "pointer",
-                                fontFamily: family,
-                                fontSize: 14,
-                                fontWeight: 400,
-                                color: active ? ink : LABEL,
-                                textAlign: "left",
-                            }}
-                        >
-                            <span
-                                aria-hidden
-                                style={{
-                                    width: 6,
-                                    height: 6,
-                                    background: active ? ink : "transparent",
-                                    border: active ? "none" : `1px solid ${LABEL}`,
-                                    flex: "none",
-                                }}
-                            />
-                            {item.label}
-                        </button>
-                    )
-                })}
-            </nav>
-
             <div
                 style={{
                     display: "flex",
                     flexDirection: "column",
-                    gap: project.slug === "sooraj-nagar" ? 0 : project.longform ? 28 : SECTION_GAP,
+                    gap: 0,
+                    marginTop: 36,
                 }}
             >
                 <CaseNarrative
@@ -1144,7 +1194,7 @@ function MetaChips({
                             {b.v
                                 .split(",")
                                 .map((part) => part.trim().replace(/^and\s+/i, ""))
-                                .filter(Boolean)
+                                .filter((part) => part && !/physical button panel/i.test(part))
                                 .map((part) => (
                                     <span
                                         key={part}
@@ -1181,6 +1231,20 @@ function MetaChips({
     )
 }
 
+function stackStyle(lead: boolean, phone: boolean): CSSProperties {
+    return {
+        position: "relative",
+        zIndex: 2,
+        background: CREAM,
+        marginTop: lead ? 0 : phone ? -88 : -160,
+        paddingTop: lead ? 0 : phone ? 28 : 40,
+        paddingBottom: phone ? 128 : 210,
+        borderTop: lead ? "none" : `1px solid ${JOURNAL_LINE}`,
+        borderRadius: lead ? 0 : "22px 22px 0 0",
+        boxShadow: lead ? "none" : "0 -28px 54px rgba(28, 27, 24, 0.09)",
+    }
+}
+
 function CaseSection({
     id,
     setSectionRef,
@@ -1193,21 +1257,12 @@ function CaseSection({
     children: ReactNode
 }) {
     const motion = useContext(CaseMotion)
+    const phone = useMediaQuery(PHONE_MQ)
     return (
         <section
             ref={setSectionRef(id)}
             id={id}
-            style={
-                motion.cover
-                    ? {
-                          position: "relative",
-                          zIndex: 1,
-                          background: CREAM,
-                          marginTop: lead ? 0 : -72,
-                          paddingBottom: 96,
-                      }
-                    : undefined
-            }
+            style={motion.cover ? stackStyle(Boolean(lead), phone) : undefined}
         >
             <Parallax amount={motion.section} lift={motion.lift}>
                 <div
@@ -1263,12 +1318,12 @@ function CaseNarrative({
     const decisionBody = [p.decision1, p.decision2, p.decision3, p.decision4].filter(
         (d) => hasText(d),
     )
-    const journal = p.slug === "sooraj-nagar" && Boolean(p.longform)
+    const phone = useMediaQuery(PHONE_MQ)
     const motion = {
-        lift: Boolean(p.longform) && !journal,
-        section: p.longform ? 64 : 80,
+        lift: true,
+        section: 160,
         media: p.longform ? 110 : 64,
-        cover: Boolean(p.longform) && !journal,
+        cover: true,
     }
     const showFinal = [
         p.finalImage1,
@@ -1506,22 +1561,29 @@ function CaseNarrative({
             )}
 
             {related.length > 0 && (
-                <section style={{ display: "flex", flexDirection: "column", gap: journal ? 12 : 20, paddingTop: journal ? 0 : 8, borderTop: journal ? "1px solid #DAD4C8" : "none", paddingBottom: journal ? 88 : 0 }}>
+                <section
+                    style={{
+                        ...stackStyle(false, phone),
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                    }}
+                >
                     <p
                         style={{
-                            margin: journal ? "24px 0 0" : 0,
-                            fontFamily: journal ? family : displayFamily,
-                            fontSize: journal ? 12 : 22,
-                            fontWeight: journal ? 600 : 400,
-                            letterSpacing: journal ? "0.96px" : 0,
-                            textTransform: journal ? "uppercase" : "none",
-                            color: journal ? "#6A665D" : ink,
+                            margin: 0,
+                            fontFamily: family,
+                            fontSize: 12,
+                            fontWeight: 600,
+                            letterSpacing: "0.96px",
+                            textTransform: "uppercase",
+                            color: JOURNAL_MUTED,
                             lineHeight: 1.3,
                         }}
                     >
                         More work
                     </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: journal ? 0 : 4, borderTop: journal ? "1px solid #DAD4C8" : "none" }}>
+                    <div style={{ display: "flex", flexDirection: "column", borderTop: `1px solid ${JOURNAL_LINE}` }}>
                         {related.map((r) => (
                             <a
                                 key={r.slug}
@@ -1534,19 +1596,17 @@ function CaseNarrative({
                                     textDecoration: "none",
                                     color: ink,
                                     background: "transparent",
-                                    border: journal ? "none" : OUTLINE,
-                                    borderBottom: journal ? "1px solid #DAD4C8" : undefined,
-                                    borderRadius: journal ? 0 : FRAME_RADIUS,
-                                    padding: journal ? "20px 4px" : "14px 16px",
+                                    borderBottom: `1px solid ${JOURNAL_LINE}`,
+                                    padding: "20px 4px",
                                 }}
                             >
                                 <span
                                     style={{
-                                        fontFamily: journal ? family : displayFamily,
+                                        fontFamily: family,
                                         fontSize: 24,
-                                        fontWeight: journal ? 600 : 400,
-                                        letterSpacing: journal ? "-0.36px" : 0,
-                                        lineHeight: journal ? 1.2 : 1.15,
+                                        fontWeight: 600,
+                                        letterSpacing: "-0.36px",
+                                        lineHeight: 1.2,
                                     }}
                                 >
                                     {r.title}
@@ -1650,11 +1710,11 @@ function Parallax({
             const below = elMid - viewMid
             let shift = 0
             if (lift) {
-                // A chapter rises only once it is at the bottom edge, and
-                // only through the empty padding of the chapter above it.
+                // The next chapter lags while it is still low in the view,
+                // then catches the one above it so the sheets stack.
                 const entering = rect.top - viewTop
-                if (entering > viewH - 24) {
-                    shift = -Math.min(amount, (entering - (viewH - 24)) * 0.5)
+                if (entering > viewH * 0.42) {
+                    shift = Math.min(amount, (entering - viewH * 0.42) * 0.45)
                 }
             } else {
                 const progress = Math.max(0, Math.min(1, below / (viewH * 0.55)))
@@ -2683,26 +2743,33 @@ function JournalBlock({
     id,
     setSectionRef,
     phone,
+    lead,
     children,
 }: {
     id: string
     setSectionRef: (id: string) => (el: HTMLElement | null) => void
     phone: boolean
+    lead?: boolean
     children: ReactNode
 }) {
+    const motion = useContext(CaseMotion)
     return (
         <section
             ref={setSectionRef(id)}
             id={id}
-            style={{
-                borderTop: `1px solid ${JOURNAL_LINE}`,
-                padding: phone ? "20px 0 56px" : "24px 0 88px",
-                display: "flex",
-                flexDirection: "column",
-                gap: phone ? 24 : 36,
-            }}
+            style={stackStyle(Boolean(lead), phone)}
         >
-            {children}
+            <Parallax amount={motion.section} lift={motion.lift}>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: phone ? 24 : 36,
+                    }}
+                >
+                    {children}
+                </div>
+            </Parallax>
         </section>
     )
 }
@@ -3016,7 +3083,7 @@ function SoorajSections({
 
     return (
         <>
-            <JournalBlock id="overview" setSectionRef={setSectionRef} phone={phone}>
+            <JournalBlock id="overview" setSectionRef={setSectionRef} phone={phone} lead>
                 <JournalTitle family={family}>Overview</JournalTitle>
                 <JournalLede family={family}>
                     Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions across three roles: government, community and individual. Every press shifts the road toward one of two futures in 2120, collapse or renewal.
@@ -4233,7 +4300,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         role: "Project Lead, Design Researcher and Experience Designer, undergraduate thesis at IVSAA",
         year: "2025",
         timeline: "9 months, from research to a public installation",
-        tools: "Participatory futures workshops, surveys, expert interviews, Futures Wheel, XF Ladder, LOOPY, Unity 3D, SketchUp, TouchDesigner, Figma, FigJam, and a physical button panel with projection",
+        tools: "Participatory futures workshops, surveys, expert interviews, Futures Wheel, XF Ladder, LOOPY, Unity 3D, SketchUp, TouchDesigner, Figma, FigJam",
         collaborators: "Nabeel Ashraf, 3D modelling. Umair Abbas, Unity development. Advisor: Fatin Nawaz.",
         overview: "92% of young Karachiites I surveyed believe their city's climate future is bleak. I led a year-long research and design project that let them press a button, watch Shahra-e-Faisal heat up or heal by 2120, and leave knowing which actions actually matter.",
         context: "Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions. The actions sit across three roles: government, community and individual. Every press shifts the road toward one of two futures in the year 2120, a future of collapse or a future of renewal.\n\nThe project started with a question. If every headline says we are doomed, what does that belief do to how we act today? Nine months of research later, it became an immersive experience, a future-news website, a take-home zine and an online community, all designed to turn climate dread into agency.",
