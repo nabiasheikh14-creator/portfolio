@@ -1429,7 +1429,7 @@ function Thumb({ name, accent }: { name: string; accent: string }) {
 }
 
 const defaultCases: CaseItem[] = [
-    { label: "Fintech App", tag: "PRODUCT / UX", slug: "fintech-app" },
+    { label: "Sooraj Nagar", tag: "INSTALLATION", slug: "sooraj-nagar" },
     { label: "Health Platform", tag: "SYSTEM / UI", slug: "health-platform" },
     { label: "Fred", tag: "PRODUCT / UX", slug: "voice-ai" },
 ]

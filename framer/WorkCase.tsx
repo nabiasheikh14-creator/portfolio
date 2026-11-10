@@ -246,7 +246,12 @@ export default function WorkCase(props: WorkCaseProps) {
         const bySlug = new Map(DEFAULT_CATALOG.map((d) => [d.slug, d]))
         return authored.map((it: any) => {
             const rawSlug = String(it?.slug || "")
-            const slugKey = rawSlug === "chutney-studios" ? "voice-ai" : rawSlug
+            const slugKey =
+                rawSlug === "chutney-studios"
+                    ? "voice-ai"
+                    : rawSlug === "fintech-app"
+                      ? "sooraj-nagar"
+                      : rawSlug
             const fb = bySlug.get(slugKey)
             if (!fb) return it as ProjectRecord
             const replaced = rawSlug === "chutney-studios"
@@ -313,7 +318,7 @@ export default function WorkCase(props: WorkCaseProps) {
     }, [isStatic])
 
     const project =
-        list.find((p) => p.slug === (slug === "chutney-studios" ? "voice-ai" : slug)) ||
+        list.find((p) => p.slug === (slug === "chutney-studios" ? "voice-ai" : slug === "fintech-app" ? "sooraj-nagar" : slug)) ||
         list.find((p) => p.slug && slug && p.slug.includes(slug) && slug !== "chutney-studios") ||
         list[0] ||
         DEFAULT_CATALOG[0]
@@ -1256,7 +1261,7 @@ function CaseNarrative({
 
     return (
         <CaseMotion.Provider value={motion}>
-            {p.slug === "fintech-app" && p.longform ? (
+            {p.slug === "sooraj-nagar" && p.longform ? (
                 <SoorajSections
                     project={p}
                     setSectionRef={setSectionRef}
@@ -3432,7 +3437,7 @@ const DEFAULT_CATALOG: ProjectRecord[] = [
         outcome: "Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.\n\nWhat it proved\nA research-led, locally rooted experience can move young people from \"Karachi is doomed\" to \"here is what would change it\". The same method can travel to any city facing extreme heat.",
         reflection: "Measure the shift\nI would measure the change, not only watch it. Two questions before and after, \"How hopeful do you feel about Karachi's future?\", would have turned strong anecdotes into evidence.\n\nBring policy in earlier\nFarhan Anwar's interview changed the whole system. Organisations such as Karachi Urban Lab, or the Sindh government, could have co-owned the actions and carried them forward.\n\nA method, not a one-off\nSooraj Nagar is a method. Participatory futures research, a research-backed model of actions, and an immersive public touchpoint can be run for any heat-stressed city in the Global South.",
         accent: "#7457C9",
-        slug: "fintech-app",
+        slug: "sooraj-nagar",
         longform: true,
         ...EMPTY_MEDIA,
         storyVideo:

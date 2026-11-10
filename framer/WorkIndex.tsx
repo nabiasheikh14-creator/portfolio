@@ -101,7 +101,12 @@ function normalizeProjects(
         .map((it: any, index: number) => {
             const rawSlug =
                 String(it?.slug || "").replace(/^\//, "") || `project-${index + 1}`
-            const slug = rawSlug === "chutney-studios" ? "voice-ai" : rawSlug
+            const slug =
+                rawSlug === "chutney-studios"
+                    ? "voice-ai"
+                    : rawSlug === "fintech-app"
+                      ? "sooraj-nagar"
+                      : rawSlug
             const custom = resolveLink(it?.href || it?.link, "")
             const fallback =
                 DEFAULT_ITEMS.find((d) => d.slug === slug) ||
@@ -151,12 +156,14 @@ function normalizeProjects(
                 href:
                     rawSlug === "chutney-studios" || slug === "voice-ai"
                         ? `${basePath}/chutney-studios`
-                        : custom || `${basePath}/${slug}`,
+                        : slug === "sooraj-nagar"
+                          ? `${basePath}/sooraj-nagar`
+                          : custom || `${basePath}/${slug}`,
             } satisfies WorkProject
         })
         .filter((it) => it.title)
 
-    const workOrder = ["fintech-app", "voice-ai", "health-platform", "travel-app"]
+    const workOrder = ["sooraj-nagar", "voice-ai", "health-platform", "travel-app"]
     normalized.sort((a, b) => {
         const ai = workOrder.indexOf(a.slug)
         const bi = workOrder.indexOf(b.slug)
@@ -1271,7 +1278,7 @@ const DEFAULT_ITEMS: WorkProject[] = [
         subtitle: "Speculative climate installation",
         description:
             "92% of young Karachiites I surveyed believe their city's climate future is bleak. Sooraj Nagar lets them press a button and watch Shahra-e-Faisal heat up or heal by 2120.",
-        slug: "fintech-app",
+        slug: "sooraj-nagar",
         year: "2025",
         accent: ACCENT,
         coverUrl:
