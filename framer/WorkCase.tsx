@@ -26,7 +26,7 @@ const LABEL = "#888888"
 const PHONE_MQ = "(max-width: 809.98px)"
 const LEFT_COL = "max(240px, 28vw)"
 const FRAME_RADIUS = 12
-const OUTLINE = "1px solid rgba(17,17,17,0.16)"
+const OUTLINE = "1.5px solid #111111"
 /** Shared case-study rhythm */
 const SECTION_GAP = 96
 const BLOCK_GAP = 64
