@@ -1114,6 +1114,30 @@ function MetaChips({
                     >
                         {b.k}
                     </div>
+                    {b.k === "Tools" && project.longform ? (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                            {b.v
+                                .split(",")
+                                .map((part) => part.trim().replace(/^and\s+/i, ""))
+                                .filter(Boolean)
+                                .map((part) => (
+                                    <span
+                                        key={part}
+                                        style={{
+                                            fontFamily: family,
+                                            fontSize: 12,
+                                            lineHeight: 1.3,
+                                            color: ink,
+                                            border: "1px solid rgba(17,17,17,0.16)",
+                                            borderRadius: 999,
+                                            padding: "5px 10px",
+                                        }}
+                                    >
+                                        {part}
+                                    </span>
+                                ))}
+                        </div>
+                    ) : (
                     <div
                         style={{
                             fontFamily: family,
@@ -1125,6 +1149,7 @@ function MetaChips({
                     >
                         {b.v}
                     </div>
+                    )}
                 </div>
             ))}
         </div>
@@ -1231,6 +1256,18 @@ function CaseNarrative({
 
     return (
         <CaseMotion.Provider value={motion}>
+            {p.slug === "fintech-app" && p.longform ? (
+                <SoorajSections
+                    project={p}
+                    setSectionRef={setSectionRef}
+                    accent={a}
+                    ink={ink}
+                    muted={muted}
+                    family={family}
+                    displayFamily={displayFamily}
+                />
+            ) : (
+            <>
             <CaseSection id="overview" lead setSectionRef={setSectionRef}>
                 <MediaFrame src={p.heroImage} accent={a} label="Hero image" tall />
                 <StoryBlock
@@ -1439,6 +1476,8 @@ function CaseNarrative({
                 />
             </CaseSection>
             ) : null}
+            </>
+            )}
 
             {related.length > 0 && (
                 <section style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 8 }}>
@@ -1618,140 +1657,503 @@ function Parallax({
 const COOL = "#1B6B45"
 const HEAT = "#A33B24"
 
-type SystemAction = { name: string; delta: string; detail: string }
+type StepItem = { label: string; detail?: string; pivot?: boolean }
+type StatItem = { value: string; caption: string }
+type CardItem = { title: string; body: string; image?: string }
+type DecisionPart = { label: string; text: string }
+type DecisionItem = { title: string; parts: DecisionPart[] }
+type TierAction = { name: string; delta: string; detail: string }
+type TierGroup = { role: string; renewal: TierAction[]; collapse: TierAction[] }
+type NoteItem = { title: string; body: string }
 
-const SYSTEM_ROLES: {
-    role: string
-    renewal: SystemAction[]
-    collapse: SystemAction[]
-}[] = [
-    {
-        role: "Government",
-        renewal: [
-            {
-                name: "Solar and wind",
-                delta: "−3°C",
-                detail: "A government action toward renewal. Each press cools the scene by 3°C. Solar panels appear on two rooftops and on five street poles.",
-            },
-            {
-                name: "Urban reforestation",
-                delta: "−3°C",
-                detail: "A government action toward renewal, 3°C cooler per press. Walkable space grows, two or three buildings turn green, and wind turbines and street solar appear.",
-            },
-        ],
-        collapse: [
-            {
-                name: "Smart city policy",
-                delta: "+4°C",
-                detail: "A government action toward collapse, 4°C hotter per press. Four buildings become half-built towers or empty plots.",
-            },
-        ],
-    },
-    {
-        role: "Community",
-        renewal: [
-            {
-                name: "Neighbourhood gardens",
-                delta: "−2°C",
-                detail: "A community action toward renewal, 2°C cooler per press. Greenery spreads across balconies and unused rooftops.",
-            },
-            {
-                name: "Rooftop gardens",
-                delta: "−2°C",
-                detail: "A community action toward renewal, 2°C cooler per press. Gardens appear on the roofs.",
-            },
-        ],
-        collapse: [
-            {
-                name: "Palm trees",
-                delta: "+3°C",
-                detail: "A community action toward collapse, 3°C hotter per press. Palms replace the trees that were already there.",
-            },
-        ],
-    },
-    {
-        role: "Individual",
-        renewal: [
-            {
-                name: "Travel by bus",
-                delta: "Cools",
-                detail: "An individual action toward renewal. Choosing the bus is one of the choices that cools the road.",
-            },
-        ],
-        collapse: [
-            {
-                name: "Travel by car",
-                delta: "Heats",
-                detail: "An individual action toward collapse. Traffic and exhaust smoke build with every press.",
-            },
-            {
-                name: "Central air conditioning",
-                delta: "Heats",
-                detail: "An individual action toward collapse. Running central air is one of the choices that heats the city.",
-            },
-        ],
-    },
-]
+const SOORAJ_UI = {
+    process: [
+        { label: "Question" },
+        { label: "Research" },
+        { label: "TouchDesigner prototype", pivot: true },
+        { label: "Karachi build" },
+        { label: "Public installation" },
+    ] as StepItem[],
+    approach: [
+        { label: "Listen first", detail: "Surveyed 65 people, ran a futures workshop and collected 32 worksheets." },
+        { label: "Ask the experts", detail: "Interviewed 7 urban planners, climate activists and futures researchers." },
+        { label: "Build two futures", detail: "A future of collapse and a future of renewal for 2120." },
+        { label: "Model the system", detail: "Mapped each action through heat, air and greenery, then into the buttons." },
+        { label: "Prototype, fail, re-root", detail: "An abstract TouchDesigner test failed. The rebuild sits on a real Karachi road." },
+        { label: "Extend beyond the room", detail: "A future-news website, a take-home zine and an Instagram community." },
+    ] as StepItem[],
+    stats: [
+        { value: "92%", caption: "described the climate future as bad" },
+        { value: "65", caption: "people surveyed, ages 20 to 35" },
+        { value: "32", caption: "futures worksheets, filled in remotely" },
+        { value: "7", caption: "expert interviews" },
+    ] as StatItem[],
+    outcomeStats: [
+        { value: "9", caption: "months, from research to the installation" },
+        { value: "6", caption: "weeks to build the room" },
+        { value: "2", caption: "futures for Shahra-e-Faisal" },
+        { value: "3", caption: "touchpoints after people leave" },
+    ] as StatItem[],
+    methods: [
+        { title: "Survey", body: "65 people, aged 20 to 35, in Karachi and in the diaspora. The pessimism tracked where they lived." },
+        { title: "Futures workshop", body: "University students drew the future as fire, desert and suffocation. Heat was what they felt in their bodies." },
+        { title: "Futures worksheets", body: "32 remote responses from young adults. The same two themes held outside the workshop room." },
+        { title: "Urban design interviews", body: "Arif Hasan and Farhan Anwar. Individual action does not cool a city unless state policy is in the system." },
+        { title: "Climate and futures interviews", body: "Five practitioners and a webinar. They asked for the dystopia to be shown honestly, not softened." },
+    ] as CardItem[],
+    findings: [
+        { title: "Destruction as the default", body: "Young people equate the future with destruction. That pessimism was the starting point." },
+        { title: "Heat is the shared language", body: "Burning, suffocating, fainting. Everyone already had a bodily reference for climate change." },
+        { title: "Responsibility, split honestly", body: "Blaming individuals alienates people. Blaming only the state breeds passivity." },
+        { title: "Abstraction does not land", body: "People needed to see their own city, not a metaphor." },
+    ] as CardItem[],
+    flow: [
+        { label: "Button", detail: "A physical panel for the nine actions." },
+        { label: "Laptop", detail: "Unity runs the Shahra-e-Faisal scene." },
+        { label: "Projector", detail: "The road fills the room." },
+    ] as StepItem[],
+    tiers: [
+        {
+            role: "Government",
+            renewal: [
+                { name: "Solar and wind", delta: "−3°C", detail: "Solar panels appear on two rooftops and on five street poles." },
+                { name: "Urban reforestation", delta: "−3°C", detail: "Walkable space grows, buildings turn green, and wind and street solar appear." },
+            ],
+            collapse: [
+                { name: "Smart city policy", delta: "+4°C", detail: "Four buildings become half-built towers or empty plots." },
+            ],
+        },
+        {
+            role: "Community",
+            renewal: [
+                { name: "Neighbourhood gardens", delta: "−2°C", detail: "Greenery spreads across balconies and unused rooftops." },
+                { name: "Rooftop gardens", delta: "−2°C", detail: "Gardens appear on the roofs." },
+            ],
+            collapse: [
+                { name: "Palm trees", delta: "+3°C", detail: "Palms replace the trees that were already there." },
+            ],
+        },
+        {
+            role: "Individual",
+            renewal: [
+                { name: "Travel by bus", delta: "Cools", detail: "Choosing the bus is one of the choices that cools the road." },
+            ],
+            collapse: [
+                { name: "Travel by car", delta: "Heats", detail: "Traffic and exhaust smoke build with every press." },
+                { name: "Central air conditioning", delta: "Heats", detail: "Running central air is one of the choices that heats the city." },
+            ],
+        },
+    ] as TierGroup[],
+    notes: [
+        { title: "Palms that heat the city", body: "Palms are a popular greening choice along Karachi's roads, but they are not native, they draw heavily on groundwater, they cast almost no shade, and they do little to cool the air compared with indigenous trees. A green-looking action that makes things worse." },
+        { title: "A smart city can mean collapse", body: "In practice, top-down, tech-first megaprojects bring glass towers and half-finished developments. Those intensify the heat island rather than relieve it." },
+    ] as NoteItem[],
+    decisions: [
+        {
+            title: "A real road, not an abstraction",
+            parts: [
+                { label: "Decision", text: "Rebuild the whole experience on Shahra-e-Faisal instead of refining the abstract prototype." },
+                { label: "Why", text: "Testing showed that abstraction broke comprehension, and comprehension was the point." },
+                { label: "Trade-off", text: "A much heavier 3D build inside a six-week window." },
+            ],
+        },
+        {
+            title: "Three roles on every button",
+            parts: [
+                { label: "Decision", text: "Every visitor can act as government, community and individual, rather than only as a private person." },
+                { label: "Why", text: "An individual-only frame is both ineffective and alienating." },
+                { label: "Trade-off", text: "The piece has to show where a visitor's power ends and the state's begins." },
+            ],
+        },
+        {
+            title: "Hope had to include the harm",
+            parts: [
+                { label: "Decision", text: "Keep buttons that make things worse, including ones that look green." },
+                { label: "Why", text: "A hope-only experience would have been easy to dismiss." },
+                { label: "Trade-off", text: "Palm trees and smart city policy both push the road toward collapse." },
+            ],
+        },
+        {
+            title: "Specialists, with me directing",
+            parts: [
+                { label: "Decision", text: "Scope the 3D modelling and the Unity development as separate workstreams." },
+                { label: "Why", text: "One person still had to ship an installation, a website, a zine and a community in one academic year." },
+                { label: "Trade-off", text: "Research, narrative and the experience stayed with me. The build did not." },
+            ],
+        },
+    ] as DecisionItem[],
+    reflections: [
+        { title: "Measure the shift", body: "I would measure the change, not only watch it. Two questions before and after, \"How hopeful do you feel about Karachi's future?\", would have turned strong anecdotes into evidence." },
+        { title: "Bring policy in earlier", body: "Farhan Anwar's interview changed the whole system. Organisations such as Karachi Urban Lab, or the Sindh government, could have co-owned the actions and carried them forward." },
+        { title: "A method, not a one-off", body: "Sooraj Nagar is a method. Participatory futures research, a research-backed model of actions, and an immersive public touchpoint can be run for any heat-stressed city in the Global South." },
+    ] as { title: string; body: string }[],
+}
 
-const SYSTEM_NOTES: { name: string; detail: string }[] = [
-    {
-        name: "Palms that heat the city",
-        detail: "Palms are a popular greening choice along Karachi's roads, but they are not native, they draw heavily on groundwater, they cast almost no shade, and they do little to cool the air compared with indigenous trees. A green-looking action that makes things worse.",
-    },
-    {
-        name: "A smart city can mean collapse",
-        detail: "In practice, top-down, tech-first megaprojects bring glass towers and half-finished developments. Those intensify the heat island rather than relieve it.",
-    },
-]
+function SectionKicker({
+    kicker,
+    displayFamily,
+    ink,
+}: {
+    kicker: string
+    displayFamily: string
+    ink: string
+}) {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <span aria-hidden style={{ display: "block", width: 36, height: 1, background: ink }} />
+            <div
+                style={{
+                    fontFamily: displayFamily,
+                    fontSize: 40,
+                    fontWeight: 400,
+                    letterSpacing: "0",
+                    lineHeight: 1.05,
+                    color: ink,
+                }}
+            >
+                {kicker}
+            </div>
+        </div>
+    )
+}
 
-function SystemBoard({
+function BodyCopy({ family, children }: { family: string; children: ReactNode }) {
+    return (
+        <p
+            style={{
+                margin: 0,
+                fontFamily: family,
+                fontSize: BODY_SIZE,
+                fontWeight: 400,
+                lineHeight: BODY_LH,
+                color: BODY_INK,
+            }}
+        >
+            {children}
+        </p>
+    )
+}
+
+function StatBlock({
+    value,
+    caption,
+    family,
+    displayFamily,
+    ink,
+}: StatItem & { family: string; displayFamily: string; ink: string }) {
+    return (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+            <div
+                style={{
+                    fontFamily: displayFamily,
+                    fontSize: 52,
+                    fontWeight: 400,
+                    lineHeight: 0.95,
+                    color: ink,
+                }}
+            >
+                {value}
+            </div>
+            <div
+                style={{
+                    fontFamily: family,
+                    fontSize: 13,
+                    fontWeight: 400,
+                    lineHeight: 1.4,
+                    color: LABEL,
+                    maxWidth: 180,
+                }}
+            >
+                {caption}
+            </div>
+        </div>
+    )
+}
+
+function ProcessStrip({
+    steps,
     family,
     displayFamily,
     ink,
     accent,
-    frames,
+    direction,
 }: {
+    steps: StepItem[]
     family: string
     displayFamily: string
     ink: string
     accent: string
-    frames?: { section: string; src: string; video?: boolean; label?: string; after?: number }[]
+    direction?: "horizontal" | "vertical"
 }) {
     const phone = useMediaQuery(PHONE_MQ)
-    const room = (frames || []).filter((f) => f.section === "system" && hasMedia(f.src))
+    const vertical = direction === "vertical" || phone
     return (
-        <div style={{ display: "flex", flexDirection: "column", gap: 22 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-                <span
-                    aria-hidden
-                    style={{ display: "block", width: 36, height: 1, background: ink }}
-                />
+        <div
+            style={{
+                display: "flex",
+                flexDirection: vertical ? "column" : "row",
+                alignItems: "stretch",
+                gap: vertical ? 0 : 0,
+            }}
+        >
+            {steps.map((step, i) => (
                 <div
+                    key={step.label}
                     style={{
-                        fontFamily: displayFamily,
-                        fontSize: 40,
-                        fontWeight: 400,
-                        letterSpacing: "0",
-                        lineHeight: 1.05,
-                        color: ink,
+                        flex: vertical ? undefined : 1,
+                        display: "flex",
+                        flexDirection: vertical ? "row" : "column",
+                        alignItems: "stretch",
+                        gap: vertical ? 14 : 8,
+                        minWidth: 0,
                     }}
                 >
-                    System
+                    <div
+                        style={{
+                            display: "flex",
+                            flexDirection: vertical ? "column" : "row",
+                            alignItems: "center",
+                            gap: 8,
+                            width: vertical ? 36 : "auto",
+                            alignSelf: "stretch",
+                        }}
+                    >
+                        <span
+                            style={{
+                                fontFamily: displayFamily,
+                                fontSize: 26,
+                                lineHeight: 1,
+                                color: step.pivot ? accent : ink,
+                            }}
+                        >
+                            {String(i + 1).padStart(2, "0")}
+                        </span>
+                        {i < steps.length - 1 ? (
+                            <span
+                                aria-hidden
+                                style={
+                                    vertical
+                                        ? { width: 1, flex: 1, minHeight: 12, background: "rgba(17,17,17,0.18)" }
+                                        : { height: 1, flex: 1, background: "rgba(17,17,17,0.18)" }
+                                }
+                            />
+                        ) : null}
+                    </div>
+                    <div style={{ padding: vertical ? "0 0 18px" : "0 16px 0 0", minWidth: 0 }}>
+                        <div
+                            style={{
+                                fontFamily: family,
+                                fontSize: 14,
+                                fontWeight: 600,
+                                lineHeight: 1.35,
+                                color: step.pivot ? accent : ink,
+                            }}
+                        >
+                            {step.label}
+                        </div>
+                        {step.pivot ? (
+                            <div
+                                style={{
+                                    marginTop: 4,
+                                    fontFamily: family,
+                                    fontSize: 11,
+                                    fontWeight: 600,
+                                    letterSpacing: "0.12em",
+                                    textTransform: "uppercase",
+                                    color: accent,
+                                }}
+                            >
+                                Pivot
+                            </div>
+                        ) : null}
+                        {step.detail ? (
+                            <div
+                                style={{
+                                    marginTop: 4,
+                                    fontFamily: family,
+                                    fontSize: 14,
+                                    lineHeight: 1.45,
+                                    color: BODY_INK,
+                                }}
+                            >
+                                {step.detail}
+                            </div>
+                        ) : null}
+                    </div>
                 </div>
-            </div>
+            ))}
+        </div>
+    )
+}
+
+function CardGrid({
+    cards,
+    columns,
+    family,
+    ink,
+    displayFamily,
+    plates,
+}: {
+    cards: CardItem[]
+    columns?: number
+    family: string
+    ink: string
+    displayFamily?: string
+    plates?: boolean
+}) {
+    const phone = useMediaQuery(PHONE_MQ)
+    const cols = phone ? 1 : columns || 2
+    return (
+        <div
+            style={{
+                display: "grid",
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
+                gap: 12,
+            }}
+        >
+            {cards.map((card) => (
+                <div
+                    key={card.title}
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        border: "1px solid rgba(17,17,17,0.12)",
+                        borderRadius: FRAME_RADIUS,
+                        padding: card.image ? 10 : 16,
+                        background: "rgba(255,255,255,0.28)",
+                        minWidth: 0,
+                    }}
+                >
+                    {card.image ? (
+                        <img
+                            src={card.image}
+                            alt={card.title}
+                            style={{
+                                display: "block",
+                                width: "100%",
+                                height: "auto",
+                                borderRadius: 8,
+                            }}
+                        />
+                    ) : plates ? (
+                        <div
+                            style={{
+                                minHeight: 140,
+                                borderRadius: 8,
+                                background: "#E7E1D6",
+                                display: "flex",
+                                alignItems: "flex-end",
+                                padding: 16,
+                                fontFamily: displayFamily,
+                                fontSize: 34,
+                                lineHeight: 1,
+                                color: ink,
+                            }}
+                        >
+                            {card.title}
+                        </div>
+                    ) : null}
+                    {card.image || !plates ? (
+                    <div
+                        style={{
+                            fontFamily: family,
+                            fontSize: 16,
+                            fontWeight: 600,
+                            lineHeight: 1.35,
+                            color: ink,
+                            padding: card.image ? "4px 6px 0" : 0,
+                        }}
+                    >
+                        {card.title}
+                    </div>
+                    ) : null}
+                    <p
+                        style={{
+                            margin: 0,
+                            fontFamily: family,
+                            fontSize: 14,
+                            fontWeight: 400,
+                            lineHeight: 1.45,
+                            color: BODY_INK,
+                            padding: card.image ? "0 6px 6px" : 0,
+                        }}
+                    >
+                        {card.body}
+                    </p>
+                </div>
+            ))}
+        </div>
+    )
+}
+
+function PullQuote({
+    quote,
+    displayFamily,
+    ink,
+}: {
+    quote: string
+    displayFamily: string
+    ink: string
+}) {
+    return (
+        <blockquote style={{ margin: 0, padding: "4px 0" }}>
             <p
                 style={{
                     margin: 0,
-                    fontFamily: family,
-                    fontSize: BODY_SIZE,
+                    fontFamily: displayFamily,
+                    fontSize: 36,
                     fontWeight: 400,
-                    lineHeight: BODY_LH,
-                    color: BODY_INK,
+                    lineHeight: 1.15,
+                    color: ink,
+                    maxWidth: 640,
                 }}
             >
-                Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.
+                {quote}
             </p>
-            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        </blockquote>
+    )
+}
+
+function DecisionRow({
+    index,
+    title,
+    parts,
+    family,
+    displayFamily,
+    ink,
+    accent,
+}: {
+    index: number
+    title: string
+    parts: DecisionPart[]
+    family: string
+    displayFamily: string
+    ink: string
+    accent: string
+}) {
+    const phone = useMediaQuery(PHONE_MQ)
+    return (
+        <div
+            style={{
+                display: "grid",
+                gridTemplateColumns: phone ? "1fr" : "76px 1fr",
+                gap: phone ? 8 : 18,
+                padding: "22px 0",
+                borderTop: "1px solid rgba(17,17,17,0.12)",
+            }}
+        >
+            <div
+                style={{
+                    fontFamily: displayFamily,
+                    fontSize: 40,
+                    lineHeight: 1,
+                    color: accent,
+                }}
+            >
+                {String(index).padStart(2, "0")}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 12, minWidth: 0 }}>
                 <div
                     style={{
                         fontFamily: family,
@@ -1761,157 +2163,87 @@ function SystemBoard({
                         color: ink,
                     }}
                 >
-                    Three roles
+                    {title}
                 </div>
-                <p
-                    style={{
-                        margin: 0,
-                        fontFamily: family,
-                        fontSize: BODY_SIZE,
-                        fontWeight: 400,
-                        lineHeight: BODY_LH,
-                        color: BODY_INK,
-                    }}
-                >
-                    I split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.
-                </p>
-            </div>
-            {room.map((f, i) => (
-                <FramePiece key={`system-room-${i}`} frame={f} accent={accent} />
-            ))}
-            <div
-                style={{
-                    borderRadius: FRAME_RADIUS,
-                    background: "#E9E3D6",
-                    overflow: "hidden",
-                }}
-            >
-                {phone ? (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        {SYSTEM_ROLES.map((group) => (
-                            <div
-                                key={group.role}
-                                style={{ borderTop: "1px solid rgba(17,17,17,0.1)" }}
-                            >
-                                <RoleMark role={group.role} family={family} ink={ink} />
-                                <PoleLabel family={family} tone="cool" label="Renewal" hint="cools the road" />
-                                {group.renewal.map((action, i) => (
-                                    <ActionRow
-                                        key={action.name}
-                                        action={action}
-                                        tone="cool"
-                                        family={family}
-                                        ink={ink}
-                                        rule={i > 0}
-                                    />
-                                ))}
-                                <PoleLabel family={family} tone="heat" label="Collapse" hint="heats the road" />
-                                {group.collapse.map((action, i) => (
-                                    <ActionRow
-                                        key={action.name}
-                                        action={action}
-                                        tone="heat"
-                                        family={family}
-                                        ink={ink}
-                                        rule={i > 0}
-                                    />
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                        <div
-                            style={{
-                                display: "grid",
-                                gridTemplateColumns: "1fr 44px 1fr",
-                            }}
-                        >
-                            <PoleLabel family={family} tone="cool" label="Renewal" hint="cools the road" align="right" />
-                            <div />
-                            <PoleLabel family={family} tone="heat" label="Collapse" hint="heats the road" />
-                        </div>
-                        {SYSTEM_ROLES.map((group) => (
-                            <div
-                                key={group.role}
-                                style={{
-                                    display: "grid",
-                                    gridTemplateColumns: "1fr 44px 1fr",
-                                    borderTop: `1px solid ${accent}55`,
-                                }}
-                            >
-                                <div style={{ display: "flex", flexDirection: "column" }}>
-                                    {group.renewal.map((action, i) => (
-                                        <ActionRow
-                                            key={action.name}
-                                            action={action}
-                                            tone="cool"
-                                            family={family}
-                                            ink={ink}
-                                            align="right"
-                                            rule={i > 0}
-                                        />
-                                    ))}
-                                </div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        borderLeft: `1px solid ${accent}`,
-                                        borderRight: `1px solid ${accent}`,
-                                    }}
-                                >
-                                    <span
-                                        style={{
-                                            fontFamily: family,
-                                            fontSize: 11,
-                                            fontWeight: 600,
-                                            letterSpacing: "0.14em",
-                                            textTransform: "uppercase",
-                                            color: ink,
-                                            writingMode: "vertical-rl",
-                                            textOrientation: "mixed",
-                                        }}
-                                    >
-                                        {group.role}
-                                    </span>
-                                </div>
-                                <div style={{ display: "flex", flexDirection: "column" }}>
-                                    {group.collapse.map((action, i) => (
-                                        <ActionRow
-                                            key={action.name}
-                                            action={action}
-                                            tone="heat"
-                                            family={family}
-                                            ink={ink}
-                                            rule={i > 0}
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: phone ? "1fr" : "1fr 1fr",
-                    gap: phone ? 22 : 28,
-                }}
-            >
-                {SYSTEM_NOTES.map((note) => (
+                {parts.map((part) => (
                     <div
-                        key={note.name}
+                        key={part.label}
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 6,
-                            borderLeft: `2px solid ${HEAT}`,
-                            paddingLeft: 14,
+                            display: "grid",
+                            gridTemplateColumns: phone ? "1fr" : "96px 1fr",
+                            gap: phone ? 2 : 12,
                         }}
                     >
+                        <div
+                            style={{
+                                fontFamily: family,
+                                fontSize: 11,
+                                fontWeight: 600,
+                                letterSpacing: "0.12em",
+                                textTransform: "uppercase",
+                                color: LABEL,
+                                paddingTop: phone ? 0 : 4,
+                            }}
+                        >
+                            {part.label}
+                        </div>
+                        <div
+                            style={{
+                                fontFamily: family,
+                                fontSize: 16,
+                                lineHeight: 1.55,
+                                color: BODY_INK,
+                            }}
+                        >
+                            {part.text}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    )
+}
+
+function TierTable({
+    groups,
+    legend,
+    family,
+    displayFamily,
+    ink,
+}: {
+    groups: TierGroup[]
+    legend: string
+    family: string
+    displayFamily: string
+    ink: string
+}) {
+    const phone = useMediaQuery(PHONE_MQ)
+    const cell = (actions: TierAction[], tone: "cool" | "heat") => (
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+            {actions.map((action, i) => (
+                <div
+                    key={action.name}
+                    style={{
+                        display: "flex",
+                        gap: 14,
+                        alignItems: "flex-start",
+                        padding: "16px 0",
+                        borderTop: i ? "1px solid rgba(17,17,17,0.08)" : "none",
+                    }}
+                >
+                    <div
+                        style={{
+                            flex: "none",
+                            width: phone ? 84 : 108,
+                            fontFamily: displayFamily,
+                            fontSize: phone ? 32 : 40,
+                            lineHeight: 0.95,
+                            color: tone === "cool" ? COOL : HEAT,
+                        }}
+                    >
+                        {action.delta}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
                         <div
                             style={{
                                 fontFamily: family,
@@ -1921,177 +2253,373 @@ function SystemBoard({
                                 color: ink,
                             }}
                         >
-                            {note.name}
+                            {action.name}
                         </div>
-                        <p
+                        <div
                             style={{
-                                margin: 0,
+                                marginTop: 4,
                                 fontFamily: family,
-                                fontSize: BODY_SIZE,
-                                fontWeight: 400,
-                                lineHeight: BODY_LH,
+                                fontSize: 14,
+                                lineHeight: 1.45,
                                 color: BODY_INK,
                             }}
                         >
-                            {note.detail}
-                        </p>
+                            {action.detail}
+                        </div>
                     </div>
-                ))}
-            </div>
+                </div>
+            ))}
         </div>
     )
-}
-
-function RoleMark({ role, family, ink }: { role: string; family: string; ink: string }) {
     return (
-        <div
-            style={{
-                padding: "14px 16px 4px",
-                fontFamily: family,
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.14em",
-                textTransform: "uppercase",
-                color: ink,
-            }}
-        >
-            {role}
-        </div>
-    )
-}
-
-function PoleLabel({
-    family,
-    tone,
-    label,
-    hint,
-    align,
-}: {
-    family: string
-    tone: "cool" | "heat"
-    label: string
-    hint: string
-    align?: "right"
-}) {
-    return (
-        <div
-            style={{
-                padding: align ? "16px 18px 8px" : "16px 18px 8px",
-                textAlign: align || "left",
-            }}
-        >
-            <div
-                style={{
-                    fontFamily: family,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    letterSpacing: "0.14em",
-                    textTransform: "uppercase",
-                    color: tone === "cool" ? COOL : HEAT,
-                }}
-            >
-                {label}
-            </div>
-            <div
-                style={{
-                    marginTop: 3,
-                    fontFamily: family,
-                    fontSize: 13,
-                    fontWeight: 400,
-                    lineHeight: 1.3,
-                    color: LABEL,
-                }}
-            >
-                {hint}
-            </div>
-        </div>
-    )
-}
-
-function ActionRow({
-    action,
-    tone,
-    family,
-    ink,
-    align,
-    rule,
-}: {
-    action: SystemAction
-    tone: "cool" | "heat"
-    family: string
-    ink: string
-    align?: "right"
-    rule?: boolean
-}) {
-    const numeric = action.delta.includes("°")
-    const delta = (
-        <div
-            style={{
-                flex: "none",
-                width: 72,
-                fontFamily: family,
-                fontSize: numeric ? 22 : 12,
-                fontWeight: 600,
-                letterSpacing: numeric ? "-0.04em" : "0.08em",
-                textTransform: numeric ? "none" : "uppercase",
-                color: tone === "cool" ? COOL : HEAT,
-                lineHeight: 1.1,
-                paddingTop: numeric ? 1 : 4,
-                textAlign: "center",
-            }}
-        >
-            {action.delta}
-        </div>
-    )
-    const copy = (
-        <div style={{ flex: 1, minWidth: 0, textAlign: align || "left" }}>
-            <div
-                style={{
-                    fontFamily: family,
-                    fontSize: 16,
-                    fontWeight: 600,
-                    lineHeight: 1.35,
-                    color: ink,
-                }}
-            >
-                {action.name}
-            </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <p
                 style={{
-                    margin: "4px 0 0",
+                    margin: 0,
                     fontFamily: family,
-                    fontSize: 15,
-                    fontWeight: 400,
-                    lineHeight: 1.5,
-                    color: BODY_INK,
+                    fontSize: 14,
+                    lineHeight: 1.45,
+                    color: MUTED,
                 }}
             >
-                {action.detail}
+                {legend}
             </p>
+            <div style={{ borderTop: "1px solid rgba(17,17,17,0.16)" }}>
+                {phone ? (
+                    groups.map((group) => (
+                        <div key={group.role} style={{ borderBottom: "1px solid rgba(17,17,17,0.12)", padding: "16px 0 8px" }}>
+                            <div
+                                style={{
+                                    fontFamily: family,
+                                    fontSize: 12,
+                                    fontWeight: 600,
+                                    letterSpacing: "0.12em",
+                                    textTransform: "uppercase",
+                                    color: ink,
+                                    marginBottom: 8,
+                                }}
+                            >
+                                {group.role}
+                            </div>
+                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: COOL }}>
+                                Renewal
+                            </div>
+                            {cell(group.renewal, "cool")}
+                            <div style={{ fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.08em", textTransform: "uppercase", color: HEAT, marginTop: 8 }}>
+                                Collapse
+                            </div>
+                            {cell(group.collapse, "heat")}
+                        </div>
+                    ))
+                ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "128px 1fr 1fr", columnGap: 28 }}>
+                        <div />
+                        <div style={{ padding: "12px 0", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: COOL }}>
+                            Renewal
+                        </div>
+                        <div style={{ padding: "12px 0", fontFamily: family, fontSize: 12, fontWeight: 600, letterSpacing: "0.12em", textTransform: "uppercase", color: HEAT }}>
+                            Collapse
+                        </div>
+                        {groups.map((group) => (
+                            <div key={group.role} style={{ display: "contents" }}>
+                                <div
+                                    style={{
+                                        borderTop: "1px solid rgba(17,17,17,0.12)",
+                                        paddingTop: 18,
+                                        fontFamily: family,
+                                        fontSize: 13,
+                                        fontWeight: 600,
+                                        letterSpacing: "0.08em",
+                                        textTransform: "uppercase",
+                                        color: ink,
+                                    }}
+                                >
+                                    {group.role}
+                                </div>
+                                <div style={{ borderTop: "1px solid rgba(17,17,17,0.12)" }}>{cell(group.renewal, "cool")}</div>
+                                <div style={{ borderTop: "1px solid rgba(17,17,17,0.12)" }}>{cell(group.collapse, "heat")}</div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
+function SoorajSections({
+    project,
+    setSectionRef,
+    accent,
+    ink,
+    family,
+    displayFamily,
+}: {
+    project: ProjectRecord
+    setSectionRef: (id: string) => (el: HTMLElement | null) => void
+    accent: string
+    ink: string
+    muted: string
+    family: string
+    displayFamily: string
+}) {
+    const phone = useMediaQuery(PHONE_MQ)
+    const frames = project.frames || []
+    const pic = (section: string, video?: boolean) =>
+        frames.find((f) => f.section === section && Boolean(f.video) === Boolean(video) && hasMedia(f.src))
+    const researchImg = pic("research")
+    const architecture = pic("approach")
+    const room = pic("system")
+    const futures = pic("experience")
+    const roomFilm = pic("experience", true)
+    const website = pic("beyond")
+    const statRow = (items: StatItem[]) => (
+        <div
+            style={{
+                display: "grid",
+                gridTemplateColumns: phone ? "1fr 1fr" : "repeat(4, minmax(0, 1fr))",
+                gap: phone ? "22px 16px" : 20,
+                padding: "8px 0",
+                borderTop: "1px solid rgba(17,17,17,0.12)",
+                borderBottom: "1px solid rgba(17,17,17,0.12)",
+            }}
+        >
+            {items.map((item) => (
+                <StatBlock
+                    key={item.caption}
+                    value={item.value}
+                    caption={item.caption}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                />
+            ))}
         </div>
     )
     return (
-        <div
-            style={{
-                display: "flex",
-                gap: 8,
-                padding: "14px 16px 16px",
-                alignItems: "flex-start",
-                borderTop: rule ? "1px solid rgba(17,17,17,0.08)" : "none",
-            }}
-        >
-            {align === "right" ? (
-                <>
-                    {copy}
-                    {delta}
-                </>
-            ) : (
-                <>
-                    {delta}
-                    {copy}
-                </>
-            )}
-        </div>
+        <>
+            <CaseSection id="overview" lead setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Overview" displayFamily={displayFamily} ink={ink} />
+                <BodyCopy family={family}>
+                    Sooraj Nagar, City of the Sun, is a speculative, interactive installation about Karachi's climate future. Visitors stand in front of a projected 3D model of Shahra-e-Faisal, the city's main artery, and press physical buttons for nine real climate actions. The actions sit across three roles: government, community and individual. Every press shifts the road toward one of two futures in the year 2120, a future of collapse or a future of renewal.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    The project started with a question. If every headline says we are doomed, what does that belief do to how we act today? Nine months of research later, it became an immersive experience, a future-news website, a take-home zine and an online community, all designed to turn climate dread into agency.
+                </BodyCopy>
+                <ProcessStrip
+                    steps={SOORAJ_UI.process}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    accent={accent}
+                />
+                <VideoFrame src={project.storyVideo || ""} accent={accent} label="Case study film" />
+            </CaseSection>
+
+            <CaseSection id="challenge" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Challenge" displayFamily={displayFamily} ink={ink} />
+                <BodyCopy family={family}>
+                    Living through Karachi's urban heat island has convinced young Karachiites that climate decline is inevitable. That belief limits their vision of a hopeful future and convinces them they are powerless.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    Karachi's 2015 heatwave killed 1,181 people in a week, the deadliest in Pakistan in over 50 years. Heat is the climate impact residents feel most, every day.
+                </BodyCopy>
+                <PullQuote
+                    quote="I'm leaving the country before it kills me."
+                    displayFamily={displayFamily}
+                    ink={ink}
+                />
+                <BodyCopy family={family}>
+                    How might we let people envision and experience Karachi's heat across more than one future, so the warning about the present arrives with a reason to hope?
+                </BodyCopy>
+            </CaseSection>
+
+            <CaseSection id="research" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Research" displayFamily={displayFamily} ink={ink} />
+                <BodyCopy family={family}>
+                    Six months of mixed-method research shaped every decision in the build. I designed and ran each stream myself, then brought it together on one FigJam board.
+                </BodyCopy>
+                {statRow(SOORAJ_UI.stats)}
+                <CardGrid cards={SOORAJ_UI.methods} columns={2} family={family} ink={ink} />
+                {researchImg ? <MediaFrame src={researchImg.src} accent={accent} label={researchImg.label || "Research board"} tall /> : null}
+                <BodyCopy family={family}>
+                    "For the West, climate change is a near future. We are going through it." "People need to see how bad things can get."
+                </BodyCopy>
+                <CardGrid cards={SOORAJ_UI.findings} columns={2} family={family} ink={ink} />
+                <BodyCopy family={family}>
+                    Asphalt, waste heat, lost vegetation and glass towers drive the heat. The cooling that fits this city is green corridors, neighbourhood gardens and urban reforestation. Across the precedents, almost no hopeful future is set in Pakistan.
+                </BodyCopy>
+            </CaseSection>
+
+            <CaseSection id="approach" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Approach" displayFamily={displayFamily} ink={ink} />
+                <ProcessStrip
+                    steps={SOORAJ_UI.approach}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    accent={accent}
+                    direction="vertical"
+                />
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Goals</div>
+                    <BodyCopy family={family}>
+                        Make a hopeful Karachi feel physically real. Give visitors agency over the outcome. Teach which actions cool a city, and which only look green. Leave a next step they can take that week.
+                    </BodyCopy>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>Constraints</div>
+                    <BodyCopy family={family}>
+                        One designer, an academic calendar, and no budget for commercial hardware or a venue. 3D and Unity sat outside my core skills, so I directed two collaborators. A first-time visitor had to understand the room within seconds. Research took six months, the installation six weeks, branding four weeks, the website a week, and the zine a week.
+                    </BodyCopy>
+                </div>
+                {architecture ? <MediaFrame src={architecture.src} accent={accent} label={architecture.label || "Project architecture"} tall /> : null}
+            </CaseSection>
+
+            <CaseSection id="system" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="System" displayFamily={displayFamily} ink={ink} />
+                <BodyCopy family={family}>
+                    Nine actions, three roles, two futures. Each button is a research-backed claim about how Karachi gets hotter or cooler, translated into a rule the 3D world obeys.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    I split the actions across government, community and individual because the interviews pulled in opposite directions. Urban planners argued that individual action is ineffective without policy. Young people asked why it was on them when the state does nothing. Giving every visitor all three roles answers both. You can see what is in your hands, and what is not.
+                </BodyCopy>
+                <TierTable
+                    groups={SOORAJ_UI.tiers}
+                    legend="Read across a role. Renewal cools the road, collapse heats it, and the figure is the change for each press."
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: phone ? "1fr" : "1fr 1fr",
+                        gap: 12,
+                    }}
+                >
+                    {SOORAJ_UI.notes.map((note) => (
+                        <div
+                            key={note.title}
+                            style={{
+                                border: "1px solid rgba(17,17,17,0.12)",
+                                borderLeft: `3px solid ${HEAT}`,
+                                borderRadius: FRAME_RADIUS,
+                                padding: "16px 16px 16px 18px",
+                            }}
+                        >
+                            <div style={{ fontFamily: family, fontSize: 16, fontWeight: 600, lineHeight: 1.35, color: ink }}>
+                                {note.title}
+                            </div>
+                            <p style={{ margin: "8px 0 0", fontFamily: family, fontSize: 15, lineHeight: 1.55, color: BODY_INK }}>
+                                {note.body}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </CaseSection>
+
+            <CaseSection id="experience" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Experience" displayFamily={displayFamily} ink={ink} />
+                {room ? <MediaFrame src={room.src} accent={accent} label={room.label || "The room"} tall /> : null}
+                <ProcessStrip
+                    steps={SOORAJ_UI.flow}
+                    family={family}
+                    displayFamily={displayFamily}
+                    ink={ink}
+                    accent={accent}
+                />
+                <BodyCopy family={family}>
+                    Using the Futures Wheel and the Experiential Futures Ladder, I built two versions of Shahra-e-Faisal. Collapse is toxic air, cracked asphalt and a permanent heat fog. Renewal is 30% green cover, rooftop gardens, walkable streets, wind and solar.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    The first build was a TouchDesigner piece. Testers could not read it until someone explained it. If a button said solar panels, they expected to see the panels. I threw out the abstraction and rebuilt the scene on the road most Karachiites have sat in traffic, flooded or baked on.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    Every press answered through the glowing button, a message, a line rooted in real life, a sound, and a temperature that climbed or fell. Visitors could end in a mixed future, because that is closer to how real change happens.
+                </BodyCopy>
+                {roomFilm ? <VideoFrame src={roomFilm.src} accent={accent} label={roomFilm.label || "Room mockup"} /> : null}
+            </CaseSection>
+
+            <CaseSection id="beyond" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Beyond the room" displayFamily={displayFamily} ink={ink} />
+                <BodyCopy family={family}>
+                    An installation lasts an afternoon. I designed three touchpoints so the idea kept working after people left.
+                </BodyCopy>
+                <CardGrid
+                    columns={3}
+                    family={family}
+                    ink={ink}
+                    displayFamily={displayFamily}
+                    plates
+                    cards={[
+                        { title: "Zine", body: "A printed guide to the real action behind each button, plus a manifesto kit.", image: "" },
+                        { title: "Website", body: "Future's Archive, a newsroom from 2120 that switches between collapse and renewal.", image: website?.src || "" },
+                        { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "" },
+                    ].map((card) => ({ ...card, image: card.image || undefined }))}
+                />
+            </CaseSection>
+
+            <CaseSection id="decisions" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Decisions" displayFamily={displayFamily} ink={ink} />
+                <div>
+                    {SOORAJ_UI.decisions.map((item, i) => (
+                        <DecisionRow
+                            key={item.title}
+                            index={i + 1}
+                            title={item.title}
+                            parts={item.parts}
+                            family={family}
+                            displayFamily={displayFamily}
+                            ink={ink}
+                            accent={accent}
+                        />
+                    ))}
+                </div>
+            </CaseSection>
+
+            <CaseSection id="outcome" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Outcome" displayFamily={displayFamily} ink={ink} />
+                {statRow(SOORAJ_UI.outcomeStats)}
+                <BodyCopy family={family}>
+                    Sooraj Nagar was exhibited as my final-year thesis at the Indus Valley School of Art and Architecture in Karachi.
+                </BodyCopy>
+                <BodyCopy family={family}>
+                    A research-led, locally rooted experience can move young people from "Karachi is doomed" to "here is what would change it". The same method can travel to any city facing extreme heat.
+                </BodyCopy>
+                {futures ? <MediaFrame src={futures.src} accent={accent} label="Two futures" tall /> : null}
+            </CaseSection>
+
+            <CaseSection id="reflection" setSectionRef={setSectionRef}>
+                <SectionKicker kicker="Reflection" displayFamily={displayFamily} ink={ink} />
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: phone ? "1fr" : "1fr 1fr 1fr",
+                        gap: 28,
+                    }}
+                >
+                    {SOORAJ_UI.reflections.map((item) => (
+                        <div key={item.title} style={{ display: "flex", flexDirection: "column", gap: 10, minWidth: 0 }}>
+                            <div
+                                style={{
+                                    fontFamily: displayFamily,
+                                    fontSize: 28,
+                                    fontWeight: 400,
+                                    lineHeight: 1.15,
+                                    color: ink,
+                                }}
+                            >
+                                {item.title}
+                            </div>
+                            <p style={{ margin: 0, fontFamily: family, fontSize: 16, lineHeight: 1.6, color: BODY_INK }}>
+                                {item.body}
+                            </p>
+                        </div>
+                    ))}
+                </div>
+            </CaseSection>
+        </>
     )
 }
 
