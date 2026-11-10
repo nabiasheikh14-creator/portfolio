@@ -2575,9 +2575,9 @@ function SoorajSections({
                     displayFamily={displayFamily}
                     plates
                     cards={[
-                        { title: "Zine", body: "A printed guide to the real action behind each button, plus a manifesto kit.", image: "" },
+                        { title: "Zine", body: "A printed guide to the real action behind each button, plus a manifesto kit.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/zine.jpg" },
                         { title: "Website", body: "Future's Archive, a newsroom from 2120 that switches between collapse and renewal.", image: website?.src || "" },
-                        { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "" },
+                        { title: "Instagram", body: "@soorajnagarkarachi turns visitors into a community that keeps reimagining the city.", image: "https://cdn.jsdelivr.net/gh/nabiasheikh14-creator/portfolio@606433ca18d8eff29f5738eb5ce295c59ea6f19b/framer/case/sooraj/instagram.jpg" },
                     ].map((card) => ({ ...card, image: card.image || undefined }))}
                 />
             </CaseSection>
